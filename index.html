@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EZPICKUP WMS — Warehouse Management System</title>
-<link rel="icon" type="image/png" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -25,6 +24,17 @@
     }
   }
 </script>
+<script>
+  // Terapkan tema gelap/terang SEBELUM body dirender (bukan di dalam DOMContentLoaded) supaya
+  // tidak ada kedipan tema salah sesaat (flash-of-wrong-theme) saat halaman dimuat.
+  (function(){
+    try {
+      const saved = localStorage.getItem('ezpickup_theme');
+      const wantDark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (wantDark) document.documentElement.classList.add('dark');
+    } catch(e) {}
+  })();
+</script>
 <style>
   * { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
   ::-webkit-scrollbar { height: 6px; width: 6px; }
@@ -37,6 +47,79 @@
   .status-rail { border-left-width: 3px; }
   input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15); }
   @media (prefers-reduced-motion: reduce) { .tab-enter, .toast-in { animation: none; } }
+
+  /* ===== DARK MODE (aktif via class "dark" di <html>, lihat initDarkMode/toggleDarkMode) =====
+     Didapat scr terprogram dari SEMUA kelas warna Tailwind yg benar-benar dipakai di file ini,
+     supaya cakupannya akurat (bukan tebakan) & otomatis berlaku jg utk HTML yg di-generate JS
+     (innerHTML dari render*Tab()) krn menyasar NAMA CLASS-nya, bukan elemen statis tertentu. */
+  .dark .bg-white { background-color: #16202f !important; }
+  .dark .bg-slate-50 { background-color: #0b1220 !important; }
+  .dark .bg-slate-50\/50 { background-color: #0b122080 !important; }
+  .dark .bg-slate-100 { background-color: #1c2739 !important; }
+  .dark .bg-slate-100\/40 { background-color: #1c273966 !important; }
+  .dark .bg-slate-800 { background-color: #25313f !important; }
+  .dark .bg-slate-900 { background-color: #0e1622 !important; }
+  .dark .bg-slate-900\/60 { background-color: rgba(0,0,0,.7) !important; }
+  .dark .hover\:bg-slate-50:hover { background-color: #1c2739 !important; }
+  .dark .hover\:bg-slate-900:hover { background-color: #000 !important; }
+  .dark .disabled\:bg-slate-50:disabled { background-color: #0b1220 !important; }
+  .dark .disabled\:bg-slate-300:disabled { background-color: #37455c !important; }
+  .dark .disabled\:text-slate-400:disabled { color: #8695ab !important; }
+  .dark .hover\:border-slate-400:hover { border-color: #4a5a72 !important; }
+  .dark .text-slate-300 { color: #3d4a5e !important; }
+  .dark .text-slate-400 { color: #5c6a80 !important; }
+  .dark .text-slate-500 { color: #8695ab !important; }
+  .dark .text-slate-600 { color: #aeb9c9 !important; }
+  .dark .text-slate-700 { color: #cbd3de !important; }
+  .dark .text-slate-800 { color: #e7ecf2 !important; }
+  .dark .text-slate-900 { color: #f4f7fa !important; }
+  .dark .border-slate-100 { border-color: #1c2739 !important; }
+  .dark .border-slate-200 { border-color: #28354a !important; }
+  .dark .border-slate-300 { border-color: #37455c !important; }
+  .dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #1c2739 !important; }
+  .dark .border-l-slate-400 { border-left-color: #8695ab !important; }
+  .dark .border-l-slate-700 { border-left-color: #37455c !important; }
+  .dark .bg-red-50 { background-color: #2c1418 !important; }
+  .dark .bg-red-50\/40 { background-color: #2c141866 !important; }
+  .dark .bg-red-100 { background-color: #3f1a1f !important; }
+  .dark .hover\:bg-red-50\/40:hover { background-color: #3f1a1f66 !important; }
+  .dark .border-red-100 { border-color: #4a1e24 !important; }
+  .dark .border-red-300 { border-color: #6b2a32 !important; }
+  .dark .text-red-100 { color: #fee2e2 !important; }
+  .dark .text-red-200 { color: #fecaca !important; }
+  .dark .text-red-300 { color: #fecaca !important; }
+  .dark .text-red-700 { color: #fca5a5 !important; }
+  .dark .text-red-800 { color: #fca5a5 !important; }
+  .dark .hover\:text-red-700:hover { color: #fca5a5 !important; }
+  .dark .hover\:text-red-800:hover { color: #fca5a5 !important; }
+  .dark .focus\:ring-red-200 { --tw-ring-color: rgba(220,38,38,.35) !important; }
+  .dark .bg-emerald-100 { background-color: #0f3d31 !important; }
+  .dark .bg-emerald-50\/40 { background-color: #0b2e2666 !important; }
+  .dark .border-emerald-100 { border-color: #164436 !important; }
+  .dark .border-emerald-300 { border-color: #1f5b48 !important; }
+  .dark .text-emerald-700 { color: #6ee7b7 !important; }
+  .dark .focus\:ring-emerald-200 { --tw-ring-color: rgba(5,150,105,.35) !important; }
+  .dark .bg-blue-100 { background-color: #132c52 !important; }
+  .dark .bg-blue-50\/40 { background-color: #0f234066 !important; }
+  .dark .border-blue-100 { border-color: #1c3a63 !important; }
+  .dark .border-blue-300 { border-color: #254a7c !important; }
+  .dark .text-blue-700 { color: #93c5fd !important; }
+  .dark .focus\:ring-blue-200 { --tw-ring-color: rgba(37,99,235,.35) !important; }
+  .dark .bg-purple-100 { background-color: #301b52 !important; }
+  .dark .bg-purple-50\/40 { background-color: #26163f66 !important; }
+  .dark .border-purple-100 { border-color: #3a2263 !important; }
+  .dark .border-purple-300 { border-color: #4c2c80 !important; }
+  .dark .text-purple-700 { color: #c4b5fd !important; }
+  .dark .focus\:ring-purple-200 { --tw-ring-color: rgba(124,58,237,.35) !important; }
+
+  /* Scrollbar & native form control (date picker, dsb) mengikuti tema gelap */
+  .dark * { scrollbar-color: #37455c transparent; }
+  .dark ::-webkit-scrollbar-thumb { background: #37455c; }
+  .dark input, .dark select, .dark textarea { color-scheme: dark; }
+  .dark input:focus, .dark select:focus, .dark textarea:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.35); }
+  /* Placeholder & elemen lain yg tidak lewat class Tailwind eksplisit */
+  .dark ::placeholder { color: #5c6a80; opacity: 1; }
+  .dark #modal-generic .bg-white, .dark [id^="modal-"] .bg-white { background-color: #16202f; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased h-screen overflow-hidden flex flex-col">
@@ -99,6 +182,9 @@
       </button>
       <button id="btn-refresh" onclick="fetchAllData()" class="p-2 rounded-lg text-red-100 hover:bg-red-800 transition" title="Refresh data">
         <i data-lucide="refresh-cw" class="h-4.5 w-4.5"></i>
+      </button>
+      <button id="btn-dark-toggle" onclick="toggleDarkMode()" class="p-2 rounded-lg text-red-100 hover:bg-red-800 transition" title="Ganti tema terang/gelap">
+        <i data-lucide="moon" class="h-4.5 w-4.5"></i>
       </button>
       <div class="h-8 w-px bg-red-800"></div>
       <div class="text-right hidden sm:block">
@@ -1629,13 +1715,17 @@ function renderDashboard(){
 
   if (window.myTrendChart) window.myTrendChart.destroy();
   const ctxTrend = document.getElementById('trendChart').getContext('2d');
+  const trendTheme = chartThemeColors();
   window.myTrendChart = new Chart(ctxTrend, {
       type: 'line',
       data: { labels: last7DaysStrings.map(d => d.substring(5)), datasets: datasets },
       options: {
           responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: {size: 10} } } },
-          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: {size: 10}, color: trendTheme.text } } },
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0, color: trendTheme.text }, grid: { color: trendTheme.grid } },
+            x: { ticks: { color: trendTheme.text }, grid: { color: trendTheme.grid } }
+          }
       }
   });
 
@@ -2519,11 +2609,14 @@ function renderProductivityTab(){
   }
   const dayValues = dayLabels.map(d => perDay[d]||0);
 
+  const prodTheme = chartThemeColors();
+
   if (window.myProdTrendChart) window.myProdTrendChart.destroy();
   window.myProdTrendChart = new Chart(document.getElementById('prodTrendChart').getContext('2d'), {
     type: 'bar',
     data: { labels: dayLabels.map(d=>d.substring(5)), datasets: [{ label:'Qty Paket', data: dayValues, backgroundColor:'#dc2626', borderRadius:4 }] },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } }
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
+      scales:{ y:{ beginAtZero:true, ticks:{ precision:0, color:prodTheme.text }, grid:{ color:prodTheme.grid } }, x:{ ticks:{ color:prodTheme.text }, grid:{ color:prodTheme.grid } } } }
   });
 
   // Chart distribusi beban per peran
@@ -2534,7 +2627,7 @@ function renderProductivityTab(){
       labels: PROD_ROLES.map(r=>r.short),
       datasets: [{ data: PROD_ROLES.map(r=>perRoleTotal[r.key]), backgroundColor:['#3b82f6','#8b5cf6','#dc2626','#10b981'] }]
     },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:10} } } } }
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:10}, color:prodTheme.text } } } }
   });
 
   renderOtherActivityGrid(perOtherCategory, dayCount);
@@ -3074,8 +3167,39 @@ async function submitFormModal(e){
 }
 
 /* ============================================================
+   DARK MODE
+   (penerapan class "dark" ke <html> saat load pertama ada di
+   <script> kecil paling atas <head> - lihat komentarnya di sana -
+   supaya tidak ada flash tema salah. Di sini cuma toggle + sinkron ikon.)
+   ============================================================ */
+function syncDarkToggleIcon(){
+  const btn = document.getElementById('btn-dark-toggle');
+  if (!btn) return;
+  const isDark = document.documentElement.classList.contains('dark');
+  btn.innerHTML = `<i data-lucide="${isDark ? 'sun' : 'moon'}" class="h-4.5 w-4.5"></i>`;
+  btn.title = isDark ? 'Ganti ke tema terang' : 'Ganti ke tema gelap';
+}
+function toggleDarkMode(){
+  const isDark = document.documentElement.classList.toggle('dark');
+  try { localStorage.setItem('ezpickup_theme', isDark ? 'dark' : 'light'); } catch(e) {}
+  syncDarkToggleIcon();
+  lucide.createIcons();
+  // Chart.js tidak ikut CSS - render ulang chart yg sedang tampil spy warna teks/grid-nya
+  // menyesuaikan tema baru (lihat chartThemeColors() yg dipakai tiap fungsi pembuat chart).
+  if (typeof renderDashboard === 'function' && !document.getElementById('tab-dashboard').classList.contains('hidden')) renderDashboard();
+  if (typeof renderProductivityTab === 'function' && !document.getElementById('tab-productivity').classList.contains('hidden')) renderProductivityTab();
+}
+// Warna teks/grid Chart.js mengikuti tema aktif saat ini - dipanggil tiap kali sebuah chart
+// dibuat/diperbarui (Chart.js tidak baca CSS, jadi tidak bisa cuma lewat .dark selector spt elemen HTML lain).
+function chartThemeColors(){
+  const isDark = document.documentElement.classList.contains('dark');
+  return { text: isDark ? '#aeb9c9' : '#64748b', grid: isDark ? '#28354a' : '#f1f5f9' };
+}
+
+/* ============================================================
    INIT
    ============================================================ */
+syncDarkToggleIcon();
 lucide.createIcons();
 </script>
 </body>
