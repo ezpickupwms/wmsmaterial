@@ -24,17 +24,6 @@
     }
   }
 </script>
-<script>
-  // Terapkan tema gelap/terang SEBELUM body dirender (bukan di dalam DOMContentLoaded) supaya
-  // tidak ada kedipan tema salah sesaat (flash-of-wrong-theme) saat halaman dimuat.
-  (function(){
-    try {
-      const saved = localStorage.getItem('ezpickup_theme');
-      const wantDark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (wantDark) document.documentElement.classList.add('dark');
-    } catch(e) {}
-  })();
-</script>
 <style>
   * { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
   ::-webkit-scrollbar { height: 6px; width: 6px; }
@@ -47,79 +36,6 @@
   .status-rail { border-left-width: 3px; }
   input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15); }
   @media (prefers-reduced-motion: reduce) { .tab-enter, .toast-in { animation: none; } }
-
-  /* ===== DARK MODE (aktif via class "dark" di <html>, lihat initDarkMode/toggleDarkMode) =====
-     Didapat scr terprogram dari SEMUA kelas warna Tailwind yg benar-benar dipakai di file ini,
-     supaya cakupannya akurat (bukan tebakan) & otomatis berlaku jg utk HTML yg di-generate JS
-     (innerHTML dari render*Tab()) krn menyasar NAMA CLASS-nya, bukan elemen statis tertentu. */
-  .dark .bg-white { background-color: #16202f !important; }
-  .dark .bg-slate-50 { background-color: #0b1220 !important; }
-  .dark .bg-slate-50\/50 { background-color: #0b122080 !important; }
-  .dark .bg-slate-100 { background-color: #1c2739 !important; }
-  .dark .bg-slate-100\/40 { background-color: #1c273966 !important; }
-  .dark .bg-slate-800 { background-color: #25313f !important; }
-  .dark .bg-slate-900 { background-color: #0e1622 !important; }
-  .dark .bg-slate-900\/60 { background-color: rgba(0,0,0,.7) !important; }
-  .dark .hover\:bg-slate-50:hover { background-color: #1c2739 !important; }
-  .dark .hover\:bg-slate-900:hover { background-color: #000 !important; }
-  .dark .disabled\:bg-slate-50:disabled { background-color: #0b1220 !important; }
-  .dark .disabled\:bg-slate-300:disabled { background-color: #37455c !important; }
-  .dark .disabled\:text-slate-400:disabled { color: #8695ab !important; }
-  .dark .hover\:border-slate-400:hover { border-color: #4a5a72 !important; }
-  .dark .text-slate-300 { color: #3d4a5e !important; }
-  .dark .text-slate-400 { color: #5c6a80 !important; }
-  .dark .text-slate-500 { color: #8695ab !important; }
-  .dark .text-slate-600 { color: #aeb9c9 !important; }
-  .dark .text-slate-700 { color: #cbd3de !important; }
-  .dark .text-slate-800 { color: #e7ecf2 !important; }
-  .dark .text-slate-900 { color: #f4f7fa !important; }
-  .dark .border-slate-100 { border-color: #1c2739 !important; }
-  .dark .border-slate-200 { border-color: #28354a !important; }
-  .dark .border-slate-300 { border-color: #37455c !important; }
-  .dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #1c2739 !important; }
-  .dark .border-l-slate-400 { border-left-color: #8695ab !important; }
-  .dark .border-l-slate-700 { border-left-color: #37455c !important; }
-  .dark .bg-red-50 { background-color: #2c1418 !important; }
-  .dark .bg-red-50\/40 { background-color: #2c141866 !important; }
-  .dark .bg-red-100 { background-color: #3f1a1f !important; }
-  .dark .hover\:bg-red-50\/40:hover { background-color: #3f1a1f66 !important; }
-  .dark .border-red-100 { border-color: #4a1e24 !important; }
-  .dark .border-red-300 { border-color: #6b2a32 !important; }
-  .dark .text-red-100 { color: #fee2e2 !important; }
-  .dark .text-red-200 { color: #fecaca !important; }
-  .dark .text-red-300 { color: #fecaca !important; }
-  .dark .text-red-700 { color: #fca5a5 !important; }
-  .dark .text-red-800 { color: #fca5a5 !important; }
-  .dark .hover\:text-red-700:hover { color: #fca5a5 !important; }
-  .dark .hover\:text-red-800:hover { color: #fca5a5 !important; }
-  .dark .focus\:ring-red-200 { --tw-ring-color: rgba(220,38,38,.35) !important; }
-  .dark .bg-emerald-100 { background-color: #0f3d31 !important; }
-  .dark .bg-emerald-50\/40 { background-color: #0b2e2666 !important; }
-  .dark .border-emerald-100 { border-color: #164436 !important; }
-  .dark .border-emerald-300 { border-color: #1f5b48 !important; }
-  .dark .text-emerald-700 { color: #6ee7b7 !important; }
-  .dark .focus\:ring-emerald-200 { --tw-ring-color: rgba(5,150,105,.35) !important; }
-  .dark .bg-blue-100 { background-color: #132c52 !important; }
-  .dark .bg-blue-50\/40 { background-color: #0f234066 !important; }
-  .dark .border-blue-100 { border-color: #1c3a63 !important; }
-  .dark .border-blue-300 { border-color: #254a7c !important; }
-  .dark .text-blue-700 { color: #93c5fd !important; }
-  .dark .focus\:ring-blue-200 { --tw-ring-color: rgba(37,99,235,.35) !important; }
-  .dark .bg-purple-100 { background-color: #301b52 !important; }
-  .dark .bg-purple-50\/40 { background-color: #26163f66 !important; }
-  .dark .border-purple-100 { border-color: #3a2263 !important; }
-  .dark .border-purple-300 { border-color: #4c2c80 !important; }
-  .dark .text-purple-700 { color: #c4b5fd !important; }
-  .dark .focus\:ring-purple-200 { --tw-ring-color: rgba(124,58,237,.35) !important; }
-
-  /* Scrollbar & native form control (date picker, dsb) mengikuti tema gelap */
-  .dark * { scrollbar-color: #37455c transparent; }
-  .dark ::-webkit-scrollbar-thumb { background: #37455c; }
-  .dark input, .dark select, .dark textarea { color-scheme: dark; }
-  .dark input:focus, .dark select:focus, .dark textarea:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.35); }
-  /* Placeholder & elemen lain yg tidak lewat class Tailwind eksplisit */
-  .dark ::placeholder { color: #5c6a80; opacity: 1; }
-  .dark #modal-generic .bg-white, .dark [id^="modal-"] .bg-white { background-color: #16202f; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased h-screen overflow-hidden flex flex-col">
@@ -182,9 +98,6 @@
       </button>
       <button id="btn-refresh" onclick="fetchAllData()" class="p-2 rounded-lg text-red-100 hover:bg-red-800 transition" title="Refresh data">
         <i data-lucide="refresh-cw" class="h-4.5 w-4.5"></i>
-      </button>
-      <button id="btn-dark-toggle" onclick="toggleDarkMode()" class="p-2 rounded-lg text-red-100 hover:bg-red-800 transition" title="Ganti tema terang/gelap">
-        <i data-lucide="moon" class="h-4.5 w-4.5"></i>
       </button>
       <div class="h-8 w-px bg-red-800"></div>
       <div class="text-right hidden sm:block">
@@ -611,7 +524,7 @@
             <input type="text" id="prodlog-other-name" placeholder="Nama Petugas" required class="border border-slate-300 rounded-lg px-2.5 py-2 text-xs outline-none focus:border-red-600">
             <input type="number" id="prodlog-other-qty" min="1" placeholder="Qty (paket/SKU)" required class="border border-slate-300 rounded-lg px-2.5 py-2 text-xs outline-none focus:border-red-600">
             <input type="number" id="prodlog-other-pcs" min="0" placeholder="Qty Pcs (opsional)" class="border border-slate-200 rounded-lg px-2.5 py-2 text-xs outline-none focus:border-red-600">
-            <button type="submit" class="bg-slate-800 text-white text-xs font-semibold rounded-lg py-2 hover:bg-slate-900 transition">+ Catat Aktivitas</button>
+            <button data-perm-module="productivity_other" data-perm-op="c" type="submit" class="bg-slate-800 text-white text-xs font-semibold rounded-lg py-2 hover:bg-slate-900 transition">+ Catat Aktivitas</button>
           </form>
           <div id="prodlog-other-today" class="mt-3 flex flex-wrap gap-2"></div>
         </div>
@@ -1075,7 +988,7 @@ const PAGE_SIZE = 12;
 
 let authToken = null;
 let currentUser = null;
-let db = { warehouses:[], materials:[], suppliers:[], inventory:[], transactionLogs:[], purchaseOrders:[], packCategories:[], bomRecipes:[], packLogs:[], users:[], overheadCosts:[], hppSettings:[], handlingFees:[], operationalCases:[], packRoles:[], productivityLogs:[], productivityTargets:[], warehouseAssets:[], rolePermissionMatrix:{}, rolePermissionCeiling:{}, customRoles:[], allRoleNames:[] };
+let db = { warehouses:[], materials:[], suppliers:[], inventory:[], transactionLogs:[], purchaseOrders:[], packCategories:[], bomRecipes:[], packLogs:[], users:[], overheadCosts:[], hppSettings:[], handlingFees:[], operationalCases:[], productivityLogs:[], productivityTargets:[], warehouseAssets:[], rolePermissionMatrix:{}, rolePermissionCeiling:{}, customRoles:[], allRoleNames:[] };
 let ui = { invPage:1, trxPage:1, matPage:1, poPage:1, supplierPage:1, assetsPage:1, casesPage:1, selectedPackCat:null, selectedPackWh:null, selectedPermRole:'Staff Gudang' };
 let permMatrixState = null; // salinan kerja rolePermissionMatrix yg sedang diedit di tab Role & Permission (belum tentu sudah disimpan)
 
@@ -1117,6 +1030,7 @@ const PERMISSION_MODULES = [
   { section:'Operasional', key:'po', label:'Purchase Order', icon:'shopping-cart', ops:['r','c','u'] },
   { section:'Operasional', key:'cases', label:'Case Operasional', icon:'alert-triangle', ops:['r','c','u'] },
   { section:'Operasional', key:'productivity', label:'Produktivitas Tim', icon:'bar-chart-3', ops:['r','c','u'] },
+  { section:'Operasional', key:'productivity_other', label:'↳ Aktivitas Operasional Lain', icon:'list-plus', ops:['r','c'] },
   { section:'Master Data', key:'warehouse', label:'Gudang', icon:'warehouse', ops:['r','c','u'] },
   { section:'Master Data', key:'material', label:'Material', icon:'package', ops:['r','c','u'] },
   { section:'Master Data', key:'supplier', label:'Supplier', icon:'truck', ops:['r','c','u'] },
@@ -1574,7 +1488,7 @@ async function fetchAllData(){
     inventory: data.inventory||[], transactionLogs: data.transactionLogs||[], purchaseOrders: data.purchaseOrders||[],
     packCategories: data.packCategories||[], bomRecipes: data.bomRecipes||[], packLogs: data.packLogs||[], users: data.users||[],
     overheadCosts: data.overheadCosts||[], hppSettings: data.hppSettings||[], handlingFees: data.handlingFees||[],
-    operationalCases: data.operationalCases||[], packRoles: data.packRoles||[], productivityLogs: data.productivityLogs||[],
+    operationalCases: data.operationalCases||[], productivityLogs: data.productivityLogs||[],
     productivityTargets: data.productivityTargets||[], warehouseAssets: data.warehouseAssets||[],
     rolePermissionMatrix: data.rolePermissionMatrix||{}, rolePermissionCeiling: data.rolePermissionCeiling||{},
     customRoles: data.customRoles||[], allRoleNames: data.allRoleNames||[]
@@ -2350,11 +2264,11 @@ function renderProductivityLogToday(){
       }).join('')
     : `<p class="text-[11px] text-slate-300">Belum ada input hari ini</p>`;
 
-  // Kartu "Aktivitas Operasional Lain" cuma utk role yg backend izinkan (Admin & Staff Gudang -
-  // lihat PRODUCTIVITY_ROLE_ACCESS utk "Admin RTS"/"Tim Inbound"/dst di Code.gs); role eksekusi
-  // packing (Admin Print/Picker/Packer/Checker) tidak perlu lihat form yg pasti ditolak server.
+  // Kartu "Aktivitas Operasional Lain" sekarang mengikuti izin Read modul "productivity_other" -
+  // bisa diatur bebas lewat tab Role & Permission (default: Admin & Staff Gudang saja, sama
+  // seperti PRODUCTIVITY_ROLE_ACCESS utk "Admin RTS"/"Tim Inbound"/dst di Code.gs).
   const otherCard = document.getElementById('card-other-activity');
-  if (otherCard) otherCard.classList.toggle('hidden', !canWrite());
+  if (otherCard) otherCard.classList.toggle('hidden', !can('productivity_other','r'));
 
   renderTargetGrid();
   lucide.createIcons();
@@ -2508,12 +2422,18 @@ function computeProductivityData(){
   });
 
   const perPerson = {}; // nama -> { 'Admin Print Name':n, 'Picker Name':n, ... , total:n, totalPcs:n }
-  const perDay = {};    // tanggal -> total Qty Paket (semua peran digabung) hari itu
+  const perDay = {};    // tanggal -> Qty Paket yg diproses Admin Print hari itu (lihat catatan totalPaket di bawah)
   const perRoleTotal = { 'Admin Print Name':0, 'Picker Name':0, 'Packer Name':0, 'Checker Name':0 };
   // Aktivitas Operasional Lain (Admin RTS/Tim Inbound/Tim Outbound/Stock Opname) - satuan
   // CAMPURAN (pkt vs SKU, lihat OTHER_ACTIVITY_CATEGORIES), makanya dihitung TERPISAH dari
   // totalPaket/perRoleTotal di atas supaya tidak salah jumlah antar satuan berbeda.
   const perOtherCategory = {}; // kategori -> { total, totalPcs, perPerson:{nama:qty} }
+  // totalPaket/totalPcs/perDay SENGAJA cuma dari peran "Admin Print" (bukan dijumlah dari
+  // Admin Print+Picker+Packer+Checker sekaligus) - 1 paket yg sama mengalir lewat KE-4 tahap
+  // itu, jadi menjumlahkan semuanya akan melipat-gandakan angka ~4x dari jumlah paket
+  // sebenarnya yang diproses. Admin Print dipakai sbg acuan krn dialah titik masuk pipeline
+  // (tahap pertama). perRoleTotal di bawah TETAP mencatat qty tiap peran scr terpisah apa
+  // adanya (dipakai utk chart distribusi beban per peran & badge per-kartu, bukan utk total ini).
   let totalPaket = 0, totalPcs = 0, coreEntryCount = 0;
 
   entries.forEach(p => {
@@ -2533,11 +2453,13 @@ function computeProductivityData(){
     }
 
     coreEntryCount++;
-    const dStr = toWIBDateStr(p['Date']);
-    perDay[dStr] = (perDay[dStr]||0) + qty;
-    totalPaket += qty;
-    totalPcs += pcs;
     perRoleTotal[role.key] += qty;
+    if (role.short === 'Admin Print') {
+      const dStr = toWIBDateStr(p['Date']);
+      perDay[dStr] = (perDay[dStr]||0) + qty;
+      totalPaket += qty;
+      totalPcs += pcs;
+    }
 
     const name = String(p['Nama']||'').trim();
     if (!name) return;
@@ -3166,40 +3088,14 @@ async function submitFormModal(e){
   finally { toggleSubmitLoading(btn, false); }
 }
 
-/* ============================================================
-   DARK MODE
-   (penerapan class "dark" ke <html> saat load pertama ada di
-   <script> kecil paling atas <head> - lihat komentarnya di sana -
-   supaya tidak ada flash tema salah. Di sini cuma toggle + sinkron ikon.)
-   ============================================================ */
-function syncDarkToggleIcon(){
-  const btn = document.getElementById('btn-dark-toggle');
-  if (!btn) return;
-  const isDark = document.documentElement.classList.contains('dark');
-  btn.innerHTML = `<i data-lucide="${isDark ? 'sun' : 'moon'}" class="h-4.5 w-4.5"></i>`;
-  btn.title = isDark ? 'Ganti ke tema terang' : 'Ganti ke tema gelap';
-}
-function toggleDarkMode(){
-  const isDark = document.documentElement.classList.toggle('dark');
-  try { localStorage.setItem('ezpickup_theme', isDark ? 'dark' : 'light'); } catch(e) {}
-  syncDarkToggleIcon();
-  lucide.createIcons();
-  // Chart.js tidak ikut CSS - render ulang chart yg sedang tampil spy warna teks/grid-nya
-  // menyesuaikan tema baru (lihat chartThemeColors() yg dipakai tiap fungsi pembuat chart).
-  if (typeof renderDashboard === 'function' && !document.getElementById('tab-dashboard').classList.contains('hidden')) renderDashboard();
-  if (typeof renderProductivityTab === 'function' && !document.getElementById('tab-productivity').classList.contains('hidden')) renderProductivityTab();
-}
-// Warna teks/grid Chart.js mengikuti tema aktif saat ini - dipanggil tiap kali sebuah chart
-// dibuat/diperbarui (Chart.js tidak baca CSS, jadi tidak bisa cuma lewat .dark selector spt elemen HTML lain).
+// Warna teks/grid Chart.js (dipanggil tiap kali sebuah chart dibuat/diperbarui).
 function chartThemeColors(){
-  const isDark = document.documentElement.classList.contains('dark');
-  return { text: isDark ? '#aeb9c9' : '#64748b', grid: isDark ? '#28354a' : '#f1f5f9' };
+  return { text: '#64748b', grid: '#f1f5f9' };
 }
 
 /* ============================================================
    INIT
    ============================================================ */
-syncDarkToggleIcon();
 lucide.createIcons();
 </script>
 </body>
