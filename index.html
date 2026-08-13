@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EZPICKUP WMS — Warehouse Management System</title>
+<link rel="icon" type="image/png" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -236,6 +237,7 @@
           <div class="overflow-x-auto"><table class="w-full text-sm text-left">
             <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-400"><tr>
               <th class="px-4 py-2.5">Gudang</th><th class="px-4 py-2.5">Material</th><th class="px-4 py-2.5">Bin</th>
+              <th class="px-4 py-2.5">Satuan</th>
               <th class="px-4 py-2.5 text-right">On Hand</th><th class="px-4 py-2.5 text-right">Reserved</th><th class="px-4 py-2.5 text-right">Available</th>
               <th class="px-4 py-2.5 text-right">Valuasi</th><th class="px-4 py-2.5 text-center">Status</th>
             </tr></thead>
@@ -290,7 +292,7 @@
               <select id="out-wh" onchange="onOutboundWhChange()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></select></div>
             
             <div class="p-3 bg-red-50 rounded-lg border border-red-100 mb-2">
-              <label class="block text-xs font-bold text-red-800 mb-1">Nomor AWB / Resi Order</label>
+              <label class="block text-xs font-bold text-red-800 mb-1">Nomor Batch Order</label>
               <input type="text" id="out-awb" required placeholder="Arahkan scanner ke sini..." class="w-full border border-red-300 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 transition font-mono bg-white shadow-inner" autofocus>
               <p class="text-[10px] text-red-600 mt-1 flex items-center gap-1"><i data-lucide="scan-barcode" class="h-3 w-3"></i> Support Scanner (otomatis submit saat Enter)</p>
             </div>
@@ -673,10 +675,11 @@
       <!-- BOM -->
       <div id="tab-bom" class="tab-content hidden">
         <h2 class="font-display text-xl font-bold text-slate-900">Kategori Kemasan &amp; Resep BOM</h2>
-        <p class="text-sm text-slate-500 mt-0.5 mb-4">Pilih kategori untuk melihat/mengatur komponen material, target produksi, dan rencana pembelian.</p>
+        <p class="text-sm text-slate-500 mt-0.5 mb-4">Pilih kategori untuk melihat/mengatur komponen material, kapasitas produksi otomatis, dan rencana pembelian.</p>
 
         <div class="flex items-center gap-2 mb-5">
           <button id="bom-subtab-btn-recipe" onclick="switchBomSubview('recipe')" class="px-3.5 py-2 rounded-lg text-xs font-semibold border transition bg-slate-900 text-white border-slate-900"><i data-lucide="clipboard-list" class="h-3.5 w-3.5 inline -mt-0.5 mr-1"></i>Resep BOM</button>
+          <button id="bom-subtab-btn-capacity" onclick="switchBomSubview('capacity')" class="px-3.5 py-2 rounded-lg text-xs font-semibold border transition bg-white text-slate-600 border-slate-200 hover:bg-slate-50"><i data-lucide="gauge" class="h-3.5 w-3.5 inline -mt-0.5 mr-1"></i>Kapasitas Produksi</button>
           <button id="bom-subtab-btn-planning" data-perm-module="production_target" data-perm-op="r" onclick="switchBomSubview('planning')" class="px-3.5 py-2 rounded-lg text-xs font-semibold border transition bg-white text-slate-600 border-slate-200 hover:bg-slate-50"><i data-lucide="target" class="h-3.5 w-3.5 inline -mt-0.5 mr-1"></i>Perencanaan &amp; PPIC</button>
         </div>
 
@@ -707,6 +710,38 @@
                 <tbody id="tbl-bom-items" class="divide-y divide-slate-100"></tbody>
               </table>
               <div class="flex justify-between text-sm font-bold text-slate-700 pt-2 border-t border-slate-200"><span>Total Biaya per Paket</span><span id="bom-total-cost">Rp 0</span></div>
+            </div>
+          </div>
+
+          <!-- SUBVIEW: Kapasitas Produksi (baru, otomatis - tanpa input target manual) -->
+          <div id="bom-subview-capacity" class="hidden lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <div id="capacity-detail-empty" class="text-sm text-slate-400 py-10 text-center">← Pilih salah satu kategori kemasan untuk melihat kapasitas produksinya.</div>
+            <div id="capacity-detail-content" class="hidden">
+              <div class="flex items-center justify-between gap-2 mb-1">
+                <h3 id="capacity-detail-title" class="font-display font-bold text-slate-900"></h3>
+                <span id="capacity-detail-badge" class="flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold"></span>
+              </div>
+              <p class="text-xs text-slate-400 mb-4">Dihitung otomatis dari stok material saat ini &amp; resep BOM — tidak perlu input target.</p>
+
+              <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="bg-slate-50 rounded-lg p-4">
+                  <p class="text-[11px] text-slate-400 font-semibold uppercase tracking-wide">Bisa Produksi Sekarang</p>
+                  <p id="capacity-max-qty" class="text-3xl font-display font-bold text-slate-900 mt-1">0 <span class="text-sm font-semibold text-slate-400">paket</span></p>
+                  <p id="capacity-bottleneck-label" class="text-xs text-slate-500 mt-1"></p>
+                </div>
+                <div class="bg-slate-50 rounded-lg p-4">
+                  <p class="text-[11px] text-slate-400 font-semibold uppercase tracking-wide">Proyeksi Ketahanan Stok</p>
+                  <p id="capacity-days-left" class="text-3xl font-display font-bold text-slate-900 mt-1">-</p>
+                  <p id="capacity-pace-label" class="text-xs text-slate-500 mt-1"></p>
+                </div>
+              </div>
+
+              <table class="w-full text-sm text-left">
+                <thead class="text-[10px] font-bold uppercase tracking-wide text-slate-400 border-b border-slate-100"><tr>
+                  <th class="py-2">Material</th><th class="py-2 text-right">Usage/Pak</th><th class="py-2 text-right">Stok Tersedia</th><th class="py-2 text-right">Safety Stock</th><th class="py-2 text-right">Bisa Dipakai</th><th class="py-2 text-right">Maks Paket</th>
+                </tr></thead>
+                <tbody id="tbl-capacity-breakdown" class="divide-y divide-slate-100"></tbody>
+              </table>
             </div>
           </div>
 
@@ -744,6 +779,21 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Ringkasan Kapasitas Produksi (semua kategori sekaligus) - hanya tampil di subview Kapasitas Produksi -->
+        <div id="bom-capacity-summary" class="hidden mt-5 bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
+            <h3 class="font-display font-bold text-slate-900">Ringkasan Kapasitas Semua Kategori</h3>
+            <select id="capacity-summary-filter-wh" onchange="renderCapacitySummaryTable()" class="border border-slate-300 rounded-lg px-3 py-2 text-xs bg-white outline-none focus:border-red-600 min-w-[220px]"></select>
+          </div>
+          <p class="text-xs text-slate-500 mb-3">Kapasitas tiap kategori dihitung otomatis dari stok &amp; resep BOM saat ini (tanpa input manual), diurutkan dari yang paling mendesak.</p>
+          <div class="overflow-x-auto"><table class="w-full text-sm text-left">
+            <thead class="text-[10px] font-bold uppercase tracking-wide text-slate-400 border-b border-slate-100"><tr>
+              <th class="py-2">Kategori</th><th class="py-2 text-right">Bisa Produksi</th><th class="py-2">Material Pembatas</th><th class="py-2 text-right">Rata-rata Harian</th><th class="py-2 text-right">Estimasi Habis</th><th class="py-2 text-center">Status</th><th class="py-2 text-center">Aksi</th>
+            </tr></thead>
+            <tbody id="tbl-capacity-summary" class="divide-y divide-slate-100"></tbody>
+          </table></div>
         </div>
 
         <!-- Rekomendasi pembelian terintegrasi (semua kategori sekaligus) - hanya tampil di subview Perencanaan & PPIC -->
@@ -1065,7 +1115,7 @@ const PAGE_SIZE = 12;
 let authToken = null;
 let currentUser = null;
 let db = { warehouses:[], materials:[], suppliers:[], inventory:[], transactionLogs:[], purchaseOrders:[], packCategories:[], bomRecipes:[], packLogs:[], users:[], overheadCosts:[], hppSettings:[], handlingFees:[], operationalCases:[], productivityLogs:[], productivityTargets:[], warehouseAssets:[], productionTargets:[], rolePermissionMatrix:{}, rolePermissionCeiling:{}, customRoles:[], allRoleNames:[] };
-let ui = { invPage:1, trxPage:1, matPage:1, poPage:1, supplierPage:1, assetsPage:1, casesPage:1, selectedPackCat:null, selectedPackWh:null, selectedPermRole:'Staff Gudang' };
+let ui = { invPage:1, trxPage:1, matPage:1, poPage:1, supplierPage:1, assetsPage:1, casesPage:1, selectedPackCat:null, selectedPackWh:null, selectedPermRole:'Staff Gudang', bomSubview:'recipe' };
 let permMatrixState = null; // salinan kerja rolePermissionMatrix yg sedang diedit di tab Role & Permission (belum tentu sudah disimpan)
 
 /* ============================================================
@@ -1329,16 +1379,51 @@ function convertToBaseUnitClient(usageQty, material){
   return usageQty * (k2 / k1);
 }
 
-function exportCsv(which){
-  let rows = [], cols = [];
-  if (which === 'inventory') {
-    rows = db.inventory; cols = [['Warehouse ID','Gudang'],['Material ID','Material ID'],['Material Name','Nama'],['Qty On Hand','On Hand'],['Qty Available','Available'],['Total Valuation (Rp)','Valuasi'],['Status Alert','Status']];
-  }
+// Bangun peta Material ID+Warehouse Name -> UOM SEKALI (bukan .find() berulang per baris) -
+// dipakai renderInventoryTab() & exportCsv('inventory') supaya kolom Satuan konsisten persis
+// antara tabel & file CSV-nya. Material di-key per Warehouse Name (bukan Warehouse ID) - sama
+// seperti findMaterialUnitPrice() - jadi warehouse ID inventory perlu di-resolve dulu ke nama.
+function buildMaterialUomIndex(){
+  const whNameById = {};
+  db.warehouses.forEach(w => { whNameById[w['Warehouse ID']] = w['Warehouse Name']; });
+  const uomByKey = {};
+  db.materials.forEach(m => { uomByKey[m['Material ID']+'||'+m['Warehouse Name']] = m['UOM'] || ''; });
+  return function(materialId, warehouseId){
+    const whName = whNameById[warehouseId] || warehouseId;
+    return uomByKey[materialId+'||'+whName] || '-';
+  };
+}
+
+// Helper generik: bikin file CSV & langsung download. Dipakai exportCsv() & exportProductivityCsv().
+// - Delimiter TITIK KOMA (bukan koma) krn Excel/Sheets versi region Indonesia default-nya pakai
+//   koma sbg pemisah DESIMAL, jadi CSV ber-delimiter koma malah dibaca sbg 1 kolom besar
+//   (persis keluhan "kolom tidak menyatu" krn menyatu terus).
+// - BOM UTF-8 (\uFEFF) di awal file supaya karakter selain huruf latin polos (mis. "×", "Rp")
+//   tidak berubah jadi karakter aneh saat dibuka Excel.
+// - CRLF (\r\n) sbg pemisah baris, sesuai standar CSV (RFC 4180) yg paling kompatibel di Excel Windows.
+// cols: array [key, label] - key boleh nama field ("Material ID") ATAU fungsi(row) utk kolom hasil
+// hitungan/lookup (mis. Satuan yg tidak ada langsung di baris inventory).
+function downloadCsv(filename, cols, rows){
   if (!rows.length) { showToast('Tidak ada data untuk diekspor.', 'info'); return; }
-  const header = cols.map(c=>`"${c[1]}"`).join(',');
-  const body = rows.map(r => cols.map(c => `"${String(r[c[0]] ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([header+'\n'+body], {type:'text/csv;charset=utf-8;'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = which+'_export.csv'; a.click();
+  const SEP = ';';
+  const escCsv = v => `"${String(v ?? '').replace(/"/g,'""')}"`;
+  const header = cols.map(c => escCsv(c[1])).join(SEP);
+  const body = rows.map(r => cols.map(c => escCsv(typeof c[0]==='function' ? c[0](r) : r[c[0]])).join(SEP)).join('\r\n');
+  const blob = new Blob(['\uFEFF' + header + '\r\n' + body], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+}
+
+function exportCsv(which){
+  if (which === 'inventory') {
+    const getUom = buildMaterialUomIndex();
+    const cols = [
+      ['Warehouse ID','Gudang'], ['Material ID','Material ID'], ['Material Name','Nama Material'],
+      [r => getUom(r['Material ID'], r['Warehouse ID']), 'Satuan'],
+      ['Bin Location','Bin'], ['Qty On Hand','On Hand'], ['Qty Reserved','Reserved'], ['Qty Available','Available'],
+      ['Total Valuation (Rp)','Valuasi'], ['Status Alert','Status']
+    ];
+    downloadCsv('inventory_export.csv', cols, db.inventory);
+  }
 }
 
 function toggleSubmitLoading(btn, isLoading) {
@@ -1575,14 +1660,20 @@ function forceLogout(){
 // baru, cukup tambah 1 baris di sini.
 const DB_KEY_RENDER_MAP = {
   warehouses: () => { populateWarehouseSelects(); renderWarehouseTab(); },
-  materials: () => renderMaterialTab(),
+  // renderBomCategoryList/renderCapacitySummaryTable/renderAggregatePurchaseRecommendation ikut
+  // ditambahkan di sini krn Kapasitas Produksi Otomatis (badge di sidebar & tabel ringkasan)
+  // dihitung dari Min Safety Stock/Lead Time/Unit Price material - jadi harus ikut refresh tiap
+  // master material berubah (aggregate sebelumnya juga belum pernah di-hook ke sini - sekalian dibenahi).
+  materials: () => { renderMaterialTab(); renderBomCategoryList(); renderCapacitySummaryTable(); renderAggregatePurchaseRecommendation(); },
   suppliers: () => renderSupplierTab(),
-  inventory: () => { renderInventoryTab(); renderDashboard(); },
+  // sama seperti materials di atas - kapasitas & rekomendasi pembelian sama2 dihitung dari stok saat ini.
+  inventory: () => { renderInventoryTab(); renderDashboard(); renderBomCategoryList(); renderCapacitySummaryTable(); renderAggregatePurchaseRecommendation(); },
   transactionLogs: () => { renderTransactionTab(); renderDashboard(); },
   purchaseOrders: () => renderPOTab(),
-  packCategories: () => renderBomCategoryList(),
-  bomRecipes: () => renderBomCategoryList(),
-  packLogs: () => { renderPackLogTable(); renderDashboard(); },
+  packCategories: () => { renderBomCategoryList(); renderCapacitySummaryTable(); },
+  bomRecipes: () => { renderBomCategoryList(); renderCapacitySummaryTable(); },
+  // + renderCapacitySummaryTable krn rata-rata harian & proyeksi ketahanan stok dihitung dari histori pack log.
+  packLogs: () => { renderPackLogTable(); renderDashboard(); renderCapacitySummaryTable(); },
   users: () => renderUsersTab(),
   overheadCosts: () => renderHppTab(),
   hppSettings: () => renderHppTab(),
@@ -1657,6 +1748,7 @@ async function fetchAllData(){
   renderMaterialTab();
   renderSupplierTab();
   renderBomCategoryList();
+  renderCapacitySummaryTable();
   renderAggregatePurchaseRecommendation();
   renderHppTab();
   renderUsersTab();
@@ -1840,6 +1932,7 @@ function renderInventoryTab(){
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   ui.invPage = Math.min(Math.max(1, ui.invPage), totalPages);
   const items = rows.slice(0, ui.invPage * PAGE_SIZE);
+  const getUom = buildMaterialUomIndex();
   document.getElementById('tbl-inventory').innerHTML = items.length ? items.map(i => {
     const status = i['Status Alert'] || 'SAFE';
     const railColor = status==='CRITICAL' ? 'border-l-red-500' : status==='REORDER' ? 'border-l-amber-500' : 'border-l-emerald-500';
@@ -1848,13 +1941,14 @@ function renderInventoryTab(){
       <td class="px-4 py-2.5 font-medium text-slate-700">${esc(i['Warehouse ID'])}</td>
       <td class="px-4 py-2.5"><p class="font-medium text-slate-800">${esc(i['Material Name'])}</p><p class="text-[11px] text-slate-400 font-mono">${esc(i['Material ID'])}</p></td>
       <td class="px-4 py-2.5 text-slate-500 font-mono text-xs">${esc(i['Bin Location']||'-')}</td>
+      <td class="px-4 py-2.5 text-slate-500">${esc(getUom(i['Material ID'], i['Warehouse ID']))}</td>
       <td class="px-4 py-2.5 text-right font-semibold text-slate-700">${Number(i['Qty On Hand']||0).toLocaleString('id-ID')}</td>
       <td class="px-4 py-2.5 text-right text-slate-500">${Number(i['Qty Reserved']||0).toLocaleString('id-ID')}</td>
       <td class="px-4 py-2.5 text-right font-bold text-slate-900">${Number(i['Qty Available']||0).toLocaleString('id-ID')}</td>
       <td class="px-4 py-2.5 text-right text-slate-600">${formatRupiah(i['Total Valuation (Rp)'])}</td>
       <td class="px-4 py-2.5 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}">${esc(status)}</span></td>
     </tr>`;
-  }).join('') : `<tr><td colspan="8" class="px-4 py-8 text-center text-slate-400 text-sm">Tidak ada data inventory yang cocok.</td></tr>`;
+  }).join('') : `<tr><td colspan="9" class="px-4 py-8 text-center text-slate-400 text-sm">Tidak ada data inventory yang cocok.</td></tr>`;
   renderScrollStatus('pg-inventory', 'inv-scroll-sentinel', items.length, rows.length, 'inventory');
   observeSentinel('inv-scroll-sentinel', () => { ui.invPage++; renderInventoryTab(); });
 }
@@ -2743,12 +2837,13 @@ function renderOtherActivityGrid(perOtherCategory, dayCount){
 
 function exportProductivityCsv(){
   const { perPerson } = computeProductivityData();
-  const rows = Object.entries(perPerson);
-  if (!rows.length) { showToast('Tidak ada data untuk diekspor.', 'info'); return; }
-  const header = ['Nama','Admin Print (Qty Paket)','Picker (Qty Paket)','Packer (Qty Paket)','Checker (Qty Paket)','Total Qty Paket','Total Qty Pcs'].map(h=>`"${h}"`).join(',');
-  const body = rows.map(([name,d]) => [name, d['Admin Print Name'], d['Picker Name'], d['Packer Name'], d['Checker Name'], d.total, d.totalPcs||0].map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([header+'\n'+body], {type:'text/csv;charset=utf-8;'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'produktivitas_tim_export.csv'; a.click();
+  const rows = Object.entries(perPerson).map(([name,d]) => ({ name, ...d }));
+  const cols = [
+    ['name','Nama'], ['Admin Print Name','Admin Print (Qty Paket)'], ['Picker Name','Picker (Qty Paket)'],
+    ['Packer Name','Packer (Qty Paket)'], ['Checker Name','Checker (Qty Paket)'],
+    ['total','Total Qty Paket'], ['totalPcs','Total Qty Pcs']
+  ];
+  downloadCsv('produktivitas_tim_export.csv', cols, rows);
 }
 
 /* ============================================================
@@ -2926,11 +3021,22 @@ function renderBomCategoryList(){
     const whInfo = db.warehouses.find(w => w['Warehouse ID']===whId);
     const whLabel = whInfo ? `${whId} — ${whInfo['Warehouse Name']}` : (whId || 'Tanpa Gudang');
     const header = `<div class="sticky top-0 z-10 bg-slate-50 px-4 py-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">${esc(whLabel)}</div>`;
-    const items = group.map(c => `
+    const items = group.map(c => {
+      // Badge kapasitas dihitung otomatis dari stok saat ini - langsung kelihatan tanpa perlu
+      // klik masuk ke detail kategori (lihat productionCapacityForCategory()).
+      const cap = productionCapacityForCategory(whId, c['Pack Category Code']);
+      const badge = !cap.hasRecipe ? ''
+        : cap.maxQty <= 0 ? `<span class="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">0 pkt</span>`
+        : `<span class="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600">${cap.maxQty.toLocaleString('id-ID')} pkt</span>`;
+      return `
       <button onclick="selectBomCategory('${esc(c['Warehouse ID'])}','${esc(c['Pack Category Code'])}')" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition ${ui.selectedPackCat===c['Pack Category Code']&&ui.selectedPackWh===c['Warehouse ID']?'bg-red-50':''}">
-        <p class="text-sm font-semibold text-slate-800">${esc(c['Pack Category Code'])}</p>
+        <div class="flex items-center justify-between gap-2">
+          <p class="text-sm font-semibold text-slate-800 truncate">${esc(c['Pack Category Code'])}</p>
+          ${badge}
+        </div>
         <p class="text-xs text-slate-400">${esc(c['Pack Size Name'])}</p>
-      </button>`).join('');
+      </button>`;
+    }).join('');
     return header + items;
   }).join('');
 }
@@ -2953,6 +3059,7 @@ function selectBomCategory(whId, code){
     </tr>`;
   }).join('') : `<tr><td colspan="5" class="py-6 text-center text-slate-400 text-sm">Belum ada komponen material untuk kategori ini.</td></tr>`;
   document.getElementById('bom-total-cost').textContent = formatRupiah(total);
+  renderCapacityDetail(whId, code);
   renderProductionPlanningDetail(whId, code);
   lucide.createIcons();
 }
@@ -2998,6 +3105,218 @@ async function deleteBomItem(whId, code, materialId){
 }
 
 /* ============================================================
+   KAPASITAS PRODUKSI OTOMATIS (BARU) - "Kategori X bisa produksi berapa
+   paket SEKARANG", dihitung langsung dari stok material saat ini x resep
+   BOM - TIDAK butuh input Target Qty manual sama sekali (beda tujuan dgn
+   "Target Produksi" di bawah, yang memang sengaja manual utk membandingkan
+   target BISNIS vs realisasi, bukan utk tahu batas kapasitas gudang saat ini).
+   - Utk tiap material di 1 resep: "stok yang boleh dipakai" = Qty Available
+     dikurangi Min Safety Stock (buffer pengaman TIDAK ikut dihitung, supaya
+     angka kapasitas tidak menggerus stok darurat) dibagi Usage Qty/pak =
+     maks paket yang MATERIAL ITU SENDIRI sanggup penuhi.
+   - Maks paket utk 1 kategori = angka paling KECIL antar semua material
+     resepnya (spt rantai - sekuat mata rantai paling lemah). Material dgn
+     angka paling kecil itulah "material pembatas" (bottleneck).
+   - Supaya lebih dari sekadar snapshot statis ("lebih cerdas"), dilengkapi
+     2 lapis proyeksi dari data yg SUDAH ada tapi belum pernah dipakai:
+     1) Rata-rata Qty Paket riil/hari dari histori Pack Log 14 hari terakhir
+        -> proyeksi "berapa hari lagi stok material pembatas ini habis".
+     2) Lead Time (Days) material pembatas (kolom Master Material) -> kalau
+        proyeksi habisnya <= lead time restock-nya, ditandai URGENT (kalau
+        tidak dipesan SEKARANG, PO baru akan datang setelah stok keburu habis).
+   - Semuanya computed LIVE di frontend, pola sama seperti
+     materialCostForCategory()/materialRequirementForCategory() di bawah -
+     tidak ada kolom hasil hitungan yg disimpan ke sheet.
+   ============================================================ */
+
+// Kapasitas 1 kategori: { hasRecipe, maxQty, breakdown[], bottleneck }. breakdown diurutkan dari
+// yg paling ketat (maxFromThis terkecil) ke paling longgar, supaya material pembatas selalu
+// tampil di baris paling atas tabel.
+function productionCapacityForCategory(whId, code){
+  const recipe = db.bomRecipes.filter(b => b['Warehouse ID']===whId && b['Pack Category Code']===code);
+  if (!recipe.length) return { hasRecipe:false, maxQty:0, breakdown:[], bottleneck:null };
+
+  const breakdown = recipe.map(it => {
+    const usagePerPack = Number(it['Usage Qty']||it['qty']||0); // satuan KONVERSI (mis. gram/lembar/meter) - ditampilkan apa adanya di kolom Usage/Pak
+    const mat = findMaterialMaster(it['Material ID'], whId);
+    const available = stockAvailable(whId, it['Material ID']); // satuan DASAR (mis. roll/box) - sama seperti Min Safety Stock & Qty Available
+    const safetyStock = mat ? Number(mat['Min Safety Stock']||0) : 0;
+    const leadTime = mat ? Number(mat['Lead Time (Days)']||0) : 0;
+    const baseUOM = mat ? (mat['UOM']||'') : '';
+    // PENTING: Usage Qty/pak disimpan dlm satuan KONVERSI (mis. gram), sedangkan stok & safety
+    // stock disimpan dlm satuan DASAR (mis. roll) - keduanya TIDAK BOLEH dibagi langsung tanpa
+    // dikonversi dulu ke satuan yang sama, atau hasilnya salah total (mis. gram dibagi roll).
+    // convertToBaseUnitClient() sudah ada & sudah dipakai benar di preview Outbound Packing -
+    // dipakai lagi di sini spy konsisten dgn 1 sumber kebenaran yg sama (bukan rumus baru).
+    const usagePerPackBase = mat ? convertToBaseUnitClient(usagePerPack, mat) : usagePerPack;
+    const usable = Math.max(0, available - safetyStock);
+    const maxFromThis = usagePerPackBase > 0 ? Math.floor(usable / usagePerPackBase) : Infinity;
+    const invRow = (db.inventory||[]).find(i => i['Warehouse ID']===whId && i['Material ID']===it['Material ID']);
+    return {
+      materialId: it['Material ID'], materialName: it['Material Name'], uom: it['UOM']||it['konversi UOM']||'', baseUOM,
+      usagePerPack, usagePerPackBase, available, safetyStock, usable, maxFromThis, leadTime,
+      statusAlert: invRow ? (invRow['Status Alert']||'SAFE') : (available<=0 ? 'CRITICAL' : 'SAFE')
+    };
+  });
+
+  let maxQty = Math.min.apply(null, breakdown.map(b => b.maxFromThis));
+  if (!isFinite(maxQty)) maxQty = 0;
+  breakdown.forEach(b => b.isBottleneck = (b.maxFromThis === maxQty));
+  breakdown.sort((a,b) => a.maxFromThis - b.maxFromThis);
+
+  return { hasRecipe:true, maxQty, breakdown, bottleneck: breakdown.find(b => b.isBottleneck) || null };
+}
+
+// Rata-rata Qty Paket riil/hari dari Pack Log utk 1 kategori dlm N hari terakhir (default 14 -
+// cukup panjang utk meredam lonjakan 1 hari & menangkap pola mingguan, cukup pendek utk tetap
+// relevan dgn kondisi terkini). null kalau tidak ada histori produksi sama sekali di window ini
+// (belum bisa diproyeksikan - BUKAN berarti kecepatannya 0 pkt/hari).
+function avgDailyPaceForCategory(whId, code, windowDays){
+  windowDays = windowDays || 14;
+  const today = getWIBDate();
+  const cutoff = new Date(today.getTime() - windowDays*86400000);
+  const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth()+1).padStart(2,'0')}-${String(cutoff.getDate()).padStart(2,'0')}`;
+  const todayStr = getWIBDateString();
+  const totalQty = (db.packLogs||[])
+    .filter(p => p['Warehouse ID']===whId && p['Pack Category Code']===code)
+    .filter(p => { const d = toWIBDateStr(p['Date']); return d && d>=cutoffStr && d<=todayStr; })
+    .reduce((s,p) => s + getPackQty(p), 0);
+  return totalQty > 0 ? (totalQty / windowDays) : null;
+}
+
+// Proyeksi ketahanan stok dari kapasitas saat ini + kecepatan pakai historis, plus flag urgent
+// kalau proyeksi habisnya lebih cepat drpd lead time restock material pembatasnya.
+function capacityProjection(maxQty, avgDaily, bottleneckLeadTime){
+  if (!avgDaily || avgDaily <= 0) return { daysLeft:null, urgent:false };
+  const daysLeft = maxQty / avgDaily;
+  const urgent = bottleneckLeadTime > 0 && daysLeft <= bottleneckLeadTime;
+  return { daysLeft, urgent };
+}
+
+// Rekomendasi qty PO utk 1 material yg jadi bottleneck: isi ulang sampai "Max Stock" (kolom
+// Master Material yg sudah ada dari awal tapi belum pernah dipakai di fitur mana pun) - pola
+// replenishment min-max standar. Fallback bertahap ke 2x Reorder Point lalu 2x Safety Stock
+// kalau Max Stock belum diisi admin, supaya tetap ada angka wajar drpd 0/kosong.
+function suggestedRestockQty(mat, available){
+  const maxStock = Number(mat['Max Stock']||0);
+  const rop = Number(mat['Reorder Point (ROP)']||0);
+  const safety = Number(mat['Min Safety Stock']||0);
+  const target = maxStock>0 ? maxStock : rop>0 ? rop*2 : safety>0 ? safety*2 : 0;
+  return Math.max(0, Math.ceil(target - available));
+}
+
+// Status ringkas 1 kategori utk badge/warna - dipakai baik di detail kategori maupun ringkasan
+// semua kategori. Sengaja mengikuti istilah SAFE/REORDER/CRITICAL yg sudah dipakai tab Inventory
+// (ambil dari status material pembatasnya, karena itulah yg benar2 menentukan kapasitas).
+function capacityStatusLabel(cap){
+  if (!cap.hasRecipe) return { text:'Belum Ada Resep', cls:'bg-slate-100 text-slate-500' };
+  if (cap.maxQty <= 0) return { text:'Stok Habis', cls:'bg-red-100 text-red-700' };
+  const alert = cap.bottleneck ? cap.bottleneck.statusAlert : 'SAFE';
+  if (alert === 'REORDER') return { text:'Menipis', cls:'bg-amber-100 text-amber-700' };
+  return { text:'Aman', cls:'bg-emerald-100 text-emerald-700' };
+}
+
+function renderCapacityDetail(whId, code){
+  const emptyEl = document.getElementById('capacity-detail-empty'), contentEl = document.getElementById('capacity-detail-content');
+  if (!emptyEl || !contentEl) return;
+  emptyEl.classList.add('hidden');
+  contentEl.classList.remove('hidden');
+  document.getElementById('capacity-detail-title').textContent = code + ' — ' + whId;
+
+  const cap = productionCapacityForCategory(whId, code);
+  const status = capacityStatusLabel(cap);
+  const badgeEl = document.getElementById('capacity-detail-badge');
+  badgeEl.textContent = status.text;
+  badgeEl.className = 'flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold ' + status.cls;
+
+  document.getElementById('capacity-max-qty').innerHTML = `${cap.maxQty.toLocaleString('id-ID')} <span class="text-sm font-semibold text-slate-400">paket</span>`;
+  document.getElementById('capacity-bottleneck-label').textContent = !cap.hasRecipe ? 'Kategori ini belum punya resep BOM.'
+    : cap.bottleneck ? `Dibatasi oleh: ${cap.bottleneck.materialName}` : '';
+
+  const avgDaily = cap.hasRecipe ? avgDailyPaceForCategory(whId, code, 14) : null;
+  const proj = capacityProjection(cap.maxQty, avgDaily, cap.bottleneck ? cap.bottleneck.leadTime : 0);
+  const daysLeftEl = document.getElementById('capacity-days-left');
+  const paceLabelEl = document.getElementById('capacity-pace-label');
+  if (!cap.hasRecipe) {
+    daysLeftEl.textContent = '-'; daysLeftEl.className = 'text-3xl font-display font-bold text-slate-900 mt-1';
+    paceLabelEl.textContent = '';
+  } else if (cap.maxQty <= 0) {
+    daysLeftEl.textContent = 'Habis'; daysLeftEl.className = 'text-3xl font-display font-bold text-red-600 mt-1';
+    paceLabelEl.textContent = 'Tidak bisa produksi dgn stok saat ini.';
+  } else if (avgDaily === null) {
+    daysLeftEl.textContent = '-'; daysLeftEl.className = 'text-3xl font-display font-bold text-slate-900 mt-1';
+    paceLabelEl.textContent = 'Belum ada histori produksi 14 hari terakhir.';
+  } else {
+    daysLeftEl.innerHTML = `${Math.floor(proj.daysLeft)} <span class="text-sm font-semibold text-slate-400">hari</span>`;
+    daysLeftEl.className = 'text-3xl font-display font-bold mt-1 ' + (proj.urgent ? 'text-red-600' : 'text-slate-900');
+    paceLabelEl.textContent = `Rata-rata ${avgDaily.toLocaleString('id-ID',{maximumFractionDigits:1})} pkt/hari (14 hari terakhir)`
+      + (proj.urgent ? ' · ⚠ Segera pesan, lead time restock lebih lama dari sisa stok.' : '');
+  }
+
+  document.getElementById('tbl-capacity-breakdown').innerHTML = cap.breakdown.length ? cap.breakdown.map(b => `<tr class="${b.isBottleneck?'bg-red-50/60':''}">
+      <td class="py-2"><p class="text-slate-700">${esc(b.materialName)}${b.isBottleneck?' <span class="text-[10px] font-bold text-red-600 uppercase tracking-wide">· Pembatas</span>':''}</p><p class="text-[11px] text-slate-400 font-mono">${esc(b.materialId)}</p></td>
+      <td class="py-2 text-right text-slate-500">${b.usagePerPack} ${esc(b.uom)}</td>
+      <td class="py-2 text-right text-slate-600">${b.available.toLocaleString('id-ID',{maximumFractionDigits:2})} ${esc(b.baseUOM)}</td>
+      <td class="py-2 text-right text-slate-500">${b.safetyStock.toLocaleString('id-ID',{maximumFractionDigits:2})} ${esc(b.baseUOM)}</td>
+      <td class="py-2 text-right text-slate-600">${b.usable.toLocaleString('id-ID',{maximumFractionDigits:2})} ${esc(b.baseUOM)}</td>
+      <td class="py-2 text-right font-bold ${b.isBottleneck?'text-red-600':'text-slate-700'}">${isFinite(b.maxFromThis)?b.maxFromThis.toLocaleString('id-ID'):'∞'}</td>
+    </tr>`).join('') : `<tr><td colspan="6" class="py-6 text-center text-slate-400 text-sm">Kategori ini belum punya resep BOM.</td></tr>`;
+  lucide.createIcons();
+}
+
+function populateCapacitySummaryWarehouseSelect(){
+  const sel = document.getElementById('capacity-summary-filter-wh');
+  if (!sel || !db.warehouses.length) return;
+  const cur = sel.value;
+  sel.innerHTML = db.warehouses.map(w => `<option value="${esc(w['Warehouse ID'])}">${esc(w['Warehouse ID'])} — ${esc(w['Warehouse Name'])}</option>`).join('');
+  if (cur && db.warehouses.some(w=>w['Warehouse ID']===cur)) sel.value = cur;
+  else if (ui.selectedPackWh && db.warehouses.some(w=>w['Warehouse ID']===ui.selectedPackWh)) sel.value = ui.selectedPackWh;
+  else if (currentUser && currentUser.resolvedWarehouseId) sel.value = currentUser.resolvedWarehouseId;
+  if (currentUser && currentUser.resolvedWarehouseId) { sel.value = currentUser.resolvedWarehouseId; sel.disabled = true; }
+}
+
+// Ringkasan kapasitas SEMUA kategori kemasan di 1 gudang sekaligus - inilah jawaban langsung utk
+// "tiap kategori pack bisa produksi berapa banyak paket", tanpa perlu klik satu-satu & TANPA
+// perlu ada target manual apa pun. Diurutkan: yg urgent (proyeksi habis <= lead time restock)
+// dulu, lalu yg kapasitasnya paling kecil - supaya prioritas tindakan langsung terlihat.
+function renderCapacitySummaryTable(){
+  populateCapacitySummaryWarehouseSelect();
+  const whId = document.getElementById('capacity-summary-filter-wh').value;
+  const tbody = document.getElementById('tbl-capacity-summary');
+  if (!whId) { tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400 text-sm">Belum ada data gudang.</td></tr>`; return; }
+
+  const cats = db.packCategories.filter(c => c['Warehouse ID']===whId);
+  const rows = cats.map(c => {
+    const code = c['Pack Category Code'];
+    const cap = productionCapacityForCategory(whId, code);
+    const avgDaily = cap.hasRecipe ? avgDailyPaceForCategory(whId, code, 14) : null;
+    const proj = capacityProjection(cap.maxQty, avgDaily, cap.bottleneck ? cap.bottleneck.leadTime : 0);
+    return { code, packSizeName: c['Pack Size Name'], cap, avgDaily, proj };
+  }).sort((a,b) => {
+    if (a.proj.urgent !== b.proj.urgent) return a.proj.urgent ? -1 : 1;
+    return a.cap.maxQty - b.cap.maxQty;
+  });
+
+  tbody.innerHTML = rows.length ? rows.map(r => {
+    const status = capacityStatusLabel(r.cap);
+    const bottleneck = r.cap.bottleneck;
+    const needsPo = bottleneck && (bottleneck.statusAlert === 'CRITICAL' || bottleneck.statusAlert === 'REORDER');
+    const bottleneckMat = bottleneck ? findMaterialMaster(bottleneck.materialId, whId) : null;
+    const poQty = bottleneckMat ? suggestedRestockQty(bottleneckMat, bottleneck.available) : 0;
+    return `<tr>
+      <td class="py-2"><p class="text-slate-700 font-medium">${esc(r.code)}</p><p class="text-[11px] text-slate-400">${esc(r.packSizeName||'')}</p></td>
+      <td class="py-2 text-right font-bold text-slate-900">${r.cap.hasRecipe ? r.cap.maxQty.toLocaleString('id-ID') : '-'}</td>
+      <td class="py-2 text-slate-600">${bottleneck ? esc(bottleneck.materialName) : '-'}</td>
+      <td class="py-2 text-right text-slate-500">${r.avgDaily!==null ? r.avgDaily.toLocaleString('id-ID',{maximumFractionDigits:1})+'/hr' : '-'}</td>
+      <td class="py-2 text-right ${r.proj.urgent?'font-bold text-red-600':'text-slate-600'}">${!r.cap.hasRecipe?'-':r.cap.maxQty<=0?'Sudah habis':r.proj.daysLeft===null?'-':Math.floor(r.proj.daysLeft)+' hari'+(r.proj.urgent?' ⚠':'')}</td>
+      <td class="py-2 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${status.cls}">${status.text}</span></td>
+      <td class="py-2 text-center">${needsPo && poQty>0 && can('po','c') ? `<button onclick="openCreatePOModalPrefilled('${esc(whId)}','${esc(bottleneck.materialId)}',${poQty})" class="text-xs font-semibold text-red-600 hover:text-red-800 transition border border-red-200 rounded-lg px-2.5 py-1">Buat PO</button>` : '-'}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="7" class="py-6 text-center text-slate-400 text-sm">Belum ada kategori kemasan di gudang ini.</td></tr>`;
+  lucide.createIcons();
+}
+
+/* ============================================================
    PERENCANAAN & PPIC (Target Produksi per periode, Kebutuhan Material vs Stok,
    Rekomendasi Pembelian Terintegrasi)
    - Sumber data: db.productionTargets (riwayat target, 1 baris = 1 periode/kategori),
@@ -3010,15 +3329,19 @@ async function deleteBomItem(whId, code, materialId){
      CUSTOM_ROLE_LOCKED_MODULES) - murni data perencanaan, tidak menyentuh akun/hak akses.
    ============================================================ */
 function switchBomSubview(view){
-  const isRecipe = view === 'recipe';
-  document.getElementById('bom-subview-recipe').classList.toggle('hidden', !isRecipe);
-  document.getElementById('bom-subview-planning').classList.toggle('hidden', isRecipe);
-  document.getElementById('bom-planning-aggregate').classList.toggle('hidden', isRecipe);
+  ui.bomSubview = view;
+  document.getElementById('bom-subview-recipe').classList.toggle('hidden', view !== 'recipe');
+  document.getElementById('bom-subview-capacity').classList.toggle('hidden', view !== 'capacity');
+  document.getElementById('bom-capacity-summary').classList.toggle('hidden', view !== 'capacity');
+  document.getElementById('bom-subview-planning').classList.toggle('hidden', view !== 'planning');
+  document.getElementById('bom-planning-aggregate').classList.toggle('hidden', view !== 'planning');
   const activeCls = 'px-3.5 py-2 rounded-lg text-xs font-semibold border transition bg-slate-900 text-white border-slate-900';
   const inactiveCls = 'px-3.5 py-2 rounded-lg text-xs font-semibold border transition bg-white text-slate-600 border-slate-200 hover:bg-slate-50';
-  document.getElementById('bom-subtab-btn-recipe').className = isRecipe ? activeCls : inactiveCls;
-  document.getElementById('bom-subtab-btn-planning').className = !isRecipe ? activeCls : inactiveCls;
-  if (!isRecipe) renderAggregatePurchaseRecommendation();
+  document.getElementById('bom-subtab-btn-recipe').className = view==='recipe' ? activeCls : inactiveCls;
+  document.getElementById('bom-subtab-btn-capacity').className = view==='capacity' ? activeCls : inactiveCls;
+  document.getElementById('bom-subtab-btn-planning').className = view==='planning' ? activeCls : inactiveCls;
+  if (view === 'planning') renderAggregatePurchaseRecommendation();
+  if (view === 'capacity') renderCapacitySummaryTable();
   lucide.createIcons();
 }
 
@@ -3068,11 +3391,17 @@ function findMaterialMaster(materialId, whId){
 // dgn harga beli riil yg juga dipakai form Purchase Order.
 function materialRequirementForCategory(whId, code, targetQty){
   return db.bomRecipes.filter(b => b['Warehouse ID']===whId && b['Pack Category Code']===code).map(it => {
-    const usagePerPack = Number(it['Usage Qty']||it['qty']||0);
+    const usagePerPack = Number(it['Usage Qty']||it['qty']||0); // satuan KONVERSI (mis. gram/lembar) - ditampilkan apa adanya di kolom Usage/Pak
     const mat = findMaterialMaster(it['Material ID'], whId);
+    const baseUOM = mat ? (mat['UOM']||'') : '';
+    // Usage Qty resep BOM disimpan dlm satuan KONVERSI, sedangkan Qty Available/Min Safety
+    // Stock/Unit Price (Rp) semuanya satuan DASAR - dikonversi dulu spy "Total Kebutuhan" apple-
+    // to-apple dgn "Stok Tersedia" (pakai convertToBaseUnitClient() yg sama dgn preview Outbound
+    // Packing), sebelum sebelumnya keduanya dibandingkan langsung tanpa dikonversi.
+    const usagePerPackBase = mat ? convertToBaseUnitClient(usagePerPack, mat) : usagePerPack;
     return {
-      materialId: it['Material ID'], materialName: it['Material Name'], uom: it['UOM']||it['konversi UOM']||'',
-      usagePerPack: usagePerPack, totalNeeded: usagePerPack * Number(targetQty||0),
+      materialId: it['Material ID'], materialName: it['Material Name'], uom: it['UOM']||it['konversi UOM']||'', baseUOM,
+      usagePerPack: usagePerPack, totalNeeded: usagePerPackBase * Number(targetQty||0),
       unitPrice: mat ? Number(mat['Unit Price (Rp)']||0) : 0, safetyStock: mat ? Number(mat['Min Safety Stock']||0) : 0
     };
   });
@@ -3108,9 +3437,9 @@ function renderProductionPlanningDetail(whId, code){
   }).join('') : `<tr><td colspan="6" class="py-6 text-center text-slate-400 text-sm">Belum ada target produksi untuk kategori ini.</td></tr>`;
 
   const targetQty = active ? Number(active['Target Qty']||0) : 0;
-  document.getElementById('plan-material-subtitle').textContent = active
-    ? `Berdasarkan target "${active['Periode Label']}" (${targetQty.toLocaleString('id-ID')} paket).`
-    : 'Belum ada target produksi yang berjalan — tambahkan target dulu untuk menghitung kebutuhan material.';
+  document.getElementById('plan-material-subtitle').innerHTML = active
+    ? `Berdasarkan target "${esc(active['Periode Label'])}" (${targetQty.toLocaleString('id-ID')} paket).`
+    : `Belum ada target produksi yang berjalan. Lihat tab <button onclick="switchBomSubview('capacity')" class="text-red-600 font-semibold hover:underline">Kapasitas Produksi</button> untuk estimasi otomatis tanpa perlu input target.`;
 
   const reqs = materialRequirementForCategory(whId, code, targetQty);
   let totalCost = 0, shortageCost = 0;
@@ -3122,9 +3451,9 @@ function renderProductionPlanningDetail(whId, code){
     return `<tr>
       <td class="py-2"><p class="text-slate-700">${esc(r.materialName)}</p><p class="text-[11px] text-slate-400 font-mono">${esc(r.materialId)}</p></td>
       <td class="py-2 text-right text-slate-500">${r.usagePerPack} ${esc(r.uom)}</td>
-      <td class="py-2 text-right text-slate-700">${r.totalNeeded.toLocaleString('id-ID',{maximumFractionDigits:2})}</td>
-      <td class="py-2 text-right text-slate-600">${available.toLocaleString('id-ID',{maximumFractionDigits:2})}</td>
-      <td class="py-2 text-right font-semibold ${gap>0?'text-red-600':'text-emerald-600'}">${gap>0? '-'+gap.toLocaleString('id-ID',{maximumFractionDigits:2}) : 'Cukup'}</td>
+      <td class="py-2 text-right text-slate-700">${r.totalNeeded.toLocaleString('id-ID',{maximumFractionDigits:2})} ${esc(r.baseUOM)}</td>
+      <td class="py-2 text-right text-slate-600">${available.toLocaleString('id-ID',{maximumFractionDigits:2})} ${esc(r.baseUOM)}</td>
+      <td class="py-2 text-right font-semibold ${gap>0?'text-red-600':'text-emerald-600'}">${gap>0? '-'+gap.toLocaleString('id-ID',{maximumFractionDigits:2})+' '+esc(r.baseUOM) : 'Cukup'}</td>
     </tr>`;
   }).join('') : `<tr><td colspan="5" class="py-6 text-center text-slate-400 text-sm">Kategori ini belum punya resep BOM.</td></tr>`;
   document.getElementById('plan-est-cost').textContent = formatRupiah(totalCost);
@@ -3173,7 +3502,7 @@ function aggregateMaterialRequirement(whId){
     const qty = target ? Number(target['Target Qty']||0) : 0;
     if (qty <= 0) return;
     materialRequirementForCategory(whId, code, qty).forEach(r => {
-      if (!map[r.materialId]) map[r.materialId] = { materialId:r.materialId, materialName:r.materialName, uom:r.uom, totalNeeded:0, unitPrice:r.unitPrice, safetyStock:r.safetyStock, categories:[] };
+      if (!map[r.materialId]) map[r.materialId] = { materialId:r.materialId, materialName:r.materialName, uom:r.uom, baseUOM:r.baseUOM, totalNeeded:0, unitPrice:r.unitPrice, safetyStock:r.safetyStock, categories:[] };
       map[r.materialId].totalNeeded += r.totalNeeded;
       map[r.materialId].categories.push(code);
     });
@@ -3205,10 +3534,10 @@ function renderAggregatePurchaseRecommendation(){
   const rows = aggregateMaterialRequirement(whId);
   tbody.innerHTML = rows.length ? rows.map(r => `<tr>
       <td class="py-2"><p class="text-slate-700">${esc(r.materialName)}</p><p class="text-[11px] text-slate-400 font-mono">${esc(r.materialId)} <span class="text-slate-300">· dipakai ${r.categories.length} kategori</span></p></td>
-      <td class="py-2 text-right text-slate-600">${r.totalNeeded.toLocaleString('id-ID',{maximumFractionDigits:2})}</td>
-      <td class="py-2 text-right text-slate-600">${r.available.toLocaleString('id-ID',{maximumFractionDigits:2})}</td>
-      <td class="py-2 text-right text-slate-500">${r.safetyStock.toLocaleString('id-ID',{maximumFractionDigits:2})}</td>
-      <td class="py-2 text-right font-bold ${r.shortage>0?'text-red-600':'text-emerald-600'}">${r.shortage>0? r.shortage.toLocaleString('id-ID',{maximumFractionDigits:2}) : 'Aman'}</td>
+      <td class="py-2 text-right text-slate-600">${r.totalNeeded.toLocaleString('id-ID',{maximumFractionDigits:2})} ${esc(r.baseUOM)}</td>
+      <td class="py-2 text-right text-slate-600">${r.available.toLocaleString('id-ID',{maximumFractionDigits:2})} ${esc(r.baseUOM)}</td>
+      <td class="py-2 text-right text-slate-500">${r.safetyStock.toLocaleString('id-ID',{maximumFractionDigits:2})} ${esc(r.baseUOM)}</td>
+      <td class="py-2 text-right font-bold ${r.shortage>0?'text-red-600':'text-emerald-600'}">${r.shortage>0? r.shortage.toLocaleString('id-ID',{maximumFractionDigits:2})+' '+esc(r.baseUOM) : 'Aman'}</td>
       <td class="py-2 text-right text-slate-700">${r.shortage>0?formatRupiah(r.estCost):'-'}</td>
       <td class="py-2 text-center">${r.shortage>0 && can('po','c') ? `<button onclick="openCreatePOModalPrefilled('${esc(whId)}','${esc(r.materialId)}',${Math.ceil(r.shortage)})" class="text-xs font-semibold text-red-600 hover:text-red-800 transition border border-red-200 rounded-lg px-2.5 py-1">Buat PO</button>` : '-'}</td>
     </tr>`).join('') : `<tr><td colspan="7" class="py-6 text-center text-slate-400 text-sm">Belum ada kategori dengan target produksi berjalan di gudang ini.</td></tr>`;
