@@ -37,6 +37,13 @@
   .status-rail { border-left-width: 3px; }
   input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15); }
   @media (prefers-reduced-motion: reduce) { .tab-enter, .toast-in { animation: none; } }
+  /* Tooltip info (ⓘ) - dipakai renderInfoTip()/renderFormField() utk field yg sering bikin bingung
+     pengguna baru (mis. konversi satuan Master Material). Klik utk buka, bukan hover, supaya sama
+     enaknya dipakai di layar sentuh & desktop. */
+  .info-tip-btn { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:9999px; background:#e2e8f0; color:#64748b; flex-shrink:0; cursor:pointer; }
+  .info-tip-btn:hover { background:#cbd5e1; }
+  .info-tip-pop { position:absolute; z-index:60; width:240px; background:#1e293b; color:#f1f5f9; font-size:11px; line-height:1.5; padding:8px 10px; border-radius:8px; box-shadow:0 10px 25px -5px rgba(0,0,0,.3); margin-top:6px; }
+  .info-tip-pop::before { content:''; position:absolute; top:-4px; left:10px; width:8px; height:8px; background:#1e293b; transform:rotate(45deg); }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased h-screen overflow-hidden flex flex-col">
@@ -96,6 +103,9 @@
       <button onclick="switchTab('dashboard')" class="relative p-2 rounded-lg text-red-100 hover:bg-red-800 transition" title="Notifikasi stok kritis">
         <i data-lucide="bell" class="h-4.5 w-4.5"></i>
         <span id="notif-badge" class="hidden absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-slate-900 text-white text-[9px] font-bold flex items-center justify-center">0</span>
+      </button>
+      <button onclick="openGlossaryModal()" class="p-2 rounded-lg text-red-100 hover:bg-red-800 transition" title="Bantuan &amp; istilah">
+        <i data-lucide="circle-help" class="h-4.5 w-4.5"></i>
       </button>
       <button id="btn-refresh" onclick="fetchAllData()" class="p-2 rounded-lg text-red-100 hover:bg-red-800 transition" title="Refresh data">
         <i data-lucide="refresh-cw" class="h-4.5 w-4.5"></i>
@@ -292,16 +302,16 @@
               <select id="out-wh" onchange="onOutboundWhChange()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></select></div>
             
             <div class="p-3 bg-red-50 rounded-lg border border-red-100 mb-2">
-              <label class="block text-xs font-bold text-red-800 mb-1">Nomor Batch Order</label>
+              <label class="block text-xs font-bold text-red-800 mb-1">Nomor AWB / Batch Order</label>
               <input type="text" id="out-awb" required placeholder="Arahkan scanner ke sini..." class="w-full border border-red-300 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 transition font-mono bg-white shadow-inner" autofocus>
               <p class="text-[10px] text-red-600 mt-1 flex items-center gap-1"><i data-lucide="scan-barcode" class="h-3 w-3"></i> Support Scanner (otomatis submit saat Enter)</p>
             </div>
 
             <div><label class="block text-xs font-semibold text-slate-600 mb-1">Merchant / Platform</label>
               <input type="text" id="out-merchant" required placeholder="mis. Tokopedia, Shopee..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></div>
-            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Kategori Kemasan</label>
+            <div><label class="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1"><span>Kategori Kemasan</span>(Menentukan resep BOM mana yang dipakai — semua material di resep kategori ini otomatis terpotong dari stok begitu disimpan, tidak perlu dipilih manual satu-satu)</label>
               <select id="out-cat" onchange="onOutboundCatChange()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"><option value="">Pilih gudang dulu</option></select></div>
-            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Primary Material ID</label>
+            <div><label class="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1"><span>Primary Material ID</span>(Material UTAMA yang mewakili kategori kemasan ini (mis. dus/box-nya) — hanya penanda pencatatan di Pack Log, BUKAN satu-satunya material yang dipotong. Material lain di resep BOM kategori ini tetap ikut terpotong otomatis.)</label>
               <select id="out-primary" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></select></div>
             <div><label class="block text-xs font-semibold text-slate-600 mb-1">Jumlah Paket</label>
               <input type="number" id="out-packqty" min="1" value="1" oninput="renderBomPreview()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></div>
@@ -422,6 +432,17 @@
           <button onclick="exportProductivityCsv()" class="flex items-center gap-1.5 bg-slate-800 text-white text-xs font-semibold px-3.5 py-2.5 rounded-lg hover:bg-slate-900 transition shadow-sm"><i data-lucide="download" class="h-3.5 w-3.5"></i>Ekspor CSV</button>
         </div>
 
+        <!-- SUB-TAB Input vs Laporan - sebelumnya semua 13 bagian (input + rekap + chart) numpuk
+             jadi 1 halaman panjang yg bikin bingung pengguna baru (tidak jelas mana buat isi data
+             hari ini, mana buat lihat riwayat). Dipisah jadi 2 zona jelas lewat pill switch di
+             bawah - lihat switchProductivitySubview(). Default ke "Input" krn itu tugas harian
+             yg paling sering dibuka. -->
+        <div class="inline-flex items-center gap-1 bg-slate-100 rounded-lg p-1 mb-5">
+          <button id="prod-subtab-btn-input" onclick="switchProductivitySubview('input')" class="px-3.5 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5"><i data-lucide="pencil-line" class="h-3.5 w-3.5"></i>Input Hari Ini</button>
+          <button id="prod-subtab-btn-laporan" onclick="switchProductivitySubview('laporan')" class="px-3.5 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5"><i data-lucide="bar-chart-3" class="h-3.5 w-3.5"></i>Laporan &amp; Rekap</button>
+        </div>
+
+        <div id="prod-subview-input">
         <!-- INPUT PRODUKTIVITAS HARIAN: murni Qty Paket per peran, TIDAK terkait AWB/BOM sama
              sekali (itu sudah selesai instan di tab Outbound Packing). Additive: tiap submit =
              1 entri baru, dijumlahkan otomatis saat direkap. -->
@@ -531,6 +552,30 @@
           <div id="prodlog-other-today" class="mt-3 flex flex-wrap gap-2"></div>
         </div>
 
+        <!-- REPORT ORDER KLIEN (BARU) - "berapa Qty Paket order dari klien X hari ini", dicatat
+             per gudang. TIDAK terhubung AWB/BOM/stok - satuan atau bulk (puluhan klien) dlm SATU
+             kali submit, ditulis backend dlm SATU kali setValues() (bukan appendRow per klien)
+             biar tetap ringan - lihat handleLogClientOrders() di Code.gs & computeClientOrderData()
+             di bawah. Nama Klien pakai datalist dari histori input + Merchant Name Pack Log. -->
+        <div id="card-client-order" class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5 mb-5">
+          <div class="mb-3">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5"><i data-lucide="users" class="h-4 w-4 text-slate-400"></i>Report Order Klien</h3>
+            <p class="text-[10px] text-slate-400 mt-0.5">Qty Paket order per klien hari ini — isi 1 baris utk 1 klien, atau tambah baris utk input banyak klien sekaligus. Pakai Gudang Aktif di atas.</p>
+          </div>
+          <div id="client-order-rows" class="space-y-2 mb-2.5"></div>
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <button type="button" onclick="addClientOrderRow()" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-red-600 border border-red-200 hover:bg-red-50 transition flex items-center gap-1"><i data-lucide="plus" class="h-3.5 w-3.5"></i>Tambah Klien</button>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-slate-500">Total: <span id="client-order-running-total" class="font-bold text-slate-800">0</span> pkt dari <span id="client-order-running-count" class="font-bold text-slate-800">0</span> klien</span>
+              <button data-perm-module="productivity" data-perm-op="c" type="button" onclick="submitClientOrders()" id="client-order-submit-btn" class="bg-red-600 text-white text-xs font-semibold rounded-lg px-4 py-2 hover:bg-red-700 transition shadow-sm">Simpan Semua</button>
+            </div>
+          </div>
+          <datalist id="client-name-suggestions"></datalist>
+        </div>
+        </div>
+        <!-- /prod-subview-input -->
+
+        <div id="prod-subview-laporan" class="hidden">
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3.5 mb-4 flex flex-wrap items-end gap-3">
           <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Gudang</label>
             <select id="prod-filter-wh" onchange="renderProductivityTab()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white outline-none focus:border-red-600"><option value="">Semua Gudang</option></select></div>
@@ -544,6 +589,10 @@
             <button onclick="setProductivityRange(30)" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition">30 Hari (Bulanan)</button>
           </div>
         </div>
+
+        <!-- Banner balance 3-arah (Order Klien vs Admin Print vs Pack Log) - lihat
+             renderClientOrderBalance(). Dihitung 100% dari data yg sudah di-fetch, tanpa API baru. -->
+        <div id="prod-balance-banner" class="mb-4"></div>
 
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
           <div class="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm">
@@ -604,6 +653,21 @@
           <div id="other-cat-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 p-4"></div>
         </div>
 
+        <!-- REKAP ORDER KLIEN - pakai filter tanggal & gudang yg SAMA dgn rekap di atas (tidak
+             ada filter duplikat). Lihat computeClientOrderData() & renderClientOrderRecap(). -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-5">
+          <div class="px-5 py-3.5 border-b border-slate-100 bg-slate-50 flex items-center justify-between flex-wrap gap-2">
+            <div><h3 class="text-sm font-bold text-slate-800">Rekap Order per Klien</h3><p class="text-[10px] text-slate-400 mt-0.5">Total Qty Paket per klien pada rentang tanggal & gudang yang difilter di atas.</p></div>
+            <button onclick="exportClientOrdersCsv()" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition flex items-center gap-1"><i data-lucide="download" class="h-3.5 w-3.5"></i>Export CSV</button>
+          </div>
+          <div class="overflow-x-auto"><table class="w-full text-sm text-left">
+            <thead class="bg-white text-[10px] font-bold uppercase tracking-wide text-slate-400 border-b border-slate-100"><tr>
+              <th class="px-4 py-2.5">Nama Klien</th><th class="px-4 py-2.5 text-center">Jumlah Entri</th><th class="px-4 py-2.5 text-right">Total Qty Paket</th><th class="px-4 py-2.5 text-right">% dari Total</th>
+            </tr></thead>
+            <tbody id="tbl-client-order" class="divide-y divide-slate-100"></tbody>
+          </table></div>
+        </div>
+
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div class="px-5 py-3.5 border-b border-slate-100 bg-slate-50"><h3 class="text-sm font-bold text-slate-800">Rekap Produktivitas per Personel</h3><p class="text-[10px] text-slate-400 mt-0.5">Angka dihitung dari total Qty Paket yang ditangani per peran, bukan jumlah baris AWB.</p></div>
           <div class="overflow-x-auto"><table class="w-full text-sm text-left">
@@ -615,6 +679,8 @@
             <tbody id="tbl-productivity" class="divide-y divide-slate-100"></tbody>
           </table></div>
         </div>
+        </div>
+        <!-- /prod-subview-laporan -->
       </div>
 
       <!-- WAREHOUSE -->
@@ -839,12 +905,12 @@
             <p class="text-[11px] text-slate-400 mb-3">Dasar alokasi overhead per paket.</p>
             <div class="space-y-3">
               <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Estimasi Volume Paket / Bulan</label>
+                <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1"><span>Estimasi Volume Paket / Bulan</span>( Total biaya Overhead per bulan (tab Overhead Cost) dibagi angka ini = Overhead per Paket di bawah. Makin besar volumenya, makin kecil overhead yang dibebankan ke tiap paket.)</label>
                 <input type="number" id="hpp-volume" min="0" step="1" oninput="renderHppCategoryTable()" class="role-admin-input w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600 disabled:bg-slate-50 disabled:text-slate-400">
                 <p id="hpp-volume-hint" class="text-[11px] text-slate-400 mt-1"></p>
               </div>
               <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Margin Handling Fee (%)</label>
+                <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1"><span>Margin Handling Fee (%)</span>( Persentase tambahan di atas HPP (biaya material + overhead per paket) untuk jadi Handling Fee yang disarankan per kategori kemasan di tabel kanan. Angka di tabel masih bisa ditimpa manual sebelum disimpan.)</label>
                 <input type="number" id="hpp-margin" min="0" step="0.5" oninput="renderHppCategoryTable()" class="role-admin-input w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600 disabled:bg-slate-50 disabled:text-slate-400">
               </div>
               <div class="flex justify-between text-sm pt-2 border-t border-slate-100">
@@ -996,6 +1062,23 @@
   </div>
 </div>
 
+<!-- BANTUAN & ISTILAH - satu tempat rujukan semua singkatan/jargon yg dipakai di seluruh
+     aplikasi (AWB, BOM, HPP, dst), dibuka dari ikon (?) di header. Dibuat sbg 1 modal
+     ter-pusat (bukan tooltip di tiap kemunculan istilah) supaya gampang dicari & tidak
+     bikin tiap layar penuh ikon ⓘ - lihat GLOSSARY_TERMS & openGlossaryModal(). -->
+<div id="modal-glossary" class="fixed inset-0 z-[230] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl max-h-[85vh] flex flex-col border border-slate-100">
+    <div class="p-5 pb-3 border-b border-slate-100">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-display font-bold text-lg text-slate-900 flex items-center gap-2"><i data-lucide="circle-help" class="h-5 w-5 text-red-600"></i>Bantuan &amp; Istilah</h3>
+        <button type="button" onclick="closeModal('modal-glossary')" class="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition"><i data-lucide="x" class="h-4.5 w-4.5"></i></button>
+      </div>
+      <input type="text" id="glossary-search" oninput="renderGlossaryList()" placeholder="Cari istilah, mis. AWB, BOM, HPP..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600">
+    </div>
+    <div id="glossary-list" class="p-5 pt-3 overflow-y-auto space-y-3"></div>
+  </div>
+</div>
+
 <div id="modal-manual-trx" class="fixed inset-0 z-[220] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
   <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100">
     <h3 class="font-display font-bold text-lg text-slate-900 mb-4">Transaksi Stok Manual</h3>
@@ -1087,6 +1170,35 @@
 
     <form id="case-manage-form" onsubmit="submitCaseUpdate(event)" class="space-y-3">
       <input type="hidden" id="cd-caseid-input">
+
+      <!-- Panel Klaim Gudang - HANYA tampil kalau Kategori case = "Klaim Gudang" (lihat
+           renderClaimInvestigation()). AWB dicocokkan ke Pack Log (Packer PASTI) & Productivity
+           Log tanggal+gudang yg sama (kandidat Admin Print/Picker/Checker, BUKAN kepastian per
+           paket - lihat komentar SHEETS.PRODUCTIVITY_LOG di Code.gs kenapa cuma bisa kandidat). -->
+      <div id="cd-claim-section" class="hidden bg-amber-50 border border-amber-200 rounded-lg p-3.5 space-y-3">
+        <p class="text-[10px] font-bold uppercase tracking-wide text-amber-700 flex items-center gap-1"><i data-lucide="search" class="h-3 w-3"></i>Investigasi Otomatis</p>
+        <div id="cd-claim-investigation" class="text-xs text-slate-600 space-y-1"></div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div><label class="flex items-center gap-1 text-[10px] font-semibold text-slate-500 mb-1"><span>AWB</span>( Isi/ubah No. AWB paket yang bermasalah, lalu klik di luar kolom ini - daftar kandidat di atas otomatis dicari ulang. )</label>
+            <input type="text" id="cd-claim-awb" onchange="onClaimAwbChange()" placeholder="No. AWB" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-red-600"></div>
+          <div><label class="block text-[10px] font-semibold text-slate-500 mb-1">Nominal Klaim (Rp)</label>
+            <input type="number" id="cd-claim-nominal" step="any" placeholder="0" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-red-600"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div><label class="block text-[10px] font-semibold text-slate-500 mb-1">Personel Bertanggung Jawab</label>
+            <input type="text" id="cd-claim-personel" placeholder="Nama (pilih dari kandidat di atas atau isi manual)" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-red-600"></div>
+          <div><label class="block text-[10px] font-semibold text-slate-500 mb-1">Peran</label>
+            <select id="cd-claim-peran" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white outline-none focus:border-red-600">
+              <option value="">- Pilih -</option>
+              <option value="Admin Print">Admin Print</option>
+              <option value="Picker">Picker</option>
+              <option value="Packer">Packer</option>
+              <option value="Checker">Checker</option>
+              <option value="Lainnya">Lainnya</option>
+            </select></div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-2 gap-3">
         <div><label class="block text-xs font-semibold text-slate-600 mb-1">Prioritas</label>
           <select id="cd-prioritas" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-red-600"></select></div>
@@ -1114,14 +1226,17 @@ const PAGE_SIZE = 12;
 
 let authToken = null;
 let currentUser = null;
-let db = { warehouses:[], materials:[], suppliers:[], inventory:[], transactionLogs:[], purchaseOrders:[], packCategories:[], bomRecipes:[], packLogs:[], users:[], overheadCosts:[], hppSettings:[], handlingFees:[], operationalCases:[], productivityLogs:[], productivityTargets:[], warehouseAssets:[], productionTargets:[], rolePermissionMatrix:{}, rolePermissionCeiling:{}, customRoles:[], allRoleNames:[] };
+let db = { warehouses:[], materials:[], suppliers:[], inventory:[], transactionLogs:[], purchaseOrders:[], packCategories:[], bomRecipes:[], packLogs:[], users:[], overheadCosts:[], hppSettings:[], handlingFees:[], operationalCases:[], productivityLogs:[], clientOrderLogs:[], productivityTargets:[], warehouseAssets:[], productionTargets:[], rolePermissionMatrix:{}, rolePermissionCeiling:{}, customRoles:[], allRoleNames:[] };
 let ui = { invPage:1, trxPage:1, matPage:1, poPage:1, supplierPage:1, assetsPage:1, casesPage:1, selectedPackCat:null, selectedPackWh:null, selectedPermRole:'Staff Gudang', bomSubview:'recipe' };
 let permMatrixState = null; // salinan kerja rolePermissionMatrix yg sedang diedit di tab Role & Permission (belum tentu sudah disimpan)
 
 /* ============================================================
    KONSTANTA: CASE OPERASIONAL & PRODUKTIVITAS
    ============================================================ */
-const CASE_CATEGORIES = ['Kehilangan Barang','Kerusakan Barang / Kemasan','Kesalahan Picking / Packing','Keterlambatan Proses','Kerusakan Alat / Sistem','Kekurangan Stok Mendadak','Komplain Merchant / Customer','SDM & Kedisiplinan','Lainnya'];
+const CASE_CATEGORIES = ['Kehilangan Barang','Kerusakan Barang / Kemasan','Kesalahan Picking / Packing','Klaim Gudang','Keterlambatan Proses','Kerusakan Alat / Sistem','Kekurangan Stok Mendadak','Komplain Merchant / Customer','SDM & Kedisiplinan','Lainnya'];
+// Kategori case yang membuka field & panel Investigasi Otomatis klaim (AWB/Nominal/Personel
+// Bertanggung Jawab) - lihat openCreateCaseModal(), openCaseDetailModal(), renderClaimInvestigation().
+const CASE_CLAIM_CATEGORY = 'Klaim Gudang';
 const CASE_PRIORITIES = ['Rendah','Sedang','Tinggi','Kritis'];
 const CASE_STATUSES = ['Terbuka','Diproses','Selesai','Ditutup'];
 const PROD_ROLES = [
@@ -1680,6 +1795,12 @@ const DB_KEY_RENDER_MAP = {
   handlingFees: () => renderHppTab(),
   operationalCases: () => renderCasesTab(),
   productivityLogs: () => { renderProductivityLogToday(); renderProductivityTab(); },
+  // Report Order Klien juga me-refresh renderProductivityTab() krn banner "balance" 3-arah
+  // (Order Klien vs Admin Print vs Pack Log) ditampilkan di situ - lihat renderClientOrderBalance().
+  // SENGAJA tidak memanggil renderClientOrderInputRows() di sini (itu cuma dipanggil sekali saat
+  // init + stlh submit sukses) - kalau ikut dipanggil tiap refresh, baris yg sedang diketik user
+  // bisa keriset kalau ada surface lain yg nulis ke sheet ini bersamaan.
+  clientOrderLogs: () => { renderProductivityTab(); populateClientNameSuggestions(); },
   productivityTargets: () => renderProductivityTab(),
   warehouseAssets: () => renderAssetsTab(),
   productionTargets: () => renderAggregatePurchaseRecommendation(),
@@ -1731,6 +1852,7 @@ async function fetchAllData(){
     packCategories: data.packCategories||[], bomRecipes: data.bomRecipes||[], packLogs: data.packLogs||[], users: data.users||[],
     overheadCosts: data.overheadCosts||[], hppSettings: data.hppSettings||[], handlingFees: data.handlingFees||[],
     operationalCases: data.operationalCases||[], productivityLogs: data.productivityLogs||[],
+    clientOrderLogs: data.clientOrderLogs||[],
     productivityTargets: data.productivityTargets||[], warehouseAssets: data.warehouseAssets||[],
     productionTargets: data.productionTargets||[],
     rolePermissionMatrix: data.rolePermissionMatrix||{}, rolePermissionCeiling: data.rolePermissionCeiling||{},
@@ -1771,6 +1893,8 @@ function populateWarehouseSelects(){
   }
   if (document.getElementById('out-wh').value) onOutboundWhChange();
   if (document.getElementById('prodinput-wh').value) renderProductivityLogToday();
+  renderClientOrderInputRows();
+  switchProductivitySubview('input');
   refreshMtMaterialOptions();
   refreshPoMaterialOptions();
 }
@@ -2329,7 +2453,9 @@ function openCreateCaseModal(){
       { name:'kategori', label:'Kategori Case', type:'select', value:CASE_CATEGORIES[0], options: CASE_CATEGORIES.map(c=>({value:c,label:c})) },
       { name:'judul', label:'Judul Case', placeholder:'Ringkasan singkat masalah' },
       { name:'deskripsi', label:'Deskripsi', type:'textarea', placeholder:'Jelaskan kronologi & dampak masalah secara detail...' },
-      { name:'prioritas', label:'Prioritas', type:'select', value:'Sedang', options: CASE_PRIORITIES.map(p=>({value:p,label:p})) }
+      { name:'prioritas', label:'Prioritas', type:'select', value:'Sedang', options: CASE_PRIORITIES.map(p=>({value:p,label:p})) },
+      { name:'awb', label:'AWB Terkait', required:false, placeholder:'Isi kalau case terkait 1 paket/AWB tertentu', showWhen:{field:'kategori', value:CASE_CLAIM_CATEGORY}, tooltip:'Kalau diisi, sistem otomatis mencari siapa yang memproses AWB ini (Packer pasti dari Pack Log, kandidat Admin Print/Picker/Checker dari log produktivitas hari yg sama) - bisa dilihat & dilengkapi lagi nanti di halaman detail case.' },
+      { name:'nominalKlaim', label:'Nominal Klaim (Rp)', type:'number', required:false, value:0, step:'any', showWhen:{field:'kategori', value:CASE_CLAIM_CATEGORY} }
     ],
     onSubmit: async (data) => {
       const payload = Object.assign({ action:'CREATE_CASE', dilaporkanOleh: currentUser.namaUser }, data);
@@ -2366,7 +2492,60 @@ function openCaseDetailModal(caseId){
   [prioSel, statusSel, document.getElementById('cd-pic'), document.getElementById('cd-catatan')].forEach(el => el.disabled = !canManage);
   document.getElementById('cd-submit-btn').classList.toggle('hidden', !canManage);
 
+  renderClaimInvestigation(c);
+  [document.getElementById('cd-claim-awb'), document.getElementById('cd-claim-nominal'), document.getElementById('cd-claim-personel'), document.getElementById('cd-claim-peran')].forEach(el => el.disabled = !canManage);
+
   openModal('modal-case-detail');
+  lucide.createIcons();
+}
+
+// Panel "Investigasi Otomatis" - HANYA relevan utk case Kategori = Klaim Gudang. Packer diambil
+// PASTI dari Pack Log (match by Awb+Warehouse ID). Admin Print/Picker/Checker HANYA bisa berupa
+// KANDIDAT (siapa saja yg log produktivitas di tanggal+gudang yg sama) krn peran itu memang cuma
+// tercatat sbg rekap harian, bukan per-AWB - lihat komentar SHEETS.PRODUCTIVITY_LOG di Code.gs.
+// Semua dihitung dari db.packLogs/db.productivityLogs yg SUDAH ada di memori FE, tanpa API baru.
+function renderClaimInvestigation(c){
+  const section = document.getElementById('cd-claim-section');
+  const isClaim = c['Kategori'] === CASE_CLAIM_CATEGORY;
+  section.classList.toggle('hidden', !isClaim);
+  if (!isClaim) return;
+
+  document.getElementById('cd-claim-awb').value = c['Awb'] || '';
+  document.getElementById('cd-claim-nominal').value = c['Nominal Klaim (Rp)'] || '';
+  document.getElementById('cd-claim-personel').value = c['Personel Bertanggung Jawab'] || '';
+  document.getElementById('cd-claim-peran').value = c['Peran Bertanggung Jawab'] || '';
+
+  renderClaimInvestigationBox(c['Warehouse ID'], (c['Awb']||'').toString().trim());
+}
+function renderClaimInvestigationBox(warehouseId, awb){
+  const box = document.getElementById('cd-claim-investigation');
+  if (!awb) { box.innerHTML = '<p class="text-slate-400">Isi AWB di bawah supaya sistem mencari kandidat otomatis.</p>'; return; }
+
+  const packLog = (db.packLogs||[]).find(p => String(p['Awb']||'').trim().toLowerCase()===awb.toLowerCase() && p['Warehouse ID']===warehouseId);
+  if (!packLog) { box.innerHTML = '<p class="text-slate-400">AWB ini belum ditemukan di Pack Log gudang yang sama.</p>'; return; }
+
+  const logDate = toWIBDateStr(packLog['Date']);
+  const candidateNames = { 'Admin Print': new Set(), 'Picker': new Set(), 'Checker': new Set() };
+  (db.productivityLogs||[]).forEach(p => {
+    if (p['Warehouse ID']===warehouseId && toWIBDateStr(p['Date'])===logDate && candidateNames[p['Role']] && p['Nama']) candidateNames[p['Role']].add(p['Nama']);
+  });
+
+  let html = `<div class="flex items-center justify-between"><span class="font-semibold text-slate-700">Packer <span class="font-normal text-emerald-600">(pasti)</span></span><span class="font-bold text-slate-800">${esc(packLog['Packer Name']||'-')}</span></div>`;
+  html += `<p class="text-slate-400">${esc(formatDate(packLog['Date']))} · ${esc(packLog['Pack Category Code']||'-')} · Klien: ${esc(packLog['Merchant Name']||'-')}</p>`;
+  Object.keys(candidateNames).forEach(role => {
+    const names = candidateNames[role].size ? Array.from(candidateNames[role]).join(', ') : '-';
+    html += `<div class="flex items-center justify-between pt-1.5 mt-1 border-t border-amber-200/70"><span class="font-semibold text-slate-700">${esc(role)} <span class="font-normal text-amber-600">(kandidat)</span></span><span class="text-slate-600 text-right">${esc(names)}</span></div>`;
+  });
+  html += `<p class="text-slate-400 pt-1 italic">Kandidat = tercatat log produktivitas di tanggal & gudang yang sama, bukan kepastian per-paket. Konfirmasi manual sebelum menetapkan pihak bertanggung jawab.</p>`;
+  box.innerHTML = html;
+}
+// Dipanggil saat PIC mengetik/mengubah AWB manual di panel klaim (mis. case dibuat tanpa AWB,
+// baru dilengkapi belakangan pas investigasi) - cari ulang kandidat tanpa perlu tutup-buka modal.
+function onClaimAwbChange(){
+  const caseId = document.getElementById('cd-caseid-input').value;
+  const c = (db.operationalCases||[]).find(x => x['Case ID']===caseId);
+  if (!c) return;
+  renderClaimInvestigationBox(c['Warehouse ID'], document.getElementById('cd-claim-awb').value.trim());
 }
 
 async function submitCaseUpdate(e){
@@ -2383,6 +2562,15 @@ async function submitCaseUpdate(e){
     pic: document.getElementById('cd-pic').value,
     catatanPenyelesaian: document.getElementById('cd-catatan').value
   };
+  // Field klaim cuma disertakan kalau panelnya memang tampil (kategori = Klaim Gudang) - case lain
+  // tidak pernah mengirim field ini sama sekali, jadi handleUpdateCase tidak pernah menyentuh
+  // kolom klaim utk case non-klaim.
+  if (!document.getElementById('cd-claim-section').classList.contains('hidden')) {
+    payload.awb = document.getElementById('cd-claim-awb').value.trim();
+    payload.nominalKlaim = document.getElementById('cd-claim-nominal').value;
+    payload.personelBertanggungJawab = document.getElementById('cd-claim-personel').value.trim();
+    payload.peranBertanggungJawab = document.getElementById('cd-claim-peran').value;
+  }
   const result = await apiPost(payload);
   toggleSubmitLoading(btn, false);
   if (result.success) { showToast(result.message,'success'); closeModal('modal-case-detail'); await fetchPartialData(['operationalCases']); } else showToast(result.message,'error');
@@ -2647,6 +2835,26 @@ function setProductivityRange(days){
   renderProductivityTab();
 }
 
+// Sub-tab "Input Hari Ini" vs "Laporan & Rekap" di dalam tab Produktivitas Tim - lihat komentar
+// di HTML #prod-subview-input/#prod-subview-laporan kenapa dipisah.
+function switchProductivitySubview(view){
+  const isInput = view === 'input';
+  document.getElementById('prod-subview-input').classList.toggle('hidden', !isInput);
+  document.getElementById('prod-subview-laporan').classList.toggle('hidden', isInput);
+  const inputBtn = document.getElementById('prod-subtab-btn-input');
+  const laporanBtn = document.getElementById('prod-subtab-btn-laporan');
+  const activeCls = ['bg-white','text-red-600','shadow-sm'];
+  const inactiveCls = ['text-slate-500'];
+  [inputBtn, laporanBtn].forEach(b => { activeCls.concat(inactiveCls).forEach(c => b.classList.remove(c)); });
+  (isInput ? inputBtn : laporanBtn).classList.add(...activeCls);
+  (isInput ? laporanBtn : inputBtn).classList.add(...inactiveCls);
+  // Chart.js butuh container yg SUDAH visible saat chart dibuat supaya ukurannya kehitung benar -
+  // kalau dibuat saat container masih display:none, canvas bisa muncul kosong walau container-nya
+  // ditampilkan belakangan. Render ulang di sini (container sudah di-unhide duluan di atas) supaya
+  // chart selalu dibuat dalam kondisi benar-benar visible.
+  if (!isInput) renderProductivityTab();
+}
+
 function computeProductivityData(){
   const wh = document.getElementById('prod-filter-wh').value;
   let from = document.getElementById('prod-filter-from').value;
@@ -2800,6 +3008,9 @@ function renderProductivityTab(){
   });
 
   renderOtherActivityGrid(perOtherCategory, dayCount);
+  const whFilter = document.getElementById('prod-filter-wh').value;
+  renderClientOrderBalance(from, to, whFilter, totalPaket);
+  renderClientOrderRecap(from, to, whFilter);
 }
 
 // Kartu ringkasan per kategori utk "Rekap Aktivitas Operasional Lain" - total qty (+pcs kalau
@@ -2832,6 +3043,149 @@ function renderOtherActivityGrid(perOtherCategory, dayCount){
       </div>
     </div>`;
   }).join('');
+  lucide.createIcons();
+}
+
+// ============================================================
+// REPORT ORDER KLIEN - state input bulk (di FE saja, direset kosong lagi stlh submit sukses)
+// + agregasi rekap + banner balance. Filosofi sama spt Input Produktivitas Harian di atas, cuma
+// disandingkan per KLIEN. Lihat handleLogClientOrders() di Code.gs utk sisi backend/batch write.
+// ============================================================
+let clientOrderRows = [{ namaKlien:'', qtyPaket:'' }, { namaKlien:'', qtyPaket:'' }, { namaKlien:'', qtyPaket:'' }];
+
+function renderClientOrderInputRows(){
+  const container = document.getElementById('client-order-rows');
+  if (!container) return;
+  container.innerHTML = clientOrderRows.map((row, idx) => `<div class="flex gap-2 items-center">
+    <input type="text" list="client-name-suggestions" placeholder="Nama Klien" value="${esc(row.namaKlien)}" oninput="updateClientOrderRow(${idx},'namaKlien',this.value)" class="flex-1 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-red-600">
+    <input type="number" min="1" placeholder="Qty Paket" value="${esc(row.qtyPaket)}" oninput="updateClientOrderRow(${idx},'qtyPaket',this.value)" class="w-28 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-red-600">
+    <button type="button" onclick="removeClientOrderRow(${idx})" class="text-slate-300 hover:text-red-500 transition p-1" aria-label="Hapus baris"><i data-lucide="x" class="h-3.5 w-3.5"></i></button>
+  </div>`).join('');
+  lucide.createIcons();
+  updateClientOrderRunningTotal();
+  populateClientNameSuggestions();
+}
+function addClientOrderRow(){
+  clientOrderRows.push({ namaKlien:'', qtyPaket:'' });
+  renderClientOrderInputRows();
+}
+function removeClientOrderRow(idx){
+  // Selalu sisakan minimal 1 baris (dikosongkan, bukan dihapus) - form tidak pernah kosong total.
+  if (clientOrderRows.length <= 1) clientOrderRows[idx] = { namaKlien:'', qtyPaket:'' };
+  else clientOrderRows.splice(idx, 1);
+  renderClientOrderInputRows();
+}
+function updateClientOrderRow(idx, field, val){
+  clientOrderRows[idx][field] = val;
+  updateClientOrderRunningTotal();
+}
+function updateClientOrderRunningTotal(){
+  const valid = clientOrderRows.filter(r => r.namaKlien.trim() && Number(r.qtyPaket) > 0);
+  document.getElementById('client-order-running-total').textContent = valid.reduce((s,r) => s + Number(r.qtyPaket), 0);
+  document.getElementById('client-order-running-count').textContent = valid.length;
+}
+// Datalist saran nama klien - gabungan histori Report Order Klien + Merchant Name yg sudah ada
+// di Pack Log, biar penulisan nama klien konsisten antar entri TANPA perlu tab master data baru
+// (tetap ringan - tidak nambah sheet/CRUD baru cuma demi konsistensi nama).
+function populateClientNameSuggestions(){
+  const dl = document.getElementById('client-name-suggestions');
+  if (!dl) return;
+  const names = new Set();
+  (db.clientOrderLogs||[]).forEach(c => { if (c['Nama Klien']) names.add(c['Nama Klien']); });
+  (db.packLogs||[]).forEach(p => { if (p['Merchant Name']) names.add(p['Merchant Name']); });
+  dl.innerHTML = Array.from(names).sort().map(n => `<option value="${esc(n)}">`).join('');
+}
+async function submitClientOrders(){
+  const wh = document.getElementById('prodinput-wh').value;
+  if (!wh) { showToast('Pilih Gudang Aktif dulu.', 'error'); return; }
+  const records = clientOrderRows
+    .filter(r => r.namaKlien.trim() && Number(r.qtyPaket) > 0)
+    .map(r => ({ namaKlien: r.namaKlien.trim(), qtyPaket: Number(r.qtyPaket) }));
+  if (!records.length) { showToast('Isi minimal 1 baris Nama Klien & Qty Paket (>0).', 'error'); return; }
+
+  const btn = document.getElementById('client-order-submit-btn');
+  toggleSubmitLoading(btn, true);
+  const result = await apiPost({ action:'LOG_CLIENT_ORDERS', warehouseId: wh, records });
+  toggleSubmitLoading(btn, false);
+  if (result.success) {
+    showToast(result.message, 'success');
+    clientOrderRows = [{ namaKlien:'', qtyPaket:'' }, { namaKlien:'', qtyPaket:'' }, { namaKlien:'', qtyPaket:'' }];
+    renderClientOrderInputRows();
+    await fetchPartialData(['clientOrderLogs']);
+  } else showToast(result.message, 'error');
+}
+
+// Agregasi Report Order Klien pada rentang from/to/wh yg SAMA dgn computeProductivityData()
+// (dioper sbg parameter dari renderProductivityTab, bukan baca ulang filter sendiri - biar 2
+// rekap selalu sinkron 1 rentang yg sama). Murni hitung di FE dari db.clientOrderLogs yg sudah
+// ke-fetch - tidak ada query/API tambahan, sesuai permintaan performa tetap ringan.
+function computeClientOrderData(from, to, wh){
+  const entries = (db.clientOrderLogs||[]).filter(c => {
+    const d = toWIBDateStr(c['Date']);
+    return d >= from && d <= to && (!wh || c['Warehouse ID']===wh);
+  });
+  const perClient = {};
+  let totalQty = 0;
+  entries.forEach(c => {
+    const name = c['Nama Klien'] || '(Tanpa Nama)';
+    const qty = Number(c['Qty Paket']||0);
+    if (!perClient[name]) perClient[name] = { total:0, count:0 };
+    perClient[name].total += qty;
+    perClient[name].count += 1;
+    totalQty += qty;
+  });
+  return { entries, perClient, totalQty };
+}
+function renderClientOrderRecap(from, to, wh){
+  const tbody = document.getElementById('tbl-client-order');
+  if (!tbody) return;
+  const { perClient, totalQty } = computeClientOrderData(from, to, wh);
+  const ranked = Object.entries(perClient).sort((a,b) => b[1].total - a[1].total);
+  tbody.innerHTML = ranked.length ? ranked.map(([name, d]) => `<tr class="hover:bg-slate-50 transition">
+    <td class="px-4 py-2.5 font-medium text-slate-800">${esc(name)}</td>
+    <td class="px-4 py-2.5 text-center text-slate-500">${d.count}</td>
+    <td class="px-4 py-2.5 text-right font-bold text-slate-800">${d.total}</td>
+    <td class="px-4 py-2.5 text-right text-slate-400">${totalQty>0?Math.round(d.total/totalQty*100):0}%</td>
+  </tr>`).join('') : `<tr><td colspan="4" class="px-4 py-8 text-center text-slate-400 text-sm">Belum ada Report Order Klien pada rentang tanggal ini.</td></tr>`;
+}
+function exportClientOrdersCsv(){
+  const wh = document.getElementById('prod-filter-wh').value;
+  const from = document.getElementById('prod-filter-from').value || getWIBDateString();
+  const to = document.getElementById('prod-filter-to').value || getWIBDateString();
+  const { perClient } = computeClientOrderData(from, to, wh);
+  const rows = Object.entries(perClient).sort((a,b)=>b[1].total-a[1].total).map(([name,d]) => [name, d.count, d.total]);
+  downloadCsv(`report-order-klien_${from}_${to}.csv`, ['Nama Klien','Jumlah Entri','Total Qty Paket'], rows);
+}
+
+// Banner "balance" 3-arah - 3 angka BEDA SUMBER yg seharusnya saling dekat kalau semua tercatat
+// rapi: (1) Order Klien = permintaan yg diinput manual, (2) Admin Print = entri "paket masuk alur
+// proses" yg dicatat tim (acuan "total paket hari ini" yg sudah dipakai di KPI atas), (3) Pack Log
+// = paket yg BENAR2 selesai dikemas (motong stok riil). Selisih besar = sinyal ada yg belum
+// sempat diinput / proses macet - alarm dini spy diperiksa manual, BUKAN vonis otomatis. Semua
+// dihitung dari data yg sudah di-fetch, tanpa panggilan API tambahan.
+function renderClientOrderBalance(from, to, wh, totalPaketAdminPrint){
+  const banner = document.getElementById('prod-balance-banner');
+  if (!banner) return;
+  const { totalQty: totalOrderKlien } = computeClientOrderData(from, to, wh);
+  const totalPackLog = (db.packLogs||[]).filter(p => {
+    const d = toWIBDateStr(p['Date']);
+    return d >= from && d <= to && (!wh || p['Warehouse ID']===wh);
+  }).reduce((s,p) => s + Number(p['Qty Paket']||0), 0);
+
+  if (totalOrderKlien===0 && totalPaketAdminPrint===0 && totalPackLog===0) { banner.innerHTML = ''; return; }
+
+  const maxVal = Math.max(totalOrderKlien, totalPaketAdminPrint, totalPackLog, 1);
+  const minVal = Math.min(totalOrderKlien || maxVal, totalPaketAdminPrint || maxVal, totalPackLog || maxVal);
+  // Toleransi selisih 5% dari angka terbesar dianggap "selaras" (waktu input di lapangan jarang
+  // pas 100% bersamaan) - di atas itu ditandai perlu dicek manual.
+  const isBalanced = (maxVal - minVal) <= maxVal * 0.05;
+
+  banner.innerHTML = `<div class="rounded-xl border ${isBalanced?'border-emerald-200 bg-emerald-50':'border-amber-200 bg-amber-50'} p-3.5 flex flex-wrap items-center gap-x-6 gap-y-2">
+    <span class="flex items-center gap-1.5 text-xs font-bold ${isBalanced?'text-emerald-700':'text-amber-700'}"><i data-lucide="${isBalanced?'check-circle-2':'alert-triangle'}" class="h-4 w-4"></i>${isBalanced?'Data selaras':'Ada selisih, cek manual'}</span>
+    <span class="text-xs text-slate-600">Order Klien: <b class="text-slate-800">${totalOrderKlien}</b> pkt</span>
+    <span class="text-xs text-slate-600">Admin Print: <b class="text-slate-800">${totalPaketAdminPrint}</b> pkt</span>
+    <span class="text-xs text-slate-600">Pack Log (selesai dikemas): <b class="text-slate-800">${totalPackLog}</b> pkt</span>
+  </div>`;
   lucide.createIcons();
 }
 
@@ -2936,6 +3290,13 @@ function observeSentinel(sentinelId, onLoadMore){
 function openMaterialForm(m){
   const isEdit = !!m;
   const whId = isEdit ? (db.warehouses.find(w=>w['Warehouse Name']===m['Warehouse Name'])||{})['Warehouse ID'] : '';
+  // Sebelumnya ada 2 field terpisah "Konversi Qty 1" & "Konversi Qty 2" yg bikin bingung (jarang
+  // sekali Qty 2 bukan 1 - itu cuma pembagi matematis, bukan sesuatu yg perlu user pikirkan).
+  // Disederhanakan jadi 1 pertanyaan langsung "1 UOM setara berapa Satuan Konversi", di belakang
+  // Qty 2 tetap dikirim = 1 selalu ke backend (matematis SAMA PERSIS - lihat onSubmit di bawah,
+  // rasio lama otomatis dinormalisasi kalau material yg diedit kebetulan punya Qty 2 != 1).
+  const hasKonversi = !!(m && m['konversi UOM']);
+  const konversiRatio = m ? (Number(m['konversi qty 1']||1) / Number(m['konversi qty 2']||1)) : '';
   openFormModal({
     title: isEdit ? 'Edit Material' : 'Tambah Material',
     fields: [
@@ -2944,18 +3305,30 @@ function openMaterialForm(m){
       { name:'materialName', label:'Nama Material', value: m?m['Material Name']:'' },
       { name:'category', label:'Kategori Umum', value: m?m['Category']:'', required:false, placeholder:'mis. Packaging' },
       { name:'packCategoryCode', label:'Kode Kategori (Pack Code)', value: m?m['Pack Category Code']:'', required:false, placeholder:'mis. PACK-11 (jika terkait BOM)' },
-      { name:'uom', label:'Satuan Stok (UOM)', value: m?m['UOM']:'', placeholder:'mis. roll, pcs, box' },
+      { name:'uom', label:'Satuan Stok (UOM)', value: m?m['UOM']:'', placeholder:'mis. roll, pcs, box', tooltip:'Satuan utama material ini dihitung & disimpan di stok gudang. Kalau resep BOM (tab Kategori & BOM) ditulis dalam satuan yang SAMA seperti ini, biarkan "Pakai Satuan Konversi?" di bawah = Tidak.' },
       { name:'minSafetyStock', label:'Min Safety Stock', type:'number', value: m?m['Min Safety Stock']:0, step:'any' },
       { name:'rop', label:'Reorder Point (ROP)', type:'number', value: m?m['Reorder Point (ROP)']:0, step:'any' },
       { name:'maxStock', label:'Max Stock', type:'number', value: m?m['Max Stock']:0, step:'any', required:false },
       { name:'unitPrice', label:'Harga Satuan (Rp)', type:'number', value: m?m['Unit Price (Rp)']:0, step:'any' },
       { name:'leadTime', label:'Lead Time (hari)', type:'number', value: m?m['Lead Time (Days)']:0, required:false },
-      { name:'konversiQty1', label:'Konversi Qty 1', type:'number', value: m?(m['konversi qty 1']||1):1, step:'any', required:false, hint:'isi 1 kalau tidak ada konversi satuan' },
-      { name:'konversiQty2', label:'Konversi Qty 2', type:'number', value: m?(m['konversi qty 2']||1):1, step:'any', required:false },
-      { name:'konversiUOM', label:'Satuan Konversi (untuk resep BOM)', value: m?(m['konversi UOM']||''):'', required:false, placeholder:'mis. gram (kosongkan jika sama dgn UOM)' }
+      { name:'pakaiKonversi', label:'Pakai Satuan Konversi?', type:'select', value: hasKonversi?'Ya':'Tidak', required:false,
+        options:[{value:'Tidak',label:'Tidak — resep BOM langsung pakai Satuan Stok di atas'},{value:'Ya',label:'Ya — resep BOM pakai satuan lain yang lebih kecil'}],
+        tooltip:'Pilih "Ya" HANYA kalau resep BOM (tab Kategori & BOM) untuk material ini ditulis dalam satuan yang lebih kecil dari Satuan Stok. Contoh: Bubble Wrap disimpan per "roll" tapi dipakai per "gram" di resep -> pilih Ya.' },
+      { name:'konversiUOM', label:'Satuan Konversi', value: m?(m['konversi UOM']||''):'', required:false, placeholder:'mis. gram', showWhen:{field:'pakaiKonversi', value:'Ya'} },
+      { name:'konversiRatio', label:'1 Satuan Stok Setara Berapa Satuan Konversi?', type:'number', value: konversiRatio, step:'any', required:false, showWhen:{field:'pakaiKonversi', value:'Ya'},
+        tooltip:'Contoh: Bubble Wrap Satuan Stok = "roll", Satuan Konversi = "gram". Kalau 1 roll = 3000 gram, isi 3000 di sini. Resep BOM lalu ditulis dalam gram, sistem otomatis menghitung potongan stok dalam roll saat packing.' }
     ],
     onSubmit: async (data) => {
-      const result = await apiPost(Object.assign({ action: isEdit ? 'EDIT_MATERIAL' : 'ADD_MATERIAL' }, data));
+      // Terjemahkan balik "Pakai Konversi? + Rasio" ke bentuk lama (konversiQty1/2) yang dipahami
+      // backend - TIDAK ada perubahan sama sekali di Code.gs, murni penyederhanaan tampilan.
+      const pakai = data.pakaiKonversi === 'Ya';
+      const payload = Object.assign({ action: isEdit ? 'EDIT_MATERIAL' : 'ADD_MATERIAL' }, data);
+      payload.konversiQty1 = pakai ? (Number(data.konversiRatio) || 1) : 1;
+      payload.konversiQty2 = 1;
+      payload.konversiUOM = pakai ? data.konversiUOM : '';
+      delete payload.pakaiKonversi;
+      delete payload.konversiRatio;
+      const result = await apiPost(payload);
       if (result.success) { showToast(result.message,'success'); closeFormModal(); await fetchPartialData(['materials']); } else showToast(result.message,'error');
     }
   });
@@ -3090,7 +3463,7 @@ function openBomItemForm(){
     title: 'Tambah Material ke BOM',
     fields: [
       { name:'materialId', label:'Material', type:'select', options: mats.map(m=>({value:m['Material ID'],label:m['Material ID']+' — '+m['Material Name']})) },
-      { name:'usageQty', label:'Usage Qty', type:'number', step:'any', hint:'dalam satuan konversi material (lihat Master Material)' }
+      { name:'usageQty', label:'Usage Qty', type:'number', step:'any', hint:'dalam satuan konversi material (lihat Master Material)', tooltip:'Angka ini ditulis dalam Satuan Konversi material (kolom "konversi UOM" di Master Material) - BUKAN dalam UOM/Satuan Stok utamanya. Contoh: kalau Bubble Wrap Satuan Stok-nya "roll" tapi Satuan Konversi-nya "gram" (3000 gram = 1 roll), maka Usage Qty di sini diisi dalam gram (mis. 150), sistem otomatis menghitung potongan stoknya dalam roll saat packing.' }
     ],
     onSubmit: async (data) => {
       const result = await apiPost(Object.assign({ action:'ADD_BOM_ITEM', warehouseId: wh, packCategoryCode: cat }, data));
@@ -3793,12 +4166,47 @@ function renderFormField(f){
   } else {
     input = `<input type="${f.type||'text'}" id="gf-${f.name}" ${reqAttr} ${f.readonly?'readonly':''} value="${esc(val)}" ${f.step!==undefined?`step="${f.step}"`:''} placeholder="${esc(f.placeholder||'')}" class="${base} ${f.readonly?'bg-slate-100 text-slate-500':''}">`;
   }
-  return `<div class="mb-3"><label class="block text-xs font-semibold text-slate-600 mb-1">${esc(f.label)}${f.hint?` <span class="font-normal text-slate-400 normal-case">— ${esc(f.hint)}</span>`:''}</label>${input}</div>`;
+  // f.tooltip (opsional): ikon ⓘ kecil di sebelah label, klik utk buka penjelasan lebih panjang -
+  // beda dari f.hint (teks pendek yg SELALU tampil). Lihat renderInfoTip().
+  const tooltipHtml = f.tooltip ? renderInfoTip('gf-tip-'+f.name, f.tooltip) : '';
+  // f.showWhen (opsional): { field, value } - div field ini disembunyikan sampai field lain
+  // (by name) bernilai persis "value". Dipasang/dilepas otomatis oleh setupConditionalFields()
+  // yg dipanggil openFormModal() setelah semua field dirender. Dipakai mis. field AWB/Nominal
+  // Klaim di form Case yg cuma relevan kalau Kategori = "Klaim Gudang".
+  const showWhenAttrs = f.showWhen ? ` data-show-when-field="${esc(f.showWhen.field)}" data-show-when-value="${esc(f.showWhen.value)}"` : '';
+  return `<div class="mb-3${f.showWhen?' form-conditional-field hidden':''}"${showWhenAttrs}><label class="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1"><span>${esc(f.label)}</span>${tooltipHtml}${f.hint?`<span class="font-normal text-slate-400 normal-case">— ${esc(f.hint)}</span>`:''}</label>${input}</div>`;
+}
+// Field-field bersyarat (showWhen) di dalam form generik: sembunyikan/tampilkan sesuai nilai
+// field pemicu SEKARANG, lalu pasang listener 'change' pada pemicu itu supaya ikut update
+// live tiap user ganti pilihan - tanpa ini, field showWhen akan tampak kosong permanen krn
+// renderFormField() sendiri cuma menaruh class 'hidden' di render awal, tidak pernah melepasnya.
+// CATATAN required: sengaja TIDAK menyentuh atribut required sama sekali di sini - elemen di
+// dalam container display:none (class 'hidden') otomatis dikecualikan dari validasi form oleh
+// browser (spec HTML5: elemen yg "tidak dirender" bukan kandidat constraint validation), jadi
+// required:false yg sudah ditulis field-nya sendiri saat renderFormField() sudah cukup & benar
+// baik saat tersembunyi maupun tampil.
+function setupConditionalFields(container){
+  const conditionals = container.querySelectorAll('.form-conditional-field');
+  if (!conditionals.length) return;
+  const apply = () => {
+    conditionals.forEach(div => {
+      const trigger = document.getElementById('gf-' + div.dataset.showWhenField);
+      div.classList.toggle('hidden', !(trigger && trigger.value === div.dataset.showWhenValue));
+    });
+  };
+  const triggerIds = new Set(Array.from(conditionals).map(d => d.dataset.showWhenField));
+  triggerIds.forEach(name => {
+    const trigger = document.getElementById('gf-' + name);
+    if (trigger) trigger.addEventListener('change', apply);
+  });
+  apply();
 }
 function openFormModal(config){
   _modalConfig = config;
   document.getElementById('generic-modal-title').textContent = config.title;
-  document.getElementById('generic-modal-fields').innerHTML = config.fields.map(renderFormField).join('');
+  const fieldsEl = document.getElementById('generic-modal-fields');
+  fieldsEl.innerHTML = config.fields.map(renderFormField).join('');
+  setupConditionalFields(fieldsEl);
   openModal('modal-generic');
   lucide.createIcons();
 }
@@ -3815,6 +4223,71 @@ async function submitFormModal(e){
   try { await _modalConfig.onSubmit(data); } 
   finally { toggleSubmitLoading(btn, false); }
 }
+
+// ============================================================
+// BANTUAN & ISTILAH - rujukan singkatan/jargon yg dipakai di seluruh aplikasi, dibuka dari
+// ikon (?) di header (lihat openGlossaryModal()). Sengaja dipusatkan di 1 modal yg bisa
+// dicari, bukan ditempel sbg ikon ⓘ di setiap kemunculan istilah - lebih gampang ditemukan
+// & tidak bikin tiap layar penuh ikon. Field-field yg konsepnya rumit (mis. konversi satuan)
+// tetap dapat tooltip tersendiri di form terkait (lihat renderInfoTip di bawah).
+// ============================================================
+const GLOSSARY_TERMS = [
+  { term:'AWB', def:'Nomor resi/pengiriman yang menempel ke 1 paket. Dipakai buat lacak proses packing satu paket lewat Pack Log, termasuk cari siapa Packer-nya saat investigasi Klaim Gudang.' },
+  { term:'UOM (Satuan Stok)', def:'Satuan utama sebuah material dihitung & disimpan di stok gudang, mis. "roll", "pcs", "box". Diisi di Master Material.' },
+  { term:'Konversi Satuan', def:'Dipakai kalau resep BOM sebuah material ditulis dalam satuan yang lebih kecil dari Satuan Stok-nya, mis. material disimpan per "roll" tapi dipakai per "gram" di resep. Diatur di form Master Material lewat "Pakai Satuan Konversi?".' },
+  { term:'BOM (Bill of Materials)', def:'Daftar/resep material apa saja & berapa banyak yang dipakai untuk 1 kategori paket. Diatur di tab Kategori & BOM.' },
+  { term:'Usage Qty', def:'Jumlah pemakaian 1 material dalam 1 resep BOM, ditulis dalam Satuan Konversi material tersebut (bukan Satuan Stok/UOM-nya).' },
+  { term:'HPP', def:'Harga Pokok Penjualan - estimasi total biaya (material + handling fee + overhead) untuk memproses 1 paket dari kategori tertentu.' },
+  { term:'Handling Fee', def:'Biaya penanganan per paket di luar biaya material (mis. ongkos kerja), diatur per kategori paket per gudang.' },
+  { term:'PO (Purchase Order)', def:'Pesanan pembelian material ke supplier dari luar gudang.' },
+  { term:'RO (Request Order)', def:'Permintaan pengeluaran/perpindahan stok material secara internal (bukan pembelian ke supplier).' },
+  { term:'ROP (Reorder Point)', def:'Batas jumlah stok - kalau stok material sudah di bawah angka ini, saatnya membuat PO/RO baru sebelum kehabisan.' },
+  { term:'Safety Stock', def:'Stok minimum pengaman yang sebaiknya selalu tersedia untuk jaga-jaga permintaan mendadak.' },
+  { term:'Qty Paket vs Qty Pcs', def:'Qty Paket = jumlah paket/kiriman yang diproses. Qty Pcs = jumlah satuan barang di dalam paket-paket itu (1 paket bisa isi banyak pcs).' },
+  { term:'Admin Print / Picker / Packer / Checker', def:'4 tahap proses sebuah paket di gudang: Admin Print (cetak label/dokumen) -> Picker (ambil barang) -> Packer (kemas, dicatat per-AWB di Pack Log) -> Checker (cek akhir). 3 peran pertama & terakhir dicatat sbg rekap harian per orang, bukan per-AWB.' },
+  { term:'Report Order Klien', def:'Catatan jumlah Qty Paket order per klien per hari, terpisah dari proses packing - dipakai untuk menyandingkan/mem-balance dengan jumlah paket yang benar-benar diproses.' },
+  { term:'Case Operasional', def:'Tiket pencatatan masalah operasional gudang (kehilangan barang, kerusakan, keterlambatan, dst) beserta status penyelesaiannya.' },
+  { term:'Klaim Gudang', def:'Kategori Case khusus untuk kerugian yang perlu investigasi siapa bertanggung jawab & berapa nominal gantinya. Sistem otomatis mencarikan Packer pasti + kandidat Admin Print/Picker/Checker dari data yang sudah tercatat.' },
+  { term:'PIC', def:'Person In Charge - orang yang bertanggung jawab menindaklanjuti sesuatu (mis. sebuah Case).' },
+  { term:'Stock Opname', def:'Penghitungan ulang stok fisik untuk dicocokkan dengan catatan sistem.' }
+];
+function openGlossaryModal(){
+  document.getElementById('glossary-search').value = '';
+  renderGlossaryList();
+  openModal('modal-glossary');
+  lucide.createIcons();
+}
+function renderGlossaryList(){
+  const q = (document.getElementById('glossary-search').value || '').toLowerCase().trim();
+  const filtered = GLOSSARY_TERMS.filter(g => !q || g.term.toLowerCase().includes(q) || g.def.toLowerCase().includes(q));
+  document.getElementById('glossary-list').innerHTML = filtered.length ? filtered.map(g => `
+    <div class="border-b border-slate-100 pb-2.5 last:border-0">
+      <p class="text-sm font-bold text-slate-800">${esc(g.term)}</p>
+      <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">${esc(g.def)}</p>
+    </div>`).join('') : '<p class="text-sm text-slate-400 text-center py-6">Istilah tidak ditemukan.</p>';
+}
+
+// ============================================================
+// TOOLTIP INFO (ⓘ) - panduan singkat di titik yg sering bikin pengguna baru bingung (mis.
+// konversi satuan Master Material). Klik utk buka/tutup (bukan hover) - konsisten enaknya di
+// touchscreen gudang maupun desktop kantor. Cuma 1 popover terbuka dlm satu waktu.
+// ============================================================
+function renderInfoTip(id, text){
+  return `<span class="relative inline-flex"><button type="button" class="info-tip-btn" onclick="toggleInfoTip('${id}',event)" aria-label="Info"><i data-lucide="info" style="width:9px;height:9px"></i></button><div id="${id}" class="info-tip-pop hidden">${esc(text)}</div></span>`;
+}
+function toggleInfoTip(id, event){
+  event.preventDefault();
+  event.stopPropagation();
+  const pop = document.getElementById(id);
+  if (!pop) return;
+  const wasHidden = pop.classList.contains('hidden');
+  document.querySelectorAll('.info-tip-pop').forEach(p => p.classList.add('hidden'));
+  if (wasHidden) pop.classList.remove('hidden');
+}
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.info-tip-btn')) return;
+  document.querySelectorAll('.info-tip-pop').forEach(p => p.classList.add('hidden'));
+});
 
 // Warna teks/grid Chart.js (dipanggil tiap kali sebuah chart dibuat/diperbarui).
 function chartThemeColors(){
