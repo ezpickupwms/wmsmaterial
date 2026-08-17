@@ -659,15 +659,18 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-          <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1.5"><i data-lucide="trending-up" class="h-4 w-4 text-slate-400"></i>Tren Qty Paket Harian</h3>
-            <div class="h-56"><canvas id="prodTrendChart"></canvas></div>
-          </div>
-          <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1.5"><i data-lucide="pie-chart" class="h-4 w-4 text-slate-400"></i>Distribusi Beban per Peran</h3>
-            <div class="h-56"><canvas id="prodRoleChart"></canvas></div>
-          </div>
+        <!-- MONITORING ALUR PROSES - pusat baru laporan: 4 tahap pipeline (Admin Print -> Picker
+             -> Packer -> Checker) dlm 1 pandangan per-proses (total, rata2/hari, personel aktif,
+             top performer, tren mini, & % thd Admin Print) - biar tidak perlu lompat2 antar
+             KPI/chart/list terpisah cuma utk paham 1 tahap. % BUKAN target resmi (blm ada target
+             harian utk 4 peran ini di productivityTargets, itu cuma dipakai
+             OTHER_ACTIVITY_CATEGORIES) - murni sinyal relatif antar tahap utk endus penumpukan.
+             Lihat renderPipelineStageCards(). -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-5">
+          <h3 class="text-sm font-bold text-slate-800 mb-1 flex items-center gap-1.5"><i data-lucide="activity" class="h-4 w-4 text-slate-400"></i>Monitoring Alur Proses<span class="relative inline-flex"><button type="button" class="info-tip-btn" onclick="toggleInfoTip('tip-pipeline',event)" aria-label="Info"><i data-lucide="info" style="width:9px;height:9px"></i></button><div id="tip-pipeline" class="info-tip-pop hidden">Alur 1 paket: Admin Print (cetak) → Picker (ambil barang) → Packer (kemas) → Checker (cek akhir). % di tiap kartu = qty peran itu dibagi qty Admin Print pada rentang yang sama - bukan target resmi, cuma sinyal relatif utk lihat tahap mana yang paling tertinggal.</div></span></h3>
+          <p class="text-[10px] text-slate-400 mb-4">Qty Paket per tahap pada rentang &amp; gudang yang difilter di atas.</p>
+          <div id="pipeline-stage-cards" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3"></div>
+          <div id="pipeline-bottleneck-alert" class="mt-3"></div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
@@ -686,6 +689,17 @@
           <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
             <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-1.5"><i data-lucide="clipboard-check" class="h-3.5 w-3.5"></i>Top Checker</h3>
             <div id="prod-top-checker" class="space-y-2.5"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1.5"><i data-lucide="trending-up" class="h-4 w-4 text-slate-400"></i>Tren Qty Paket Harian</h3>
+            <div class="h-56"><canvas id="prodTrendChart"></canvas></div>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1.5"><i data-lucide="trending-up" class="h-4 w-4 text-slate-400"></i>Tren Qty Paket Harian per Peran<span class="relative inline-flex"><button type="button" class="info-tip-btn" onclick="toggleInfoTip('tip-prod-role-daily',event)" aria-label="Info"><i data-lucide="info" style="width:9px;height:9px"></i></button><div id="tip-prod-role-daily" class="info-tip-pop hidden">4 garis = 4 peran (Admin Print, Picker, Packer, Checker), warnanya sama dgn kartu Monitoring Alur Proses di atas. Tiap garis menjumlahkan qty paket seluruh petugas di peran itu per hari. Klik nama peran di legenda bawah utk sembunyikan/tampilkan garis tertentu.</div></span></h3>
+            <div class="h-56"><canvas id="prodRoleDailyChart"></canvas></div>
           </div>
         </div>
 
@@ -3027,18 +3041,22 @@ function computeProductivityData(){
   });
 
   const perPerson = {}; // nama -> { 'Admin Print Name':n, 'Picker Name':n, ... , total:n, totalPcs:n }
-  const perDay = {};    // tanggal -> Qty Paket yg diproses Admin Print hari itu (lihat catatan totalPaket di bawah)
+  // perRoleTotal/perRoleDaily = agregat per PERAN (gabungan semua personel) - dipakai kartu
+  // "Monitoring Alur Proses" (total, % thd Admin Print) & sparkline-nya, plus chart "Tren Qty
+  // Paket Harian per Peran". Beda dgn perPerson yg agregat per ORANG.
   const perRoleTotal = { 'Admin Print Name':0, 'Picker Name':0, 'Packer Name':0, 'Checker Name':0 };
+  const perRoleDaily = { 'Admin Print Name':{}, 'Picker Name':{}, 'Packer Name':{}, 'Checker Name':{} };
+  const perDay = {};    // tanggal -> Qty Paket yg diproses Admin Print hari itu (lihat catatan totalPaket di bawah)
   // Aktivitas Operasional Lain (Admin RTS/Tim Inbound/Tim Outbound/Stock Opname) - satuan
   // CAMPURAN (pkt vs SKU, lihat OTHER_ACTIVITY_CATEGORIES), makanya dihitung TERPISAH dari
-  // totalPaket/perRoleTotal di atas supaya tidak salah jumlah antar satuan berbeda.
+  // totalPaket di atas supaya tidak salah jumlah antar satuan berbeda.
   const perOtherCategory = {}; // kategori -> { total, totalPcs, perPerson:{nama:qty} }
   // totalPaket/totalPcs/perDay SENGAJA cuma dari peran "Admin Print" (bukan dijumlah dari
   // Admin Print+Picker+Packer+Checker sekaligus) - 1 paket yg sama mengalir lewat KE-4 tahap
   // itu, jadi menjumlahkan semuanya akan melipat-gandakan angka ~4x dari jumlah paket
   // sebenarnya yang diproses. Admin Print dipakai sbg acuan krn dialah titik masuk pipeline
-  // (tahap pertama). perRoleTotal di bawah TETAP mencatat qty tiap peran scr terpisah apa
-  // adanya (dipakai utk chart distribusi beban per peran & badge per-kartu, bukan utk total ini).
+  // (tahap pertama) - acuan yg sama dipakai lagi di kartu Monitoring Alur Proses utk hitung
+  // "seberapa besar yg sudah diproses tahap lain dibanding yg di-print" (perRoleTotal di atas).
   let totalPaket = 0, totalPcs = 0, coreEntryCount = 0;
 
   entries.forEach(p => {
@@ -3058,9 +3076,10 @@ function computeProductivityData(){
     }
 
     coreEntryCount++;
+    const dStr = toWIBDateStr(p['Date']);
     perRoleTotal[role.key] += qty;
+    perRoleDaily[role.key][dStr] = (perRoleDaily[role.key][dStr]||0) + qty;
     if (role.short === 'Admin Print') {
-      const dStr = toWIBDateStr(p['Date']);
       perDay[dStr] = (perDay[dStr]||0) + qty;
       totalPaket += qty;
       totalPcs += pcs;
@@ -3074,7 +3093,7 @@ function computeProductivityData(){
     perPerson[name].totalPcs += pcs;
   });
 
-  return { entries, coreEntryCount, from, to, perPerson, perDay, perRoleTotal, totalPaket, totalPcs, perOtherCategory };
+  return { entries, coreEntryCount, from, to, perPerson, perRoleTotal, perRoleDaily, perDay, totalPaket, totalPcs, perOtherCategory };
 }
 
 function prodPersonRow(name, count, colorClass){
@@ -3086,8 +3105,110 @@ function prodPersonRow(name, count, colorClass){
   </div>`;
 }
 
+// Sparkline SVG ringan (tanpa Chart.js) utk tren mini di tiap kartu Monitoring Alur Proses -
+// sengaja tulis tangan (bukan bikin 4 instance Chart.js tambahan) krn cuma dekoratif/sekilas,
+// tidak butuh interaktivitas/tooltip, & lebih ringan dirender ulang tiap ganti filter.
+function sparklineSvg(values, colorHex){
+  const w = 100, h = 28, pad = 3;
+  if (!values.length || !values.some(v => v > 0)) {
+    return `<svg viewBox="0 0 ${w} ${h}" class="w-full h-7"><line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/></svg>`;
+  }
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const range = (max - min) || 1;
+  const stepX = values.length > 1 ? (w - pad*2) / (values.length - 1) : 0;
+  const coords = values.map((v,i) => ({ x: pad + i*stepX, y: h - pad - ((v-min)/range) * (h - pad*2) }));
+  const pts = coords.map(c => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ');
+  const last = coords[coords.length-1];
+  return `<svg viewBox="0 0 ${w} ${h}" class="w-full h-7" preserveAspectRatio="none">
+    <polyline points="${pts}" fill="none" stroke="${colorHex}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${last.x.toFixed(1)}" cy="${last.y.toFixed(1)}" r="2.2" fill="${colorHex}"/>
+  </svg>`;
+}
+
+// Gaya visual per tahap pipeline - SAMA PERSIS dgn skema warna/ikon yg sudah dipakai di form
+// "Input Produktivitas Harian" & topColors di renderProductivityTab(), biar 1 bahasa visual di
+// seluruh tab Produktivitas Tim (form input, badge top performer, kartu pipeline, chart, semua
+// pakai warna peran yg sama: Admin Print=biru, Picker=ungu, Packer=merah, Checker=hijau).
+const STAGE_STYLE = {
+  'Admin Print Name': { border:'border-blue-100',    bg:'bg-blue-50/40',    text:'text-blue-700',    dot:'#3b82f6', icon:'printer' },
+  'Picker Name':      { border:'border-purple-100',  bg:'bg-purple-50/40',  text:'text-purple-700',  dot:'#8b5cf6', icon:'hand' },
+  'Packer Name':      { border:'border-red-100',     bg:'bg-red-50/40',     text:'text-red-700',     dot:'#dc2626', icon:'package-check' },
+  'Checker Name':     { border:'border-emerald-100', bg:'bg-emerald-50/40', text:'text-emerald-700', dot:'#10b981', icon:'clipboard-check' }
+};
+
+// Kartu "Monitoring Alur Proses" - 1 kartu per tahap pipeline (Admin Print->Picker->Packer->
+// Checker), gabungan total+rata2/hari+personel aktif+top performer+tren mini+% thd Admin Print
+// dlm 1 pandangan, supaya tidak perlu lompat2 antar KPI/chart/list terpisah cuma utk paham 1
+// tahap. % relatif thd Admin Print (bukan target resmi - lihat catatan di computeProductivityData)
+// dipakai sbg sinyal penumpukan/bottleneck: kalau tahap X jauh di bawah Admin Print, kemungkinan
+// ada antrean menumpuk SEBELUM tahap X. Ambang batas 65%/85% keputusan desain, cukup longgar spy
+// tidak salah alarm di variasi wajar sehari-hari.
+function renderPipelineStageCards(perRoleTotal, perRoleDaily, perPerson, dayLabels, dayCount){
+  const wrap = document.getElementById('pipeline-stage-cards');
+  if (!wrap) return;
+  const adminPrintTotal = perRoleTotal['Admin Print Name'] || 0;
+
+  wrap.innerHTML = PROD_ROLES.map((role, idx) => {
+    const style = STAGE_STYLE[role.key];
+    const total = perRoleTotal[role.key] || 0;
+    const avgPerDay = (total / dayCount).toFixed(1);
+    const activeStaff = Object.values(perPerson).filter(d => d[role.key] > 0).length;
+    const topEntry = Object.entries(perPerson).map(([n,d]) => [n, d[role.key]]).filter(([,c]) => c > 0).sort((a,b) => b[1]-a[1])[0];
+    const dailySeries = dayLabels.map(d => (perRoleDaily[role.key]||{})[d] || 0);
+
+    let pctBadge;
+    if (role.short === 'Admin Print') {
+      pctBadge = `<span class="text-[10px] font-semibold text-slate-400">Titik masuk pipeline</span>`;
+    } else if (adminPrintTotal === 0) {
+      pctBadge = `<span class="text-[10px] font-semibold text-slate-300">Belum ada data Admin Print</span>`;
+    } else {
+      const pct = Math.round(total / adminPrintTotal * 100);
+      const healthClass = pct >= 85 ? 'bg-emerald-100 text-emerald-700' : pct >= 65 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
+      pctBadge = `<span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold ${healthClass}">${pct}% dari Admin Print</span>`;
+    }
+
+    return `<div class="rounded-xl border-2 ${style.border} ${style.bg} p-3.5 flex flex-col">
+      <div class="flex items-center justify-between mb-2">
+        <span class="flex items-center gap-1.5 text-xs font-bold ${style.text}"><i data-lucide="${style.icon}" class="h-3.5 w-3.5"></i>${role.short}</span>
+        <span class="text-[9px] font-bold text-slate-300">TAHAP ${idx+1}/4</span>
+      </div>
+      <p class="font-display text-2xl font-bold text-slate-800 leading-tight">${total.toLocaleString('id-ID')}</p>
+      <p class="text-[10px] text-slate-400 mb-2">Qty Paket</p>
+      <div class="mb-2">${sparklineSvg(dailySeries, style.dot)}</div>
+      <div class="text-[11px] text-slate-500 space-y-0.5 mb-2">
+        <p>Rata-rata/hari: <b class="text-slate-700">${avgPerDay}</b></p>
+        <p>Personel aktif: <b class="text-slate-700">${activeStaff}</b></p>
+        <p class="truncate">Top: <b class="text-slate-700">${topEntry ? `${esc(topEntry[0])} (${topEntry[1]} pkt)` : '-'}</b></p>
+      </div>
+      <div class="mt-auto pt-2 border-t ${style.border}">${pctBadge}</div>
+    </div>`;
+  }).join('');
+
+  const alertWrap = document.getElementById('pipeline-bottleneck-alert');
+  if (alertWrap) {
+    if (adminPrintTotal === 0) {
+      alertWrap.innerHTML = '';
+    } else {
+      const behind = PROD_ROLES.filter(r => r.short !== 'Admin Print')
+        .map(r => ({ role:r, pct: Math.round((perRoleTotal[r.key]||0) / adminPrintTotal * 100) }))
+        .sort((a,b) => a.pct - b.pct)[0];
+      alertWrap.innerHTML = behind.pct < 65
+        ? `<div class="rounded-xl border border-red-200 bg-red-50 p-3 flex items-center gap-2">
+             <i data-lucide="alert-triangle" class="h-4 w-4 text-red-600 flex-shrink-0"></i>
+             <p class="text-xs text-red-700"><b>${behind.role.short} berpotensi jadi bottleneck</b> — baru ${behind.pct}% dari Qty Paket Admin Print yang sudah diproses tahap ini pada rentang ini. Cek kemungkinan penumpukan sebelum tahap ${behind.role.short}.</p>
+           </div>`
+        : `<div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 flex items-center gap-2">
+             <i data-lucide="check-circle-2" class="h-4 w-4 text-emerald-600 flex-shrink-0"></i>
+             <p class="text-xs text-emerald-700">Semua tahap berjalan seimbang, belum ada indikasi penumpukan signifikan pada rentang ini.</p>
+           </div>`;
+    }
+  }
+  lucide.createIcons();
+}
+
 function renderProductivityTab(){
-  const { entries, coreEntryCount, from, to, perPerson, perDay, perRoleTotal, totalPaket, perOtherCategory } = computeProductivityData();
+  const { entries, coreEntryCount, from, to, perPerson, perRoleTotal, perRoleDaily, perDay, totalPaket, perOtherCategory } = computeProductivityData();
 
   // "Total Entri Log" dihitung dari coreEntryCount (bukan entries.length) supaya konsisten dgn
   // 3 KPI lain di sebelahnya - ketiganya sama2 khusus 4 peran utama (Qty Paket), TIDAK
@@ -3098,6 +3219,19 @@ function renderProductivityTab(){
   const dayCount = Math.max(1, Math.round((new Date(to) - new Date(from)) / 86400000) + 1);
   document.getElementById('prod-kpi-avg').textContent = (totalPaket / dayCount).toFixed(1);
   document.getElementById('prod-kpi-personel').textContent = Object.keys(perPerson).length;
+
+  // dayLabels dipakai bareng oleh kartu Monitoring Alur Proses (sparkline per tahap) & ke-2
+  // chart tren di bawah - dihitung sekali di sini spy rentang tanggalnya selalu konsisten di
+  // semua tempat (dipindah lebih awal drpd sebelumnya krn sekarang dipakai lbh dari 1 bagian).
+  const dayLabels = [];
+  const cursor = new Date(from);
+  const end = new Date(to);
+  while (cursor <= end) {
+    dayLabels.push(`${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}-${String(cursor.getDate()).padStart(2,'0')}`);
+    cursor.setDate(cursor.getDate()+1);
+  }
+
+  renderPipelineStageCards(perRoleTotal, perRoleDaily, perPerson, dayLabels, dayCount);
 
   // Top performer per peran (5 besar)
   const topColors = { 'Admin Print Name':'text-blue-600', 'Picker Name':'text-purple-600', 'Packer Name':'text-red-600', 'Checker Name':'text-emerald-600' };
@@ -3126,18 +3260,10 @@ function renderProductivityTab(){
     </tr>`;
   }).join('') : `<tr><td colspan="8" class="px-4 py-8 text-center text-slate-400 text-sm">Belum ada data produktivitas pada rentang tanggal ini.</td></tr>`;
 
-  // Chart tren Qty Paket harian (semua peran digabung)
-  const dayLabels = [];
-  const cursor = new Date(from);
-  const end = new Date(to);
-  while (cursor <= end) {
-    dayLabels.push(`${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}-${String(cursor.getDate()).padStart(2,'0')}`);
-    cursor.setDate(cursor.getDate()+1);
-  }
   const dayValues = dayLabels.map(d => perDay[d]||0);
-
   const prodTheme = chartThemeColors();
 
+  // Chart tren Qty Paket harian (semua peran digabung, acuan Admin Print)
   if (window.myProdTrendChart) window.myProdTrendChart.destroy();
   window.myProdTrendChart = new Chart(document.getElementById('prodTrendChart').getContext('2d'), {
     type: 'bar',
@@ -3146,15 +3272,25 @@ function renderProductivityTab(){
       scales:{ y:{ beginAtZero:true, ticks:{ precision:0, color:prodTheme.text }, grid:{ color:prodTheme.grid } }, x:{ ticks:{ color:prodTheme.text }, grid:{ color:prodTheme.grid } } } }
   });
 
-  // Chart distribusi beban per peran
-  if (window.myProdRoleChart) window.myProdRoleChart.destroy();
-  window.myProdRoleChart = new Chart(document.getElementById('prodRoleChart').getContext('2d'), {
-    type: 'doughnut',
-    data: {
-      labels: PROD_ROLES.map(r=>r.short),
-      datasets: [{ data: PROD_ROLES.map(r=>perRoleTotal[r.key]), backgroundColor:['#3b82f6','#8b5cf6','#dc2626','#10b981'] }]
-    },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:10}, color:prodTheme.text } } } }
+  // Chart tren harian per peran - 4 garis (1 per tahap pipeline), warnanya SAMA PERSIS dgn
+  // kartu Monitoring Alur Proses di atas (lihat STAGE_STYLE) biar 1 bahasa visual. Ini versi
+  // "zoom in" dari sparkline mini di tiap kartu - dipakai kalau butuh bandingkan pola naik-
+  // turun antar tahap dari waktu ke waktu, bukan cuma angka akhir.
+  const roleDatasets = PROD_ROLES.map(role => ({
+    label: role.short,
+    data: dayLabels.map(d => (perRoleDaily[role.key]||{})[d] || 0),
+    borderColor: STAGE_STYLE[role.key].dot, backgroundColor: STAGE_STYLE[role.key].dot,
+    tension:0.3, borderWidth:2, pointRadius:2, pointHoverRadius:4
+  }));
+
+  if (window.myProdRoleDailyChart) window.myProdRoleDailyChart.destroy();
+  window.myProdRoleDailyChart = new Chart(document.getElementById('prodRoleDailyChart').getContext('2d'), {
+    type: 'line',
+    data: { labels: dayLabels.map(d=>d.substring(5)), datasets: roleDatasets },
+    options: { responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'nearest', axis:'x', intersect:false },
+      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:10}, color:prodTheme.text } } },
+      scales:{ y:{ beginAtZero:true, ticks:{ precision:0, color:prodTheme.text }, grid:{ color:prodTheme.grid } }, x:{ ticks:{ color:prodTheme.text }, grid:{ color:prodTheme.grid } } } }
   });
 
   renderOtherActivityGrid(perOtherCategory, dayCount);
@@ -4326,15 +4462,6 @@ function renderFormField(f){
   const showWhenAttrs = f.showWhen ? ` data-show-when-field="${esc(f.showWhen.field)}" data-show-when-value="${esc(f.showWhen.value)}"` : '';
   return `<div class="mb-3${f.showWhen?' form-conditional-field hidden':''}"${showWhenAttrs}><label class="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1"><span>${esc(f.label)}</span>${tooltipHtml}${f.hint?`<span class="font-normal text-slate-400 normal-case">— ${esc(f.hint)}</span>`:''}</label>${input}</div>`;
 }
-// Field-field bersyarat (showWhen) di dalam form generik: sembunyikan/tampilkan sesuai nilai
-// field pemicu SEKARANG, lalu pasang listener 'change' pada pemicu itu supaya ikut update
-// live tiap user ganti pilihan - tanpa ini, field showWhen akan tampak kosong permanen krn
-// renderFormField() sendiri cuma menaruh class 'hidden' di render awal, tidak pernah melepasnya.
-// CATATAN required: sengaja TIDAK menyentuh atribut required sama sekali di sini - elemen di
-// dalam container display:none (class 'hidden') otomatis dikecualikan dari validasi form oleh
-// browser (spec HTML5: elemen yg "tidak dirender" bukan kandidat constraint validation), jadi
-// required:false yg sudah ditulis field-nya sendiri saat renderFormField() sudah cukup & benar
-// baik saat tersembunyi maupun tampil.
 function setupConditionalFields(container){
   const conditionals = container.querySelectorAll('.form-conditional-field');
   if (!conditionals.length) return;
@@ -4374,17 +4501,7 @@ async function submitFormModal(e){
   finally { toggleSubmitLoading(btn, false); }
 }
 
-// ============================================================
-// BANTUAN & ISTILAH - rujukan singkatan/jargon yg dipakai di seluruh aplikasi, dibuka dari
-// ikon (?) di header (lihat openGlossaryModal()). Sengaja dipusatkan di 1 modal yg bisa
-// dicari, bukan ditempel sbg ikon ⓘ di setiap kemunculan istilah - lebih gampang ditemukan
-// & tidak bikin tiap layar penuh ikon. Field-field yg konsepnya rumit (mis. konversi satuan)
-// tetap dapat tooltip tersendiri di form terkait (lihat renderInfoTip di bawah).
-// ============================================================
 const GLOSSARY_TERMS = [
-  // ---------- MENU & NAVIGASI (sidebar) - teks dasarnya diselaraskan dgn subjudul yg sudah
-  // tampil di tiap tab, sedikit diperluas krn di sini memang tempatnya orang cari penjelasan
-  // saat bingung, bukan sekadar label singkat. ----------
   { category:'Menu & Navigasi', term:'Dashboard', def:'Halaman pertama setelah login - ringkasan cepat kondisi gudang: total stok, material yang sudah di bawah Safety Stock/ROP, dan aktivitas terbaru. Cara tercepat cek "ada yang perlu diperhatikan atau tidak" tanpa buka menu lain satu-satu.' },
   { category:'Menu & Navigasi', term:'Inventory', def:'Daftar stok AKTUAL tiap material di tiap gudang SAAT INI (angka sisa sekarang) - beda dengan Log Transaksi yang mencatat histori pergerakannya dari waktu ke waktu.' },
   { category:'Menu & Navigasi', term:'Log Transaksi', def:'Riwayat SETIAP pergerakan stok: IN (masuk), OUT (keluar), TRANSFER (pindah antar gudang), ADJUSTMENT (koreksi manual). Kalau Inventory menjawab "sisa berapa sekarang", menu ini menjawab "kenapa bisa jadi segitu".' },
@@ -4442,10 +4559,6 @@ function renderGlossaryList(){
     document.getElementById('glossary-list').innerHTML = '<p class="text-sm text-slate-400 text-center py-6">Istilah tidak ditemukan.</p>';
     return;
   }
-  // Dikelompokkan per kategori - urutan kategori mengikuti urutan kemunculan pertama di
-  // GLOSSARY_TERMS (Menu & Navigasi -> Tombol & Ikon Header -> Istilah Bisnis & Operasional),
-  // supaya yang paling sering dicari (lagi bingung liat menu/tombol APA) muncul duluan drpd
-  // istilah bisnis yg sifatnya referensi.
   const order = [], grouped = {};
   filtered.forEach(g => {
     if (!grouped[g.category]) { grouped[g.category] = []; order.push(g.category); }
@@ -4462,11 +4575,6 @@ function renderGlossaryList(){
     </div>`).join('');
 }
 
-// ============================================================
-// TOOLTIP INFO (ⓘ) - panduan singkat di titik yg sering bikin pengguna baru bingung (mis.
-// konversi satuan Master Material). Klik utk buka/tutup (bukan hover) - konsisten enaknya di
-// touchscreen gudang maupun desktop kantor. Cuma 1 popover terbuka dlm satu waktu.
-// ============================================================
 function renderInfoTip(id, text){
   return `<span class="relative inline-flex"><button type="button" class="info-tip-btn" onclick="toggleInfoTip('${id}',event)" aria-label="Info"><i data-lucide="info" style="width:9px;height:9px"></i></button><div id="${id}" class="info-tip-pop hidden">${esc(text)}</div></span>`;
 }
@@ -4489,9 +4597,6 @@ function chartThemeColors(){
   return { text: '#64748b', grid: '#f1f5f9' };
 }
 
-/* ============================================================
-   INIT
-   ============================================================ */
 lucide.createIcons();
 </script>
 </body>
