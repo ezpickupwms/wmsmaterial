@@ -8,23 +8,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <!-- Tambahan pustaka Chart.js untuk Grafik Garis (Line Chart) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        fontFamily: {
-          sans: ['Inter','ui-sans-serif','system-ui'],
-          display: ['"Space Grotesk"','ui-sans-serif','sans-serif'],
-          mono: ['"JetBrains Mono"','ui-monospace','monospace']
-        }
-      }
-    }
-  }
-</script>
+<!-- POIN 2: Tailwind SEBELUMNYA di-compile runtime di browser tiap kali halaman dibuka lewat
+     <script src="https://cdn.tailwindcss.com"> (Play CDN) - lambat (JS compiler jalan on every
+     load) & Tailwind sendiri secara resmi memperingatkan CDN ini TIDAK utk produksi. Sekarang
+     diganti CSS hasil kompilasi STATIS (Tailwind CLI v3.4, di-purge cuma class yang benar2
+     dipakai di file ini + config fontFamily custom yang sama persis dgn tailwind.config lama).
+     PENTING kalau nanti nambah class Tailwind BARU yang belum pernah dipakai di file ini: class
+     itu TIDAK otomatis punya CSS-nya di sini (beda dgn CDN lama yang compile apa saja on the
+     fly) - minta di-generate ulang blok <style> ini (build: npx tailwindcss -c tailwind.config.js
+     -i input.css -o output.css --minify, config fontFamily di atas). -->
+<style>*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.19 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:Inter,ui-sans-serif,system-ui;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:JetBrains Mono,ui-monospace,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.\!container{width:100%!important}.container{width:100%}@media (min-width:640px){.\!container{max-width:640px!important}.container{max-width:640px}}@media (min-width:768px){.\!container{max-width:768px!important}.container{max-width:768px}}@media (min-width:1024px){.\!container{max-width:1024px!important}.container{max-width:1024px}}@media (min-width:1280px){.\!container{max-width:1280px!important}.container{max-width:1280px}}@media (min-width:1536px){.\!container{max-width:1536px!important}.container{max-width:1536px}}.visible{visibility:visible}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0}.-right-0\.5{right:-.125rem}.-top-0\.5{top:-.125rem}.bottom-0{bottom:0}.left-0{left:0}.left-2\.5{left:.625rem}.right-2\.5{right:.625rem}.right-4{right:1rem}.top-0{top:0}.top-1\/2{top:50%}.top-16{top:4rem}.top-4{top:1rem}.z-10{z-index:10}.z-20{z-index:20}.z-30{z-index:30}.z-40{z-index:40}.z-\[200\]{z-index:200}.z-\[220\]{z-index:220}.z-\[230\]{z-index:230}.z-\[250\]{z-index:250}.z-\[300\]{z-index:300}.z-\[400\]{z-index:400}.col-span-full{grid-column:1/-1}.mx-auto{margin-left:auto;margin-right:auto}.-ml-2{margin-left:-.5rem}.-mt-0\.5{margin-top:-.125rem}.mb-1{margin-bottom:.25rem}.mb-1\.5{margin-bottom:.375rem}.mb-2{margin-bottom:.5rem}.mb-2\.5{margin-bottom:.625rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mb-5{margin-bottom:1.25rem}.mb-6{margin-bottom:1.5rem}.ml-0\.5{margin-left:.125rem}.ml-2{margin-left:.5rem}.ml-auto{margin-left:auto}.mr-1{margin-right:.25rem}.mr-2{margin-right:.5rem}.mt-0\.5{margin-top:.125rem}.mt-1{margin-top:.25rem}.mt-1\.5{margin-top:.375rem}.mt-2{margin-top:.5rem}.mt-2\.5{margin-top:.625rem}.mt-3{margin-top:.75rem}.mt-5{margin-top:1.25rem}.block{display:block}.inline-block{display:inline-block}.inline{display:inline}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.hidden{display:none}.h-1\.5{height:.375rem}.h-12{height:3rem}.h-16{height:4rem}.h-2{height:.5rem}.h-24{height:6rem}.h-3{height:.75rem}.h-3\.5{height:.875rem}.h-36{height:9rem}.h-4{height:1rem}.h-48{height:12rem}.h-5{height:1.25rem}.h-56{height:14rem}.h-6{height:1.5rem}.h-8{height:2rem}.h-fit{height:-moz-fit-content;height:fit-content}.h-full{height:100%}.h-screen{height:100vh}.max-h-28{max-height:7rem}.max-h-72{max-height:18rem}.max-h-\[60vh\]{max-height:60vh}.max-h-\[85vh\]{max-height:85vh}.max-h-\[88vh\]{max-height:88vh}.max-h-\[90vh\]{max-height:90vh}.w-1\.5{width:.375rem}.w-12{width:3rem}.w-28{width:7rem}.w-3{width:.75rem}.w-3\.5{width:.875rem}.w-32{width:8rem}.w-36{width:9rem}.w-4{width:1rem}.w-48{width:12rem}.w-5{width:1.25rem}.w-6{width:1.5rem}.w-60{width:15rem}.w-72{width:18rem}.w-\[100px\]{width:100px}.w-\[32\%\]{width:32%}.w-auto{width:auto}.w-full{width:100%}.w-px{width:1px}.min-w-0{min-width:0}.min-w-\[140px\]{min-width:140px}.min-w-\[160px\]{min-width:160px}.min-w-\[180px\]{min-width:180px}.min-w-\[200px\]{min-width:200px}.min-w-\[220px\]{min-width:220px}.max-w-\[220px\]{max-width:220px}.max-w-lg{max-width:32rem}.max-w-md{max-width:28rem}.max-w-sm{max-width:24rem}.flex-1{flex:1 1 0%}.flex-none{flex:none}.flex-shrink-0{flex-shrink:0}.-translate-x-full{--tw-translate-x:-100%}.-translate-x-full,.-translate-y-1\/2{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.-translate-y-1\/2{--tw-translate-y:-50%}.translate-x-0{--tw-translate-x:0px}.transform,.translate-x-0{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@keyframes pulse{50%{opacity:.5}}.animate-pulse{animation:pulse 2s cubic-bezier(.4,0,.6,1) infinite}@keyframes spin{to{transform:rotate(1turn)}}.animate-spin{animation:spin 1s linear infinite}.cursor-pointer{cursor:pointer}.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:.25rem}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-2\.5{gap:.625rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-5{gap:1.25rem}.gap-x-6{-moz-column-gap:1.5rem;column-gap:1.5rem}.gap-y-2{row-gap:.5rem}.space-x-2>:not([hidden])~:not([hidden]){--tw-space-x-reverse:0;margin-right:calc(.5rem*var(--tw-space-x-reverse));margin-left:calc(.5rem*(1 - var(--tw-space-x-reverse)))}.space-y-0\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.125rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.125rem*var(--tw-space-y-reverse))}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.space-y-2>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.5rem*var(--tw-space-y-reverse))}.space-y-2\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.625rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.625rem*var(--tw-space-y-reverse))}.space-y-3>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.75rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.75rem*var(--tw-space-y-reverse))}.space-y-3\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.875rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.875rem*var(--tw-space-y-reverse))}.space-y-4>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem*var(--tw-space-y-reverse))}.space-y-5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.25rem*var(--tw-space-y-reverse))}.divide-y>:not([hidden])~:not([hidden]){--tw-divide-y-reverse:0;border-top-width:calc(1px*(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(1px*var(--tw-divide-y-reverse))}.divide-slate-100>:not([hidden])~:not([hidden]){--tw-divide-opacity:1;border-color:rgb(241 245 249/var(--tw-divide-opacity,1))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis}.truncate,.whitespace-nowrap{white-space:nowrap}.whitespace-pre-wrap{white-space:pre-wrap}.rounded{border-radius:.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-md{border-radius:.375rem}.rounded-xl{border-radius:.75rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-r{border-right-width:1px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-amber-200{--tw-border-opacity:1;border-color:rgb(253 230 138/var(--tw-border-opacity,1))}.border-amber-200\/70{border-color:hsla(48,97%,77%,.7)}.border-blue-100{--tw-border-opacity:1;border-color:rgb(219 234 254/var(--tw-border-opacity,1))}.border-blue-300{--tw-border-opacity:1;border-color:rgb(147 197 253/var(--tw-border-opacity,1))}.border-emerald-100{--tw-border-opacity:1;border-color:rgb(209 250 229/var(--tw-border-opacity,1))}.border-emerald-200{--tw-border-opacity:1;border-color:rgb(167 243 208/var(--tw-border-opacity,1))}.border-emerald-300{--tw-border-opacity:1;border-color:rgb(110 231 183/var(--tw-border-opacity,1))}.border-emerald-600{--tw-border-opacity:1;border-color:rgb(5 150 105/var(--tw-border-opacity,1))}.border-purple-100{--tw-border-opacity:1;border-color:rgb(243 232 255/var(--tw-border-opacity,1))}.border-purple-300{--tw-border-opacity:1;border-color:rgb(216 180 254/var(--tw-border-opacity,1))}.border-purple-600{--tw-border-opacity:1;border-color:rgb(147 51 234/var(--tw-border-opacity,1))}.border-red-100{--tw-border-opacity:1;border-color:rgb(254 226 226/var(--tw-border-opacity,1))}.border-red-200{--tw-border-opacity:1;border-color:rgb(254 202 202/var(--tw-border-opacity,1))}.border-red-300{--tw-border-opacity:1;border-color:rgb(252 165 165/var(--tw-border-opacity,1))}.border-red-600{--tw-border-opacity:1;border-color:rgb(220 38 38/var(--tw-border-opacity,1))}.border-slate-100{--tw-border-opacity:1;border-color:rgb(241 245 249/var(--tw-border-opacity,1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.border-slate-300{--tw-border-opacity:1;border-color:rgb(203 213 225/var(--tw-border-opacity,1))}.border-slate-700{--tw-border-opacity:1;border-color:rgb(51 65 85/var(--tw-border-opacity,1))}.border-slate-900{--tw-border-opacity:1;border-color:rgb(15 23 42/var(--tw-border-opacity,1))}.border-l-amber-500{--tw-border-opacity:1;border-left-color:rgb(245 158 11/var(--tw-border-opacity,1))}.border-l-emerald-500{--tw-border-opacity:1;border-left-color:rgb(16 185 129/var(--tw-border-opacity,1))}.border-l-orange-500{--tw-border-opacity:1;border-left-color:rgb(249 115 22/var(--tw-border-opacity,1))}.border-l-red-500{--tw-border-opacity:1;border-left-color:rgb(239 68 68/var(--tw-border-opacity,1))}.border-l-red-600{--tw-border-opacity:1;border-left-color:rgb(220 38 38/var(--tw-border-opacity,1))}.border-l-sky-500{--tw-border-opacity:1;border-left-color:rgb(14 165 233/var(--tw-border-opacity,1))}.border-l-slate-400{--tw-border-opacity:1;border-left-color:rgb(148 163 184/var(--tw-border-opacity,1))}.border-l-slate-700{--tw-border-opacity:1;border-left-color:rgb(51 65 85/var(--tw-border-opacity,1))}.border-t-red-600{--tw-border-opacity:1;border-top-color:rgb(220 38 38/var(--tw-border-opacity,1))}.bg-amber-100{--tw-bg-opacity:1;background-color:rgb(254 243 199/var(--tw-bg-opacity,1))}.bg-amber-50{--tw-bg-opacity:1;background-color:rgb(255 251 235/var(--tw-bg-opacity,1))}.bg-blue-100{--tw-bg-opacity:1;background-color:rgb(219 234 254/var(--tw-bg-opacity,1))}.bg-blue-50\/40{background-color:rgba(239,246,255,.4)}.bg-blue-600{--tw-bg-opacity:1;background-color:rgb(37 99 235/var(--tw-bg-opacity,1))}.bg-emerald-100{--tw-bg-opacity:1;background-color:rgb(209 250 229/var(--tw-bg-opacity,1))}.bg-emerald-400{--tw-bg-opacity:1;background-color:rgb(52 211 153/var(--tw-bg-opacity,1))}.bg-emerald-50{--tw-bg-opacity:1;background-color:rgb(236 253 245/var(--tw-bg-opacity,1))}.bg-emerald-50\/40{background-color:rgba(236,253,245,.4)}.bg-emerald-500{--tw-bg-opacity:1;background-color:rgb(16 185 129/var(--tw-bg-opacity,1))}.bg-emerald-600{--tw-bg-opacity:1;background-color:rgb(5 150 105/var(--tw-bg-opacity,1))}.bg-orange-100{--tw-bg-opacity:1;background-color:rgb(255 237 213/var(--tw-bg-opacity,1))}.bg-purple-100{--tw-bg-opacity:1;background-color:rgb(243 232 255/var(--tw-bg-opacity,1))}.bg-purple-50{--tw-bg-opacity:1;background-color:rgb(250 245 255/var(--tw-bg-opacity,1))}.bg-purple-50\/40{background-color:rgba(250,245,255,.4)}.bg-purple-600{--tw-bg-opacity:1;background-color:rgb(147 51 234/var(--tw-bg-opacity,1))}.bg-red-100{--tw-bg-opacity:1;background-color:rgb(254 226 226/var(--tw-bg-opacity,1))}.bg-red-400{--tw-bg-opacity:1;background-color:rgb(248 113 113/var(--tw-bg-opacity,1))}.bg-red-50{--tw-bg-opacity:1;background-color:rgb(254 242 242/var(--tw-bg-opacity,1))}.bg-red-50\/40{background-color:hsla(0,86%,97%,.4)}.bg-red-50\/60{background-color:hsla(0,86%,97%,.6)}.bg-red-500{--tw-bg-opacity:1;background-color:rgb(239 68 68/var(--tw-bg-opacity,1))}.bg-red-600{--tw-bg-opacity:1;background-color:rgb(220 38 38/var(--tw-bg-opacity,1))}.bg-red-700{--tw-bg-opacity:1;background-color:rgb(185 28 28/var(--tw-bg-opacity,1))}.bg-red-800{--tw-bg-opacity:1;background-color:rgb(153 27 27/var(--tw-bg-opacity,1))}.bg-slate-100{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.bg-slate-100\/40{background-color:rgba(241,245,249,.4)}.bg-slate-100\/50{background-color:rgba(241,245,249,.5)}.bg-slate-200{--tw-bg-opacity:1;background-color:rgb(226 232 240/var(--tw-bg-opacity,1))}.bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.bg-slate-50\/50{background-color:rgba(248,250,252,.5)}.bg-slate-50\/70{background-color:rgba(248,250,252,.7)}.bg-slate-700{--tw-bg-opacity:1;background-color:rgb(51 65 85/var(--tw-bg-opacity,1))}.bg-slate-800{--tw-bg-opacity:1;background-color:rgb(30 41 59/var(--tw-bg-opacity,1))}.bg-slate-900{--tw-bg-opacity:1;background-color:rgb(15 23 42/var(--tw-bg-opacity,1))}.bg-slate-900\/50{background-color:rgba(15,23,42,.5)}.bg-slate-900\/60{background-color:rgba(15,23,42,.6)}.bg-transparent{background-color:transparent}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.object-contain{-o-object-fit:contain;object-fit:contain}.p-1{padding:.25rem}.p-1\.5{padding:.375rem}.p-2{padding:.5rem}.p-3{padding:.75rem}.p-3\.5{padding:.875rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.p-7{padding:1.75rem}.px-1\.5{padding-left:.375rem;padding-right:.375rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-2\.5{padding-left:.625rem;padding-right:.625rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-3\.5{padding-left:.875rem;padding-right:.875rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-1\.5{padding-top:.375rem;padding-bottom:.375rem}.py-10{padding-top:2.5rem;padding-bottom:2.5rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.py-3\.5{padding-top:.875rem;padding-bottom:.875rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.py-8{padding-top:2rem;padding-bottom:2rem}.pb-0\.5{padding-bottom:.125rem}.pb-1{padding-bottom:.25rem}.pb-2\.5{padding-bottom:.625rem}.pb-3{padding-bottom:.75rem}.pl-2\.5{padding-left:.625rem}.pl-6{padding-left:1.5rem}.pl-8{padding-left:2rem}.pr-2{padding-right:.5rem}.pr-3{padding-right:.75rem}.pr-4{padding-right:1rem}.pr-9{padding-right:2.25rem}.pt-1{padding-top:.25rem}.pt-1\.5{padding-top:.375rem}.pt-2{padding-top:.5rem}.pt-3{padding-top:.75rem}.pt-4{padding-top:1rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.align-text-bottom{vertical-align:text-bottom}.font-display{font-family:Space Grotesk,ui-sans-serif,sans-serif}.font-mono{font-family:JetBrains Mono,ui-monospace,monospace}.font-sans{font-family:Inter,ui-sans-serif,system-ui}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[9px\]{font-size:9px}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-normal{font-weight:400}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.normal-case{text-transform:none}.italic{font-style:italic}.leading-none{line-height:1}.leading-relaxed{line-height:1.625}.tracking-tight{letter-spacing:-.025em}.tracking-wide{letter-spacing:.025em}.tracking-wider{letter-spacing:.05em}.text-amber-500{--tw-text-opacity:1;color:rgb(245 158 11/var(--tw-text-opacity,1))}.text-amber-600{--tw-text-opacity:1;color:rgb(217 119 6/var(--tw-text-opacity,1))}.text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9/var(--tw-text-opacity,1))}.text-blue-600{--tw-text-opacity:1;color:rgb(37 99 235/var(--tw-text-opacity,1))}.text-blue-700{--tw-text-opacity:1;color:rgb(29 78 216/var(--tw-text-opacity,1))}.text-emerald-600{--tw-text-opacity:1;color:rgb(5 150 105/var(--tw-text-opacity,1))}.text-emerald-700{--tw-text-opacity:1;color:rgb(4 120 87/var(--tw-text-opacity,1))}.text-orange-600{--tw-text-opacity:1;color:rgb(234 88 12/var(--tw-text-opacity,1))}.text-orange-700{--tw-text-opacity:1;color:rgb(194 65 12/var(--tw-text-opacity,1))}.text-purple-600{--tw-text-opacity:1;color:rgb(147 51 234/var(--tw-text-opacity,1))}.text-purple-700{--tw-text-opacity:1;color:rgb(126 34 206/var(--tw-text-opacity,1))}.text-red-100{--tw-text-opacity:1;color:rgb(254 226 226/var(--tw-text-opacity,1))}.text-red-200{--tw-text-opacity:1;color:rgb(254 202 202/var(--tw-text-opacity,1))}.text-red-300{--tw-text-opacity:1;color:rgb(252 165 165/var(--tw-text-opacity,1))}.text-red-500{--tw-text-opacity:1;color:rgb(239 68 68/var(--tw-text-opacity,1))}.text-red-600{--tw-text-opacity:1;color:rgb(220 38 38/var(--tw-text-opacity,1))}.text-red-700{--tw-text-opacity:1;color:rgb(185 28 28/var(--tw-text-opacity,1))}.text-red-800{--tw-text-opacity:1;color:rgb(153 27 27/var(--tw-text-opacity,1))}.text-sky-600{--tw-text-opacity:1;color:rgb(2 132 199/var(--tw-text-opacity,1))}.text-slate-300{--tw-text-opacity:1;color:rgb(203 213 225/var(--tw-text-opacity,1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184/var(--tw-text-opacity,1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139/var(--tw-text-opacity,1))}.text-slate-600{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59/var(--tw-text-opacity,1))}.text-slate-900{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.underline{text-decoration-line:underline}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.accent-red-600{accent-color:#dc2626}.opacity-30{opacity:.3}.opacity-60{opacity:.6}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgba(0,0,0,.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color)}.shadow-2xl,.shadow-inner{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-inner{--tw-shadow:inset 0 2px 4px 0 rgba(0,0,0,.05);--tw-shadow-colored:inset 0 2px 4px 0 var(--tw-shadow-color)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color),0 4px 6px -4px var(--tw-shadow-color)}.shadow-lg,.shadow-md{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-md{--tw-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color),0 2px 4px -2px var(--tw-shadow-color)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgba(0,0,0,.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-red-600\/20{--tw-shadow-color:rgba(220,38,38,.2);--tw-shadow:var(--tw-shadow-colored)}.shadow-red-900\/40{--tw-shadow-color:rgba(127,29,29,.4);--tw-shadow:var(--tw-shadow-colored)}.outline-none{outline:2px solid transparent;outline-offset:2px}.drop-shadow-sm{--tw-drop-shadow:drop-shadow(0 1px 1px rgba(0,0,0,.05))}.drop-shadow-sm,.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-transform{transition-property:transform;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.duration-200{transition-duration:.2s}.ease-in-out{transition-timing-function:cubic-bezier(.4,0,.2,1)}.last\:border-0:last-child{border-width:0}.hover\:border-slate-300:hover{--tw-border-opacity:1;border-color:rgb(203 213 225/var(--tw-border-opacity,1))}.hover\:border-slate-400:hover{--tw-border-opacity:1;border-color:rgb(148 163 184/var(--tw-border-opacity,1))}.hover\:bg-blue-700:hover{--tw-bg-opacity:1;background-color:rgb(29 78 216/var(--tw-bg-opacity,1))}.hover\:bg-emerald-700:hover{--tw-bg-opacity:1;background-color:rgb(4 120 87/var(--tw-bg-opacity,1))}.hover\:bg-purple-700:hover{--tw-bg-opacity:1;background-color:rgb(126 34 206/var(--tw-bg-opacity,1))}.hover\:bg-red-50:hover{--tw-bg-opacity:1;background-color:rgb(254 242 242/var(--tw-bg-opacity,1))}.hover\:bg-red-50\/40:hover{background-color:hsla(0,86%,97%,.4)}.hover\:bg-red-700:hover{--tw-bg-opacity:1;background-color:rgb(185 28 28/var(--tw-bg-opacity,1))}.hover\:bg-red-800:hover{--tw-bg-opacity:1;background-color:rgb(153 27 27/var(--tw-bg-opacity,1))}.hover\:bg-slate-100:hover{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.hover\:bg-slate-50:hover{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.hover\:bg-slate-900:hover{--tw-bg-opacity:1;background-color:rgb(15 23 42/var(--tw-bg-opacity,1))}.hover\:text-red-500:hover{--tw-text-opacity:1;color:rgb(239 68 68/var(--tw-text-opacity,1))}.hover\:text-red-600:hover{--tw-text-opacity:1;color:rgb(220 38 38/var(--tw-text-opacity,1))}.hover\:text-red-700:hover{--tw-text-opacity:1;color:rgb(185 28 28/var(--tw-text-opacity,1))}.hover\:text-red-800:hover{--tw-text-opacity:1;color:rgb(153 27 27/var(--tw-text-opacity,1))}.hover\:text-slate-800:hover{--tw-text-opacity:1;color:rgb(30 41 59/var(--tw-text-opacity,1))}.hover\:text-white:hover{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.hover\:underline:hover{text-decoration-line:underline}.hover\:opacity-100:hover{opacity:1}.focus\:border-blue-500:focus{--tw-border-opacity:1;border-color:rgb(59 130 246/var(--tw-border-opacity,1))}.focus\:border-emerald-500:focus{--tw-border-opacity:1;border-color:rgb(16 185 129/var(--tw-border-opacity,1))}.focus\:border-emerald-600:focus{--tw-border-opacity:1;border-color:rgb(5 150 105/var(--tw-border-opacity,1))}.focus\:border-purple-500:focus{--tw-border-opacity:1;border-color:rgb(168 85 247/var(--tw-border-opacity,1))}.focus\:border-red-500:focus{--tw-border-opacity:1;border-color:rgb(239 68 68/var(--tw-border-opacity,1))}.focus\:border-red-600:focus{--tw-border-opacity:1;border-color:rgb(220 38 38/var(--tw-border-opacity,1))}.focus\:ring-2:focus{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.focus\:ring-blue-200:focus{--tw-ring-opacity:1;--tw-ring-color:rgb(191 219 254/var(--tw-ring-opacity,1))}.focus\:ring-emerald-200:focus{--tw-ring-opacity:1;--tw-ring-color:rgb(167 243 208/var(--tw-ring-opacity,1))}.focus\:ring-purple-200:focus{--tw-ring-opacity:1;--tw-ring-color:rgb(233 213 255/var(--tw-ring-opacity,1))}.focus\:ring-red-200:focus{--tw-ring-opacity:1;--tw-ring-color:rgb(254 202 202/var(--tw-ring-opacity,1))}.disabled\:cursor-not-allowed:disabled{cursor:not-allowed}.disabled\:bg-slate-300:disabled{--tw-bg-opacity:1;background-color:rgb(203 213 225/var(--tw-bg-opacity,1))}.disabled\:bg-slate-50:disabled{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.disabled\:text-slate-400:disabled{--tw-text-opacity:1;color:rgb(148 163 184/var(--tw-text-opacity,1))}@media (min-width:640px){.sm\:block{display:block}.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.sm\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.sm\:grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}.sm\:p-5{padding:1.25rem}}@media (min-width:1024px){.lg\:static{position:static}.lg\:z-auto{z-index:auto}.lg\:col-span-2{grid-column:span 2/span 2}.lg\:col-span-3{grid-column:span 3/span 3}.lg\:hidden{display:none}.lg\:translate-x-0{--tw-translate-x:0px;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.lg\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.lg\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.lg\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.lg\:grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}.lg\:transition-none{transition-property:none}}@media (min-width:1280px){.xl\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}}</style>
 <style>
   * { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
   ::-webkit-scrollbar { height: 6px; width: 6px; }
@@ -44,6 +40,24 @@
   .info-tip-btn:hover { background:#cbd5e1; }
   .info-tip-pop { position:absolute; z-index:60; width:240px; background:#1e293b; color:#f1f5f9; font-size:11px; line-height:1.5; padding:8px 10px; border-radius:8px; box-shadow:0 10px 25px -5px rgba(0,0,0,.3); margin-top:6px; }
   .info-tip-pop::before { content:''; position:absolute; top:-4px; left:10px; width:8px; height:8px; background:#1e293b; transform:rotate(45deg); }
+
+  /* MODE CETAK (poin 9) - window.print() dipicu printCurrentTab(). Semua elemen "chrome" (header,
+     sidebar, tombol aksi, modal, toast, skeleton) disembunyikan; sisa layout dilepas dari batasan
+     h-screen/overflow-hidden (didesain utk SPA 1-layar) ke alur dokumen alami supaya tabel/daftar
+     panjang tercetak utuh di banyak halaman, bukan terpotong ke tinggi 1 layar. Tab yang TIDAK
+     aktif otomatis tidak ikut tercetak (sudah class .hidden = display:none dari switchTab()). */
+  @media print {
+    body { overflow: visible !important; height: auto !important; }
+    header, aside, #sidebar-backdrop, #toast-container, .no-print, button,
+    #modal-confirm, #modal-generic, #modal-glossary, #modal-manual-trx,
+    #modal-create-po, #modal-receive-po, #modal-case-detail { display: none !important; }
+    #app-section { display: block !important; height: auto !important; }
+    #app-section > div { display: block !important; overflow: visible !important; height: auto !important; }
+    #main-content { overflow: visible !important; height: auto !important; padding: 0 !important; }
+    table { break-inside: auto; }
+    tr { break-inside: avoid; }
+    thead { display: table-header-group; }
+  }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased h-screen overflow-hidden flex flex-col">
@@ -90,6 +104,9 @@
 <div id="app-section" class="hidden flex-1 flex-col h-full">
   <header class="flex-none h-16 flex items-center justify-between bg-red-700 px-5 shadow-sm z-20">
     <div class="flex items-center gap-4">
+      <button id="btn-sidebar-toggle" onclick="toggleSidebar()" class="lg:hidden p-2 -ml-2 rounded-lg text-red-100 hover:bg-red-800 transition flex-shrink-0" title="Menu" aria-label="Buka menu navigasi">
+        <i data-lucide="menu" class="h-5 w-5"></i>
+      </button>
       <div class="flex flex-col gap-1">
         <img src="data:image/png;base64,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" alt="EZPickup" class="h-8 w-auto object-contain" onerror="this.outerHTML='<h1 class=\'font-display text-white font-bold text-sm leading-none tracking-tight\'>EZPICKUP WMS</h1>'">
         <div class="flex items-center gap-2">
@@ -104,8 +121,11 @@
         <i data-lucide="bell" class="h-4.5 w-4.5"></i>
         <span id="notif-badge" class="hidden absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-slate-900 text-white text-[9px] font-bold flex items-center justify-center">0</span>
       </button>
-      <button onclick="openGlossaryModal()" class="p-2 rounded-lg text-red-100 hover:bg-red-800 transition" title="Bantuan &amp; istilah">
+      <button onclick="openGlossaryModal()" class="p-2 rounded-lg text-red-100 hover:bg-red-800 transition" title="Pusat Bantuan">
         <i data-lucide="circle-help" class="h-4.5 w-4.5"></i>
+      </button>
+      <button id="btn-print" onclick="printCurrentTab()" class="p-2 rounded-lg text-red-100 hover:bg-red-800 transition" title="Cetak tampilan ini">
+        <i data-lucide="printer" class="h-4.5 w-4.5"></i>
       </button>
       <button id="btn-refresh" onclick="fetchAllData()" class="p-2 rounded-lg text-red-100 hover:bg-red-800 transition" title="Refresh data">
         <i data-lucide="refresh-cw" class="h-4.5 w-4.5"></i>
@@ -119,8 +139,9 @@
     </div>
   </header>
 
-  <div class="flex flex-1 overflow-hidden">
-    <aside class="w-60 flex-none bg-white border-r border-slate-200 overflow-y-auto p-3">
+  <div class="flex flex-1 overflow-hidden relative">
+    <div id="sidebar-backdrop" onclick="closeSidebar()" class="hidden fixed inset-0 bg-slate-900/50 z-30 lg:hidden"></div>
+    <aside id="app-sidebar" class="w-60 flex-none bg-white border-r border-slate-200 overflow-y-auto p-3 fixed left-0 top-16 bottom-0 z-40 -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 lg:transition-none lg:z-auto">
       <p class="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Operasional</p>
       <nav class="space-y-0.5">
         <button onclick="switchTab('dashboard')" data-nav="dashboard" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="layout-dashboard" class="h-4 w-4"></i>Dashboard</button>
@@ -153,7 +174,31 @@
       </div>
     </aside>
 
-    <main class="flex-1 overflow-y-auto p-6 bg-slate-50">
+    <main id="main-content" class="flex-1 overflow-y-auto p-6 bg-slate-50 relative">
+
+      <!-- Skeleton loading (poin 7) - overlay yang tampil PERSIS saat app-section baru dimunculkan
+           stlh login (data asli belum sempat tiba dari fetchAllData), disembunyikan lagi begitu
+           fetchAllData() selesai - lihat handleLoginSubmit(). Struktur baris di bawah SENGAJA
+           dibuat mirip bentuk kasar dashboard (4 kartu ringkasan + panel besar + 2 panel kecil)
+           supaya transisi ke data asli tidak terasa "meloncat" drastis. no-print supaya tidak
+           ikut kepencet ke kertas kalau user kebetulan mencetak persis di momen ini. -->
+      <div id="app-loading-skeleton" class="hidden absolute inset-0 bg-slate-50 z-10 p-6 overflow-hidden no-print">
+        <div class="animate-pulse space-y-4">
+          <div class="h-5 w-48 bg-slate-200 rounded"></div>
+          <div class="h-3 w-72 bg-slate-200 rounded mb-2"></div>
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
+            <div class="h-24 bg-slate-200 rounded-xl"></div>
+            <div class="h-24 bg-slate-200 rounded-xl"></div>
+            <div class="h-24 bg-slate-200 rounded-xl"></div>
+            <div class="h-24 bg-slate-200 rounded-xl"></div>
+          </div>
+          <div class="h-56 bg-slate-200 rounded-xl"></div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="h-36 bg-slate-200 rounded-xl"></div>
+            <div class="h-36 bg-slate-200 rounded-xl"></div>
+          </div>
+        </div>
+      </div>
 
       <!-- DASHBOARD -->
       <div id="tab-dashboard" class="tab-content tab-enter">
@@ -360,7 +405,7 @@
           <div class="overflow-x-auto"><table class="w-full text-sm text-left">
             <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-400"><tr>
               <th class="px-4 py-2.5">No. PO</th><th class="px-4 py-2.5">Tujuan</th><th class="px-4 py-2.5">Supplier</th><th class="px-4 py-2.5">Material</th>
-              <th class="px-4 py-2.5 text-right">Order / Diterima</th><th class="px-4 py-2.5 text-center">Status</th><th class="px-4 py-2.5 text-center">Aksi</th>
+              <th class="px-4 py-2.5 text-right">Order / Disetujui / Diterima</th><th class="px-4 py-2.5 text-center">Status</th><th class="px-4 py-2.5 text-center">Aksi</th>
             </tr></thead>
             <tbody id="tbl-po" class="divide-y divide-slate-100"></tbody>
           </table></div>
@@ -1062,18 +1107,19 @@
   </div>
 </div>
 
-<!-- BANTUAN & ISTILAH - satu tempat rujukan semua singkatan/jargon yg dipakai di seluruh
-     aplikasi (AWB, BOM, HPP, dst), dibuka dari ikon (?) di header. Dibuat sbg 1 modal
-     ter-pusat (bukan tooltip di tiap kemunculan istilah) supaya gampang dicari & tidak
-     bikin tiap layar penuh ikon ⓘ - lihat GLOSSARY_TERMS & openGlossaryModal(). -->
+<!-- PUSAT BANTUAN - satu tempat rujukan semua menu, tombol header, dan singkatan/jargon yg
+     dipakai di seluruh aplikasi (Dashboard, Outbound Packing, AWB, BOM, HPP, dst), dibuka dari
+     ikon (?) di header. Dibuat sbg 1 modal ter-pusat & terkelompok per kategori (bukan tooltip
+     di tiap kemunculan) supaya gampang dicari & tidak bikin tiap layar penuh ikon ⓘ - lihat
+     GLOSSARY_TERMS & openGlossaryModal(). -->
 <div id="modal-glossary" class="fixed inset-0 z-[230] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
   <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl max-h-[85vh] flex flex-col border border-slate-100">
     <div class="p-5 pb-3 border-b border-slate-100">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="font-display font-bold text-lg text-slate-900 flex items-center gap-2"><i data-lucide="circle-help" class="h-5 w-5 text-red-600"></i>Bantuan &amp; Istilah</h3>
+        <h3 class="font-display font-bold text-lg text-slate-900 flex items-center gap-2"><i data-lucide="circle-help" class="h-5 w-5 text-red-600"></i>Pusat Bantuan</h3>
         <button type="button" onclick="closeModal('modal-glossary')" class="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition"><i data-lucide="x" class="h-4.5 w-4.5"></i></button>
       </div>
-      <input type="text" id="glossary-search" oninput="renderGlossaryList()" placeholder="Cari istilah, mis. AWB, BOM, HPP..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600">
+      <input type="text" id="glossary-search" oninput="renderGlossaryList()" placeholder="Cari menu, tombol, atau istilah, mis. Outbound, Refresh, BOM..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600">
     </div>
     <div id="glossary-list" class="p-5 pt-3 overflow-y-auto space-y-3"></div>
   </div>
@@ -1139,10 +1185,15 @@
     <p id="receive-po-info" class="text-xs text-slate-500 mb-4"></p>
     <form onsubmit="submitReceivePO(event)" class="space-y-3">
       <input type="hidden" id="rp-ponumber">
-      <div><label class="block text-xs font-semibold text-slate-600 mb-1">Qty Diterima Sekarang</label>
-        <input type="number" id="rp-qty" min="1" step="any" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-600"></div>
+      <div><label class="block text-xs font-semibold text-slate-600 mb-1">Qty Diterima Sekarang (sesuai fisik)</label>
+        <input type="number" id="rp-qty" min="1" step="any" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-600">
+        <p class="text-[11px] text-slate-400 mt-1">Boleh diisi beda dari sisa perkiraan kalau jumlah fisik yang datang lebih atau kurang.</p></div>
       <div><label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Terima</label>
         <input type="date" id="rp-date" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-600"></div>
+      <label class="flex items-start gap-2 text-xs text-slate-600 cursor-pointer pt-1">
+        <input type="checkbox" id="rp-close-short" class="mt-0.5 flex-shrink-0">
+        <span>Tandai PO ini <b>selesai sekarang</b> meski qty yang diterima kurang dari yang disetujui (sisanya dipastikan tidak akan datang lagi).</span>
+      </label>
       <div class="flex justify-end gap-2 pt-2">
         <button type="button" onclick="closeModal('modal-receive-po')" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition">Batal</button>
         <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition shadow-sm">Konfirmasi Terima</button>
@@ -1453,17 +1504,42 @@ function openModal(id){
   document.getElementById(id).classList.add('flex');
 }
 
+// ESCAPE menutup modal yang sedang terbuka (poin 8) - dicek berurutan, berhenti di modal PERTAMA
+// yang ketemu terbuka (1x Escape = 1 aksi tutup, bukan menutup semua modal sekaligus kalau
+// entah bagaimana ada lebih dari 1 yang terbuka). Modal konfirmasi sengaja di-resolve(false) -
+// Escape harus berarti batal, tidak pernah diam-diam mengonfirmasi aksi destruktif.
+const NAMED_MODAL_IDS = ['modal-glossary','modal-manual-trx','modal-create-po','modal-receive-po','modal-case-detail'];
+document.addEventListener('keydown', function(e){
+  if (e.key !== 'Escape') return;
+  const generic = document.getElementById('modal-generic');
+  if (generic && !generic.classList.contains('hidden')) { closeFormModal(); return; }
+  const confirmEl = document.getElementById('modal-confirm');
+  if (confirmEl && !confirmEl.classList.contains('hidden')) { resolveConfirm(false); return; }
+  for (const id of NAMED_MODAL_IDS) {
+    const el = document.getElementById(id);
+    if (el && !el.classList.contains('hidden')) { closeModal(id); return; }
+  }
+  if (isSidebarOpen()) closeSidebar();
+});
+
+// Cetak (poin 9) - window.print() otomatis cuma mencetak tab yang SEDANG terlihat: tab lain
+// sudah berclass "hidden" (display:none) dari switchTab(), dan browser tidak pernah mencetak
+// elemen display:none. CSS @media print di <head> yang menyembunyikan header/sidebar/tombol/
+// modal supaya hasil cetak cuma berisi konten data tab aktif.
+function printCurrentTab(){ window.print(); }
+
 async function apiPost(payload, isRetry){
   try {
     const res = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({}, payload, { token: authToken })) });
     const data = await res.json();
     if (data.authError) { showToast('Sesi berakhir, silakan login kembali.', 'error'); forceLogout(); return data; }
-    // doPost mengunci SEMUA aksi simpan jadi satu antrean global (lihat LockService di Code.gs) -
-    // kalau lagi banyak yang menyimpan bersamaan, request ini bisa gagal krn antrean penuh
-    // (data.error mengandung "lock"). Ini murni soal waktu, BUKAN kesalahan data - jadi coba
-    // ulang otomatis 1x drpd langsung menyerah ke user. Kalau retry-nya JUGA gagal, baru
-    // diserahkan apa adanya spt biasa ke pemanggil.
-    if (!data.success && !isRetry && data.error && /lock/i.test(data.error)) {
+    // doPost mengunci aksi simpan PER GUDANG (lihat acquireActionLocks_ di Code.gs) - 2 gudang
+    // berbeda kini bisa menyimpan BERSAMAAN tanpa saling tunggu; yang tetap antre cuma aksi di
+    // GUDANG YANG SAMA (memang harus) atau aksi non-gudang (mis. manajemen user/role). Kontensi
+    // jauh lebih jarang drpd sebelumnya, tapi tetap bisa terjadi - retry otomatis 1x ini jaga2
+    // utk kasus itu (data.error mengandung "lock"/"sibuk"). Ini murni soal waktu, BUKAN kesalahan
+    // data. Kalau retry-nya JUGA gagal, baru diserahkan apa adanya spt biasa ke pemanggil.
+    if (!data.success && !isRetry && data.error && /lock|sibuk/i.test(data.error)) {
       showToast('Sistem sedang sibuk, mencoba lagi...', 'info');
       await new Promise(r => setTimeout(r, 1500));
       return apiPost(payload, true);
@@ -1745,12 +1821,14 @@ async function handleLoginSubmit(e){
     document.getElementById('login-section').classList.add('hidden');
     document.getElementById('app-section').classList.remove('hidden');
     document.getElementById('app-section').classList.add('flex');
+    document.getElementById('app-loading-skeleton').classList.remove('hidden');
     document.getElementById('user-name').textContent = currentUser.namaUser;
     document.getElementById('user-role').textContent = currentUser.role + (currentUser.resolvedWarehouseId ? ' · ' + currentUser.resolvedWarehouseId : ' · Semua Gudang');
     document.getElementById('out-packer-name').value = currentUser.namaUser;
     applyRoleUI();
     switchTab('dashboard');
     await fetchAllData();
+    document.getElementById('app-loading-skeleton').classList.add('hidden');
   } else {
     errBox.textContent = result.message || 'Username atau password salah.';
     errBox.classList.remove('hidden');
@@ -1912,7 +1990,29 @@ function switchTab(tab){
   if(tabEl) { tabEl.classList.remove('hidden'); tabEl.classList.add('tab-enter'); }
   const navEl = document.querySelector(`[data-nav="${tab}"]`);
   if (navEl) { navEl.classList.add('bg-red-50','text-red-700'); navEl.classList.remove('text-slate-600'); }
+  closeSidebar(); // no-op kalau sedang di layar lg+ (statis) atau memang sudah tertutup - aman dipanggil selalu
 }
+
+/* ============================================================
+   SIDEBAR RESPONSIVE (poin 3) - di bawah breakpoint lg, aside jadi drawer off-canvas
+   (fixed + translate-x), di-toggle tombol hamburger header. Di lg ke atas aside statis spt
+   semula (class lg:static lg:translate-x-0 di HTML) - fungsi2 ini jadi no-op di layar besar
+   krn -translate-x-full/translate-x-0 sama2 tertutup oleh lg:translate-x-0.
+   ============================================================ */
+function isSidebarOpen(){
+  return document.getElementById('app-sidebar').classList.contains('translate-x-0');
+}
+function openSidebar(){
+  document.getElementById('app-sidebar').classList.remove('-translate-x-full');
+  document.getElementById('app-sidebar').classList.add('translate-x-0');
+  document.getElementById('sidebar-backdrop').classList.remove('hidden');
+}
+function closeSidebar(){
+  document.getElementById('app-sidebar').classList.add('-translate-x-full');
+  document.getElementById('app-sidebar').classList.remove('translate-x-0');
+  document.getElementById('sidebar-backdrop').classList.add('hidden');
+}
+function toggleSidebar(){ isSidebarOpen() ? closeSidebar() : openSidebar(); }
 
 /* ============================================================
    DASHBOARD & CHART.JS
@@ -2344,18 +2444,39 @@ function renderPOTab(){
   const items = rows.slice(0, ui.poPage * PAGE_SIZE);
   document.getElementById('tbl-po').innerHTML = items.length ? items.map(po => {
     const status = po['PO Status'] || 'OPEN';
-    const badge = { OPEN:'bg-slate-100 text-slate-600', APPROVED:'bg-slate-800 text-white', PARTIAL:'bg-amber-100 text-amber-700', COMPLETED:'bg-emerald-100 text-emerald-700' }[status] || 'bg-slate-100 text-slate-600';
+    const badge = { OPEN:'bg-slate-100 text-slate-600', APPROVED:'bg-slate-800 text-white', PARTIAL:'bg-amber-100 text-amber-700', COMPLETED:'bg-emerald-100 text-emerald-700', CANCELLED:'bg-red-100 text-red-600' }[status] || 'bg-slate-100 text-slate-600';
+    const qtyOrdered = Number(po['Qty Ordered']||0);
+    const qtyApprovedRaw = po['Qty Approved'];
+    const qtyApproved = (qtyApprovedRaw!==undefined && qtyApprovedRaw!=='') ? Number(qtyApprovedRaw) : null;
+    const qtyReceived = Number(po['Qty Received']||0);
+
     let action = '<span class="text-xs text-slate-400">-</span>';
-    if (status==='OPEN' && isAdmin()) action = `<button onclick="approvePO('${esc(po['PO Number'])}')" class="px-2.5 py-1 rounded bg-slate-800 text-white text-xs font-semibold hover:bg-slate-900 transition shadow-sm">Approve</button>`;
-    else if ((status==='APPROVED'||status==='PARTIAL') && can('po','u')) action = `<button onclick="openReceivePOModal('${esc(po['PO Number'])}','${Number(po['Qty Ordered'])-Number(po['Qty Received']||0)}')" class="px-2.5 py-1 rounded bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition shadow-sm">Terima Barang</button>`;
-    else if (status==='COMPLETED') action = '<span class="text-xs text-emerald-600 font-semibold">✓ Selesai</span>';
-    else if (status==='OPEN') action = '<span class="text-xs text-slate-400 italic">Menunggu approval</span>';
+    if (status==='OPEN') {
+      action = isAdmin()
+        ? `<div class="flex items-center justify-center gap-1.5">
+             <button onclick="openApprovePOForm('${esc(po['PO Number'])}',${qtyOrdered})" class="px-2.5 py-1 rounded bg-slate-800 text-white text-xs font-semibold hover:bg-slate-900 transition shadow-sm">Approve</button>
+             <button onclick="cancelPO('${esc(po['PO Number'])}')" class="px-2 py-1 rounded border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 transition">Batal</button>
+           </div>`
+        : '<span class="text-xs text-slate-400 italic">Menunggu approval</span>';
+    } else if (status==='APPROVED' || status==='PARTIAL') {
+      const cap = qtyApproved!==null ? qtyApproved : qtyOrdered;
+      const sisa = cap - qtyReceived;
+      const btns = [];
+      if (can('po','u')) btns.push(`<button onclick="openReceivePOModal('${esc(po['PO Number'])}',${sisa})" class="px-2.5 py-1 rounded bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition shadow-sm">Terima Barang</button>`);
+      if (status==='APPROVED' && isAdmin()) btns.push(`<button onclick="cancelPO('${esc(po['PO Number'])}')" class="px-2 py-1 rounded border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 transition">Batal</button>`);
+      if (btns.length) action = `<div class="flex items-center justify-center gap-1.5">${btns.join('')}</div>`;
+    } else if (status==='COMPLETED') {
+      action = '<span class="text-xs text-emerald-600 font-semibold">✓ Selesai</span>';
+    } else if (status==='CANCELLED') {
+      action = '<span class="text-xs text-slate-400 italic">Dibatalkan</span>';
+    }
+
     return `<tr class="hover:bg-slate-50 transition">
       <td class="px-4 py-2.5 font-mono text-xs font-bold text-slate-700">${esc(po['PO Number'])}</td>
       <td class="px-4 py-2.5 text-slate-600">${esc(po['Destination WH ID'])}</td>
       <td class="px-4 py-2.5 text-slate-600">${esc(po['Supplier Name'])}</td>
       <td class="px-4 py-2.5"><p class="text-slate-700">${esc(po['Material ID'])}</p></td>
-      <td class="px-4 py-2.5 text-right text-slate-600">${Number(po['Qty Ordered']||0).toLocaleString('id-ID')} / ${Number(po['Qty Received']||0).toLocaleString('id-ID')}</td>
+      <td class="px-4 py-2.5 text-right text-slate-600 text-xs">${qtyOrdered.toLocaleString('id-ID')} / ${qtyApproved!==null ? qtyApproved.toLocaleString('id-ID') : '-'} / ${qtyReceived.toLocaleString('id-ID')}</td>
       <td class="px-4 py-2.5 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badge}">${esc(status)}</span></td>
       <td class="px-4 py-2.5 text-center">${action}</td>
     </tr>`;
@@ -2363,15 +2484,32 @@ function renderPOTab(){
   renderScrollStatus('pg-po', 'po-scroll-sentinel', items.length, rows.length, 'PO');
   observeSentinel('po-scroll-sentinel', () => { ui.poPage++; renderPOTab(); });
 }
-async function approvePO(poNumber){
-  if (!(await confirmDialog('Approve PO?', `Setujui pengajuan ${poNumber}?`))) return;
-  const result = await apiPost({ action:'APPROVE_PO', poNumber });
+// Approve PO (poin: qty yg di-approve bisa diedit naik/turun dari qty yg diajukan) - pakai
+// generic form modal engine (bukan confirmDialog polos spt sebelumnya) supaya approver bisa
+// koreksi angkanya langsung di form yang sama, bukan approve buta lalu edit belakangan.
+function openApprovePOForm(poNumber, qtyOrdered){
+  openFormModal({
+    title: 'Approve PO ' + poNumber,
+    fields: [
+      { name:'qtyOrdered', label:'Qty Diajukan', value: qtyOrdered, type:'number', readonly:true },
+      { name:'qtyApproved', label:'Qty Di-approve', value: qtyOrdered, type:'number', step:'any', hint:'Boleh dikurangi atau ditambah dari qty yang diajukan, sesuai keputusan approval.' }
+    ],
+    onSubmit: async (data) => {
+      const result = await apiPost({ action:'APPROVE_PO', poNumber: poNumber, qtyApproved: Number(data.qtyApproved) });
+      if (result.success) { showToast(result.message,'success'); closeFormModal(); await fetchPartialData(['purchaseOrders']); } else showToast(result.message,'error');
+    }
+  });
+}
+async function cancelPO(poNumber){
+  if (!(await confirmDialog('Batalkan PO?', `PO ${poNumber} akan dibatalkan dan tidak bisa diproses lebih lanjut. Aksi ini tidak bisa dibatalkan balik.`))) return;
+  const result = await apiPost({ action:'CANCEL_PO', poNumber });
   if (result.success) { showToast(result.message,'success'); await fetchPartialData(['purchaseOrders']); } else showToast(result.message,'error');
 }
 function openReceivePOModal(poNumber, sisa){
   document.getElementById('rp-ponumber').value = poNumber;
-  document.getElementById('receive-po-info').textContent = `${poNumber} · sisa yang belum diterima: ${sisa}`;
-  document.getElementById('rp-qty').value = sisa; document.getElementById('rp-qty').max = sisa;
+  document.getElementById('receive-po-info').textContent = `${poNumber} · sisa perkiraan: ${sisa} (boleh isi beda kalau fisik yang datang lebih atau kurang)`;
+  document.getElementById('rp-qty').value = sisa > 0 ? sisa : '';
+  document.getElementById('rp-close-short').checked = false;
   document.getElementById('rp-date').value = getWIBDateString();
   openModal('modal-receive-po');
 }
@@ -2379,8 +2517,12 @@ async function submitReceivePO(e){
   e.preventDefault();
   const btn = e.submitter;
   toggleSubmitLoading(btn, true);
-  
-  const result = await apiPost({ action:'RECEIVE_PO', poNumber: document.getElementById('rp-ponumber').value, qtyReceived: Number(document.getElementById('rp-qty').value), actualDate: document.getElementById('rp-date').value, operator: currentUser.namaUser });
+
+  const result = await apiPost({
+    action:'RECEIVE_PO', poNumber: document.getElementById('rp-ponumber').value,
+    qtyReceived: Number(document.getElementById('rp-qty').value), actualDate: document.getElementById('rp-date').value,
+    closeAsComplete: document.getElementById('rp-close-short').checked, operator: currentUser.namaUser
+  });
   toggleSubmitLoading(btn, false);
   
   if (result.success) { showToast(result.message,'success'); closeModal('modal-receive-po'); await fetchPartialData(['purchaseOrders','inventory','transactionLogs']); } else showToast(result.message,'error');
@@ -2591,7 +2733,13 @@ function renderAssetsTab(){
     (!status || a['Status']===status) &&
     (!q || String(a['Nama Aset']).toLowerCase().includes(q) || String(a['Asset ID']).toLowerCase().includes(q))
   );
-  document.getElementById('tbl-assets').innerHTML = rows.length ? rows.map(a => {
+  // FIX: sebelumnya me-render SEMUA baris hasil filter sekaligus tanpa batas (ui.assetsPage sudah
+  // di-reset di filter onchange, tapi tidak pernah benar2 dipakai di sini) - beda sendiri dari 6
+  // tabel besar lain yang sudah konsisten pakai PAGE_SIZE + observeSentinel. Disamakan di sini.
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  ui.assetsPage = Math.min(Math.max(1, ui.assetsPage), totalPages);
+  const items = rows.slice(0, ui.assetsPage * PAGE_SIZE);
+  document.getElementById('tbl-assets').innerHTML = items.length ? items.map(a => {
     const whName = (db.warehouses.find(w=>w['Warehouse ID']===a['Warehouse ID'])||{})['Warehouse Name'] || a['Warehouse ID'];
     const statusColor = a['Status']==='Aktif' ? 'bg-emerald-100 text-emerald-700' : a['Status']==='Perbaikan' ? 'bg-amber-100 text-amber-700' : a['Status']==='Dihapuskan' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600';
     return `
@@ -2609,6 +2757,8 @@ function renderAssetsTab(){
       </td>
     </tr>`;
   }).join('') : `<tr><td colspan="8" class="px-4 py-8 text-center text-slate-400 text-sm">Tidak ada aset yang cocok.</td></tr>`;
+  renderScrollStatus('pg-assets', 'assets-scroll-sentinel', items.length, rows.length, 'aset');
+  observeSentinel('assets-scroll-sentinel', () => { ui.assetsPage++; renderAssetsTab(); });
   lucide.createIcons();
 }
 
@@ -4232,24 +4382,52 @@ async function submitFormModal(e){
 // tetap dapat tooltip tersendiri di form terkait (lihat renderInfoTip di bawah).
 // ============================================================
 const GLOSSARY_TERMS = [
-  { term:'AWB', def:'Nomor resi/pengiriman yang menempel ke 1 paket. Dipakai buat lacak proses packing satu paket lewat Pack Log, termasuk cari siapa Packer-nya saat investigasi Klaim Gudang.' },
-  { term:'UOM (Satuan Stok)', def:'Satuan utama sebuah material dihitung & disimpan di stok gudang, mis. "roll", "pcs", "box". Diisi di Master Material.' },
-  { term:'Konversi Satuan', def:'Dipakai kalau resep BOM sebuah material ditulis dalam satuan yang lebih kecil dari Satuan Stok-nya, mis. material disimpan per "roll" tapi dipakai per "gram" di resep. Diatur di form Master Material lewat "Pakai Satuan Konversi?".' },
-  { term:'BOM (Bill of Materials)', def:'Daftar/resep material apa saja & berapa banyak yang dipakai untuk 1 kategori paket. Diatur di tab Kategori & BOM.' },
-  { term:'Usage Qty', def:'Jumlah pemakaian 1 material dalam 1 resep BOM, ditulis dalam Satuan Konversi material tersebut (bukan Satuan Stok/UOM-nya).' },
-  { term:'HPP', def:'Harga Pokok Penjualan - estimasi total biaya (material + handling fee + overhead) untuk memproses 1 paket dari kategori tertentu.' },
-  { term:'Handling Fee', def:'Biaya penanganan per paket di luar biaya material (mis. ongkos kerja), diatur per kategori paket per gudang.' },
-  { term:'PO (Purchase Order)', def:'Pesanan pembelian material ke supplier dari luar gudang.' },
-  { term:'RO (Request Order)', def:'Permintaan pengeluaran/perpindahan stok material secara internal (bukan pembelian ke supplier).' },
-  { term:'ROP (Reorder Point)', def:'Batas jumlah stok - kalau stok material sudah di bawah angka ini, saatnya membuat PO/RO baru sebelum kehabisan.' },
-  { term:'Safety Stock', def:'Stok minimum pengaman yang sebaiknya selalu tersedia untuk jaga-jaga permintaan mendadak.' },
-  { term:'Qty Paket vs Qty Pcs', def:'Qty Paket = jumlah paket/kiriman yang diproses. Qty Pcs = jumlah satuan barang di dalam paket-paket itu (1 paket bisa isi banyak pcs).' },
-  { term:'Admin Print / Picker / Packer / Checker', def:'4 tahap proses sebuah paket di gudang: Admin Print (cetak label/dokumen) -> Picker (ambil barang) -> Packer (kemas, dicatat per-AWB di Pack Log) -> Checker (cek akhir). 3 peran pertama & terakhir dicatat sbg rekap harian per orang, bukan per-AWB.' },
-  { term:'Report Order Klien', def:'Catatan jumlah Qty Paket order per klien per hari, terpisah dari proses packing - dipakai untuk menyandingkan/mem-balance dengan jumlah paket yang benar-benar diproses.' },
-  { term:'Case Operasional', def:'Tiket pencatatan masalah operasional gudang (kehilangan barang, kerusakan, keterlambatan, dst) beserta status penyelesaiannya.' },
-  { term:'Klaim Gudang', def:'Kategori Case khusus untuk kerugian yang perlu investigasi siapa bertanggung jawab & berapa nominal gantinya. Sistem otomatis mencarikan Packer pasti + kandidat Admin Print/Picker/Checker dari data yang sudah tercatat.' },
-  { term:'PIC', def:'Person In Charge - orang yang bertanggung jawab menindaklanjuti sesuatu (mis. sebuah Case).' },
-  { term:'Stock Opname', def:'Penghitungan ulang stok fisik untuk dicocokkan dengan catatan sistem.' }
+  // ---------- MENU & NAVIGASI (sidebar) - teks dasarnya diselaraskan dgn subjudul yg sudah
+  // tampil di tiap tab, sedikit diperluas krn di sini memang tempatnya orang cari penjelasan
+  // saat bingung, bukan sekadar label singkat. ----------
+  { category:'Menu & Navigasi', term:'Dashboard', def:'Halaman pertama setelah login - ringkasan cepat kondisi gudang: total stok, material yang sudah di bawah Safety Stock/ROP, dan aktivitas terbaru. Cara tercepat cek "ada yang perlu diperhatikan atau tidak" tanpa buka menu lain satu-satu.' },
+  { category:'Menu & Navigasi', term:'Inventory', def:'Daftar stok AKTUAL tiap material di tiap gudang SAAT INI (angka sisa sekarang) - beda dengan Log Transaksi yang mencatat histori pergerakannya dari waktu ke waktu.' },
+  { category:'Menu & Navigasi', term:'Log Transaksi', def:'Riwayat SETIAP pergerakan stok: IN (masuk), OUT (keluar), TRANSFER (pindah antar gudang), ADJUSTMENT (koreksi manual). Kalau Inventory menjawab "sisa berapa sekarang", menu ini menjawab "kenapa bisa jadi segitu".' },
+  { category:'Menu & Navigasi', term:'Outbound Packing', def:'Tempat input AWB saat sebuah paket selesai dikemas. Begitu disimpan, stok material yang dipakai otomatis terpotong sesuai resep BOM kategori paket itu - tidak perlu catat pemakaian material manual satu-satu.' },
+  { category:'Menu & Navigasi', term:'Purchase Order', def:'Alur pembelian material dari supplier: ajukan PO -> di-approve (qty boleh dikurangi/ditambah approver, atau dibatalkan) -> dicatat saat barang diterima. Stok baru bertambah setelah tahap "diterima" - bisa bertahap/partial, dan qty yang diinput boleh beda dari yang disetujui kalau fisik yang datang lebih atau kurang.' },
+  { category:'Menu & Navigasi', term:'Case Operasional', def:'Tiket pelaporan masalah operasional harian (barang hilang/rusak/telat, dst) per gudang beserta status penyelesaiannya - termasuk sub-kategori Klaim Gudang yang otomatis mencarikan siapa Packer-nya untuk investigasi.' },
+  { category:'Menu & Navigasi', term:'Produktivitas Tim', def:'Rekap kinerja harian tiap orang di 4 tahap proses paket: Admin Print, Picker, Packer, Checker - berapa banyak Qty Paket yang mereka kerjakan.' },
+  { category:'Menu & Navigasi', term:'Gudang (Master Gudang)', def:'Daftar lokasi/cabang gudang yang beroperasi. Menentukan pilihan gudang yang muncul di semua form lain di seluruh aplikasi.' },
+  { category:'Menu & Navigasi', term:'Material (Master Material)', def:'Katalog SEMUA bahan baku per gudang: satuan stok (UOM), titik pemesanan ulang (ROP), Safety Stock, dan aturan Konversi Satuan kalau resep BOM-nya ditulis dalam satuan berbeda dari satuan stoknya.' },
+  { category:'Menu & Navigasi', term:'Supplier (Master Supplier)', def:'Daftar vendor/pemasok tempat material dibeli - dipilih saat membuat Purchase Order baru.' },
+  { category:'Menu & Navigasi', term:'Kategori & BOM', def:'Atur resep tiap kategori kemasan: material apa saja & berapa banyak yang terpakai untuk 1 paket kategori itu. Ini dasar perhitungan otomatis di Outbound Packing (potong stok) dan Kalkulator HPP (estimasi biaya).' },
+  { category:'Menu & Navigasi', term:'Kalkulator HPP', def:'Menghitung estimasi HPP (biaya material + handling fee + overhead) per kategori kemasan, dipakai untuk menentukan handling fee yang pas untuk tiap gudang.' },
+  { category:'Menu & Navigasi', term:'Aset Gudang', def:'Inventaris peralatan/perlengkapan kerja gudang (mis. mesin, rak, alat bantu) yang dipakai berulang - beda dari Material yang isinya bahan baku habis pakai per transaksi.' },
+  { category:'Menu & Navigasi', term:'User & Akses', def:'Kelola akun pengguna sistem: siapa saja yang punya login, role apa yang disandang, dan dibatasi beroperasi di gudang mana saja (kosongkan/"Semua Gudang" berarti tidak dibatasi).' },
+  { category:'Menu & Navigasi', term:'Role & Permission', def:'Atur detail izin tiap role - boleh Read/Create/Update/Delete di menu mana saja. Termasuk tempat membuat role baru sendiri di luar 7 role bawaan sistem, lengkap dengan izin custom-nya.' },
+  // ---------- TOMBOL & IKON HEADER ----------
+  { category:'Tombol & Ikon Header', term:'Status "Terhubung" / "Terputus"', def:'Titik hijau + "Terhubung" = koneksi ke server (Google Apps Script) normal. Kalau berubah merah "Terputus"/"Gagal terhubung", coba tombol Refresh - kalau tetap gagal, kemungkinan jaringan Anda bermasalah atau server sedang gangguan.' },
+  { category:'Tombol & Ikon Header', term:'Jam WIB', def:'Jam real-time di pojok kiri header, mengikuti waktu perangkat Anda - membantu mencatat waktu kejadian tanpa perlu cek HP/jam terpisah.' },
+  { category:'Tombol & Ikon Header', term:'Ikon Lonceng (Notifikasi)', def:'Menyala dengan angka merah kalau ada material yang stoknya sudah di bawah Safety Stock/ROP - angkanya menunjukkan berapa material yang perlu diperhatikan. Klik untuk langsung ke Dashboard.' },
+  { category:'Tombol & Ikon Header', term:'Ikon Tanda Tanya (Pusat Bantuan)', def:'Tombol yang barusan Anda klik untuk membuka jendela ini - kumpulan penjelasan istilah, menu, dan tombol yang sering bikin bingung. Bisa dicari lewat kolom pencarian di atas.' },
+  { category:'Tombol & Ikon Header', term:'Ikon Printer (Cetak)', def:'Mencetak tampilan tab yang SEDANG aktif/terbuka apa adanya - tab lain tidak ikut tercetak. Pindah dulu ke tab yang ingin dicetak, baru klik tombol ini.' },
+  { category:'Tombol & Ikon Header', term:'Ikon Refresh', def:'Menarik ulang semua data terbaru dari Google Sheets. Berguna kalau ada perubahan dari pengguna/gudang lain yang belum terlihat di layar Anda.' },
+  { category:'Tombol & Ikon Header', term:'Nama & Role Anda', def:'Menampilkan siapa yang sedang login dan role/gudang yang di-assign ke akun itu - sekaligus penentu menu apa saja yang muncul di sidebar Anda (lihat Role & Permission).' },
+  { category:'Tombol & Ikon Header', term:'Ikon Keluar (Logout)', def:'Mengakhiri sesi login saat ini. Sesi juga otomatis berakhir sendiri 6 jam setelah login walau tidak di-logout manual, jadi tidak perlu was-was lupa logout di komputer bersama.' },
+  // ---------- ISTILAH BISNIS & OPERASIONAL ----------
+  { category:'Istilah Bisnis & Operasional', term:'AWB', def:'Nomor resi/pengiriman yang menempel ke 1 paket. Dipakai buat lacak proses packing satu paket lewat Pack Log, termasuk cari siapa Packer-nya saat investigasi Klaim Gudang.' },
+  { category:'Istilah Bisnis & Operasional', term:'UOM (Satuan Stok)', def:'Satuan utama sebuah material dihitung & disimpan di stok gudang, mis. "roll", "pcs", "box". Diisi di Master Material.' },
+  { category:'Istilah Bisnis & Operasional', term:'Konversi Satuan', def:'Dipakai kalau resep BOM sebuah material ditulis dalam satuan yang lebih kecil dari Satuan Stok-nya, mis. material disimpan per "roll" tapi dipakai per "gram" di resep. Diatur di form Master Material lewat "Pakai Satuan Konversi?".' },
+  { category:'Istilah Bisnis & Operasional', term:'BOM (Bill of Materials)', def:'Daftar/resep material apa saja & berapa banyak yang dipakai untuk 1 kategori paket. Diatur di tab Kategori & BOM.' },
+  { category:'Istilah Bisnis & Operasional', term:'Usage Qty', def:'Jumlah pemakaian 1 material dalam 1 resep BOM, ditulis dalam Satuan Konversi material tersebut (bukan Satuan Stok/UOM-nya).' },
+  { category:'Istilah Bisnis & Operasional', term:'HPP', def:'Harga Pokok Penjualan - estimasi total biaya (material + handling fee + overhead) untuk memproses 1 paket dari kategori tertentu.' },
+  { category:'Istilah Bisnis & Operasional', term:'Handling Fee', def:'Biaya penanganan per paket di luar biaya material (mis. ongkos kerja), diatur per kategori paket per gudang.' },
+  { category:'Istilah Bisnis & Operasional', term:'PO (Purchase Order)', def:'Pesanan pembelian material ke supplier dari luar gudang.' },
+  { category:'Istilah Bisnis & Operasional', term:'RO (Request Order)', def:'Permintaan pengeluaran/perpindahan stok material secara internal (bukan pembelian ke supplier).' },
+  { category:'Istilah Bisnis & Operasional', term:'ROP (Reorder Point)', def:'Batas jumlah stok - kalau stok material sudah di bawah angka ini, saatnya membuat PO/RO baru sebelum kehabisan.' },
+  { category:'Istilah Bisnis & Operasional', term:'Safety Stock', def:'Stok minimum pengaman yang sebaiknya selalu tersedia untuk jaga-jaga permintaan mendadak.' },
+  { category:'Istilah Bisnis & Operasional', term:'Qty Paket vs Qty Pcs', def:'Qty Paket = jumlah paket/kiriman yang diproses. Qty Pcs = jumlah satuan barang di dalam paket-paket itu (1 paket bisa isi banyak pcs).' },
+  { category:'Istilah Bisnis & Operasional', term:'Admin Print / Picker / Packer / Checker', def:'4 tahap proses sebuah paket di gudang: Admin Print (cetak label/dokumen) -> Picker (ambil barang) -> Packer (kemas, dicatat per-AWB di Pack Log) -> Checker (cek akhir). 3 peran pertama & terakhir dicatat sbg rekap harian per orang, bukan per-AWB.' },
+  { category:'Istilah Bisnis & Operasional', term:'Report Order Klien', def:'Catatan jumlah Qty Paket order per klien per hari, terpisah dari proses packing - dipakai untuk menyandingkan/mem-balance dengan jumlah paket yang benar-benar diproses.' },
+  { category:'Istilah Bisnis & Operasional', term:'Case Operasional', def:'Tiket pencatatan masalah operasional gudang (kehilangan barang, kerusakan, keterlambatan, dst) beserta status penyelesaiannya.' },
+  { category:'Istilah Bisnis & Operasional', term:'Klaim Gudang', def:'Kategori Case khusus untuk kerugian yang perlu investigasi siapa bertanggung jawab & berapa nominal gantinya. Sistem otomatis mencarikan Packer pasti + kandidat Admin Print/Picker/Checker dari data yang sudah tercatat.' },
+  { category:'Istilah Bisnis & Operasional', term:'PIC', def:'Person In Charge - orang yang bertanggung jawab menindaklanjuti sesuatu (mis. sebuah Case).' },
+  { category:'Istilah Bisnis & Operasional', term:'Stock Opname', def:'Penghitungan ulang stok fisik untuk dicocokkan dengan catatan sistem.' }
 ];
 function openGlossaryModal(){
   document.getElementById('glossary-search').value = '';
@@ -4259,12 +4437,29 @@ function openGlossaryModal(){
 }
 function renderGlossaryList(){
   const q = (document.getElementById('glossary-search').value || '').toLowerCase().trim();
-  const filtered = GLOSSARY_TERMS.filter(g => !q || g.term.toLowerCase().includes(q) || g.def.toLowerCase().includes(q));
-  document.getElementById('glossary-list').innerHTML = filtered.length ? filtered.map(g => `
-    <div class="border-b border-slate-100 pb-2.5 last:border-0">
-      <p class="text-sm font-bold text-slate-800">${esc(g.term)}</p>
-      <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">${esc(g.def)}</p>
-    </div>`).join('') : '<p class="text-sm text-slate-400 text-center py-6">Istilah tidak ditemukan.</p>';
+  const filtered = GLOSSARY_TERMS.filter(g => !q || g.term.toLowerCase().includes(q) || g.def.toLowerCase().includes(q) || g.category.toLowerCase().includes(q));
+  if (!filtered.length) {
+    document.getElementById('glossary-list').innerHTML = '<p class="text-sm text-slate-400 text-center py-6">Istilah tidak ditemukan.</p>';
+    return;
+  }
+  // Dikelompokkan per kategori - urutan kategori mengikuti urutan kemunculan pertama di
+  // GLOSSARY_TERMS (Menu & Navigasi -> Tombol & Ikon Header -> Istilah Bisnis & Operasional),
+  // supaya yang paling sering dicari (lagi bingung liat menu/tombol APA) muncul duluan drpd
+  // istilah bisnis yg sifatnya referensi.
+  const order = [], grouped = {};
+  filtered.forEach(g => {
+    if (!grouped[g.category]) { grouped[g.category] = []; order.push(g.category); }
+    grouped[g.category].push(g);
+  });
+  document.getElementById('glossary-list').innerHTML = order.map(cat => `
+    <div>
+      <p class="px-0.5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">${esc(cat)}</p>
+      ${grouped[cat].map(g => `
+        <div class="border-b border-slate-100 pb-2.5 mb-2.5 last:border-0 last:mb-0">
+          <p class="text-sm font-bold text-slate-800">${esc(g.term)}</p>
+          <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">${esc(g.def)}</p>
+        </div>`).join('')}
+    </div>`).join('');
 }
 
 // ============================================================
