@@ -32,7 +32,7 @@
     body { overflow: visible !important; height: auto !important; }
     header, aside, #sidebar-backdrop, #toast-container, .no-print, button,
     #modal-confirm, #modal-generic, #modal-glossary, #modal-manual-trx,
-    #modal-create-po, #modal-receive-po, #modal-case-detail { display: none !important; }
+    #modal-create-po, #modal-receive-po, #modal-approve-po, #modal-case-detail { display: none !important; }
     #app-section { display: block !important; height: auto !important; }
     #app-section > div { display: block !important; overflow: visible !important; height: auto !important; }
     #main-content { overflow: visible !important; height: auto !important; padding: 0 !important; }
@@ -115,7 +115,7 @@
       <button id="btn-sidebar-collapse" onclick="toggleDesktopSidebar()" class="btn-sidebar-collapse-desktop p-2 rounded-lg text-red-100 hover:bg-red-800 transition" title="Sembunyikan/tampilkan menu">
         <i data-lucide="panel-left-close" class="h-4.5 w-4.5"></i>
       </button>
-      <button id="btn-refresh" onclick="fetchAllData()" class="p-2 rounded-lg text-red-100 hover:bg-red-800 transition" title="Refresh data">
+      <button id="btn-refresh" onclick="refreshCurrentView()" class="p-2 rounded-lg text-red-100 hover:bg-red-800 transition" title="Refresh data">
         <i data-lucide="refresh-cw" class="h-4.5 w-4.5"></i>
       </button>
       <div class="h-8 w-px bg-red-800"></div>
@@ -133,7 +133,6 @@
       <p class="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Operasional</p>
       <nav class="space-y-0.5">
         <button onclick="switchTab('dashboard')" data-nav="dashboard" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="layout-dashboard" class="h-4 w-4"></i>Dashboard</button>
-        <button onclick="switchTab('warehouse_compare')" data-nav="warehouse_compare" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="git-compare" class="h-4 w-4"></i>Performance WH</button>
         <button onclick="switchTab('inventory')" data-nav="inventory" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="boxes" class="h-4 w-4"></i>Inventory</button>
         <button onclick="switchTab('transaction')" data-nav="transaction" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="arrow-left-right" class="h-4 w-4"></i>Log Transaksi</button>
         <button onclick="switchTab('outbound')" data-nav="outbound" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="package-check" class="h-4 w-4"></i>Outbound Packing</button>
@@ -159,6 +158,7 @@
         <nav class="space-y-0.5">
           <button onclick="switchTab('users')" data-nav="users" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="users" class="h-4 w-4"></i>User &amp; Akses</button>
           <button onclick="switchTab('roles')" data-nav="roles" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="shield-check" class="h-4 w-4"></i>Role &amp; Permission</button>
+          <button onclick="switchTab('warehouse_compare')" data-nav="warehouse_compare" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="git-compare" class="h-4 w-4"></i>Performance WH</button>
         </nav>
       </div>
     </aside>
@@ -308,6 +308,25 @@
               <th class="px-4 py-2.5 text-center">Tahap Tertinggal</th>
             </tr></thead>
             <tbody id="tbl-compare-productivity" class="divide-y divide-slate-100"></tbody>
+          </table></div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+          <div class="px-4 py-3 border-b border-slate-100">
+            <p class="text-sm font-bold text-slate-800">Aktivitas Operasional Lain per Gudang</p>
+            <p class="text-[11px] text-slate-400">Admin RTS/retur, tim inbound-outbound umum, dan stock opname SKU — total qty sesuai rentang tanggal terpilih. Qty pcs (bila diisi saat input) ditampilkan di bawah qty paket/SKU.</p>
+          </div>
+          <div class="overflow-x-auto"><table class="w-full text-sm text-left">
+            <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-400"><tr>
+              <th class="px-4 py-2.5">Gudang</th>
+              <th class="px-4 py-2.5 text-right">RTS/Retur</th>
+              <th class="px-4 py-2.5 text-right">Tim Inbound</th>
+              <th class="px-4 py-2.5 text-right">Tim Outbound</th>
+              <th class="px-4 py-2.5 text-right">SO Material</th>
+              <th class="px-4 py-2.5 text-right">SO Klien</th>
+              <th class="px-4 py-2.5 text-right">Total</th>
+            </tr></thead>
+            <tbody id="tbl-compare-other-activity" class="divide-y divide-slate-100"></tbody>
           </table></div>
         </div>
 
@@ -473,13 +492,16 @@
       <div id="tab-po" class="tab-content hidden">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div><h2 class="font-display text-xl font-bold text-slate-900">Purchase Order</h2><p class="text-sm text-slate-500 mt-0.5">Alur pengajuan → approval → penerimaan barang.</p></div>
-          <button data-perm-module="po" data-perm-op="c" onclick="openCreatePOModal()" class="flex items-center gap-1.5 bg-red-600 text-white text-xs font-semibold px-3.5 py-2.5 rounded-lg hover:bg-red-700 transition shadow-sm"><i data-lucide="plus" class="h-3.5 w-3.5"></i>Buat PO Baru</button>
+          <div class="flex items-center gap-2">
+            <button data-perm-module="po" data-perm-op="c" onclick="openCreatePOBulkModal()" class="flex items-center gap-1.5 bg-white text-red-600 border border-red-200 text-xs font-semibold px-3.5 py-2.5 rounded-lg hover:bg-red-50 transition shadow-sm"><i data-lucide="list-plus" class="h-3.5 w-3.5"></i>Buat PO Bulk</button>
+            <button data-perm-module="po" data-perm-op="c" onclick="openCreatePOModal()" class="flex items-center gap-1.5 bg-red-600 text-white text-xs font-semibold px-3.5 py-2.5 rounded-lg hover:bg-red-700 transition shadow-sm"><i data-lucide="plus" class="h-3.5 w-3.5"></i>Buat PO Baru</button>
+          </div>
         </div>
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div class="overflow-x-auto"><table class="w-full text-sm text-left">
             <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-400"><tr>
               <th class="px-4 py-2.5">No. PO</th><th class="px-4 py-2.5">Tujuan</th><th class="px-4 py-2.5">Supplier</th><th class="px-4 py-2.5">Material</th>
-              <th class="px-4 py-2.5 text-right">Order / Disetujui / Diterima</th><th class="px-4 py-2.5 text-center">Status</th><th class="px-4 py-2.5 text-center">Aksi</th>
+              <th class="px-4 py-2.5 text-right">Order / Disetujui / Diterima</th><th class="px-4 py-2.5 text-right">Nilai Pembelian</th><th class="px-4 py-2.5 text-center">Status</th><th class="px-4 py-2.5 text-center">Aksi</th>
             </tr></thead>
             <tbody id="tbl-po" class="divide-y divide-slate-100"></tbody>
           </table></div>
@@ -1193,7 +1215,7 @@
 </div>
 
 <div id="modal-create-po" class="fixed inset-0 z-[220] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-  <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100">
+  <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
     <h3 class="font-display font-bold text-lg text-slate-900 mb-4">Buat Purchase Order</h3>
     <form onsubmit="submitCreatePO(event)" class="space-y-3">
       <div><label class="block text-xs font-semibold text-slate-600 mb-1">Gudang Tujuan</label>
@@ -1201,9 +1223,32 @@
       <div><label class="block text-xs font-semibold text-slate-600 mb-1">Supplier</label>
         <select id="po-supplier" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-red-600"></select></div>
       <div><label class="block text-xs font-semibold text-slate-600 mb-1">Material</label>
-        <select id="po-mat" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-red-600"></select></div>
-      <div><label class="block text-xs font-semibold text-slate-600 mb-1">Qty Order</label>
-        <input type="number" id="po-qty" min="1" step="any" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></div>
+        <select id="po-mat" onchange="onPoMaterialChange()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-red-600"></select></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Qty Order</label>
+          <input type="number" id="po-qty" min="1" step="any" required oninput="updatePoSummary()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Harga Satuan (Rp)</label>
+          <input type="number" id="po-harga" min="0" step="any" required oninput="updatePoSummary()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></div>
+      </div>
+      <p class="text-[11px] text-slate-400 -mt-2">Harga satuan otomatis terisi dari harga terakhir material, boleh diubah sesuai penawaran supplier saat ini.</p>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Diskon (Rp)</label>
+          <input type="number" id="po-diskon" min="0" step="any" value="0" oninput="updatePoSummary()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600">
+          <div class="flex items-center gap-1 mt-1">
+            <span class="text-[10px] text-slate-400">atau isi %:</span>
+            <input type="number" id="po-diskon-pct" min="0" max="100" step="any" placeholder="0" oninput="applyDiskonPercent()" class="w-12 border border-slate-200 rounded px-1.5 py-0.5 text-[11px] outline-none focus:border-red-600">
+          </div>
+        </div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Ongkir (Rp)</label>
+          <input type="number" id="po-ongkir" min="0" step="any" value="0" oninput="updatePoSummary()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></div>
+      </div>
+      <div class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2.5 text-xs space-y-1">
+        <div class="flex justify-between text-slate-500"><span>Subtotal Material</span><span id="po-sum-subtotal">Rp 0</span></div>
+        <div class="flex justify-between text-slate-500"><span>Diskon</span><span id="po-sum-diskon" class="text-emerald-600">- Rp 0</span></div>
+        <div class="flex justify-between text-slate-500"><span>Ongkir</span><span id="po-sum-ongkir">+ Rp 0</span></div>
+        <div class="flex justify-between font-bold text-slate-800 pt-1 border-t border-slate-200"><span>Total Nilai PO</span><span id="po-sum-total">Rp 0</span></div>
+        <div class="flex justify-between text-slate-400"><span>≈ Harga efektif / unit</span><span id="po-sum-unit">Rp 0</span></div>
+      </div>
       <div><label class="block text-xs font-semibold text-slate-600 mb-1">Estimasi Tanggal Tiba</label>
         <input type="date" id="po-expected" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></div>
       <div class="flex justify-end gap-2 pt-2">
@@ -1214,10 +1259,47 @@
   </div>
 </div>
 
+<div id="modal-create-po-bulk" class="fixed inset-0 z-[220] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+    <h3 class="font-display font-bold text-lg text-slate-900 mb-1">Buat PO Bulk (Beberapa Item)</h3>
+    <p class="text-[11px] text-slate-400 mb-4">1 gudang tujuan &amp; 1 supplier, boleh banyak material sekaligus. Tiap item tetap jadi 1 nomor PO tersendiri.</p>
+    <form onsubmit="submitCreatePOBulk(event)" class="space-y-3">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Gudang Tujuan</label>
+          <select id="pobulk-wh" onchange="refreshPoBulkMaterialOptions()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-red-600"></select></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Supplier</label>
+          <select id="pobulk-supplier" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-red-600"></select></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Estimasi Tanggal Tiba</label>
+          <input type="date" id="pobulk-expected" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></div>
+      </div>
+
+      <div class="flex items-center justify-between pt-1">
+        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wide">Daftar Item Material</h4>
+        <button type="button" onclick="addPoBulkRow()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-red-600 border border-red-200 hover:bg-red-50 transition"><i data-lucide="plus" class="h-3.5 w-3.5"></i>Tambah Item</button>
+      </div>
+      <div id="pobulk-rows" class="space-y-2.5"></div>
+
+      <div class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2.5 text-xs space-y-1">
+        <div class="flex justify-between text-slate-500"><span>Jumlah Item Valid</span><span id="pobulk-sum-count">0</span></div>
+        <div class="flex justify-between text-slate-500"><span>Subtotal Material</span><span id="pobulk-sum-subtotal">Rp 0</span></div>
+        <div class="flex justify-between text-slate-500"><span>Diskon</span><span id="pobulk-sum-diskon" class="text-emerald-600">- Rp 0</span></div>
+        <div class="flex justify-between text-slate-500"><span>Ongkir</span><span id="pobulk-sum-ongkir">+ Rp 0</span></div>
+        <div class="flex justify-between font-bold text-slate-800 pt-1 border-t border-slate-200"><span>Total Nilai Semua PO</span><span id="pobulk-sum-total">Rp 0</span></div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeModal('modal-create-po-bulk')" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition">Batal</button>
+        <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition shadow-sm">Buat Semua PO</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div id="modal-receive-po" class="fixed inset-0 z-[220] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
   <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100">
     <h3 class="font-display font-bold text-lg text-slate-900 mb-1">Terima Barang PO</h3>
-    <p id="receive-po-info" class="text-xs text-slate-500 mb-4"></p>
+    <p id="receive-po-info" class="text-xs text-slate-500 mb-3"></p>
+    <div id="receive-po-cost-info" class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-[11px] text-slate-500 mb-3 hidden"></div>
     <form onsubmit="submitReceivePO(event)" class="space-y-3">
       <input type="hidden" id="rp-ponumber">
       <div><label class="block text-xs font-semibold text-slate-600 mb-1">Qty Diterima Sekarang (sesuai fisik)</label>
@@ -1232,6 +1314,33 @@
       <div class="flex justify-end gap-2 pt-2">
         <button type="button" onclick="closeModal('modal-receive-po')" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition">Batal</button>
         <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition shadow-sm">Konfirmasi Terima</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="modal-approve-po" class="fixed inset-0 z-[220] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100">
+    <h3 class="font-display font-bold text-lg text-slate-900 mb-1">Approve PO</h3>
+    <p id="approve-po-info" class="text-xs text-slate-500 mb-4 font-mono"></p>
+    <form onsubmit="submitApprovePO(event)" class="space-y-3">
+      <input type="hidden" id="ap-ponumber">
+      <div><label class="block text-xs font-semibold text-slate-600 mb-1">Qty Diajukan</label>
+        <input type="number" id="ap-qty-ordered" readonly class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-100 text-slate-500"></div>
+      <div><label class="block text-xs font-semibold text-slate-600 mb-1">Qty Di-approve</label>
+        <input type="number" id="ap-qty-approved" min="0.01" step="any" required oninput="updateApprovePoSummary()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600">
+        <p class="text-[11px] text-slate-400 mt-1">Boleh dikurangi atau ditambah dari qty yang diajukan, sesuai keputusan approval.</p></div>
+      <div id="approve-po-summary" class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2.5 text-xs space-y-1">
+        <div class="flex justify-between text-slate-500"><span>Harga Satuan</span><span id="ap-sum-harga">Rp 0</span></div>
+        <div class="flex justify-between text-slate-500"><span>Subtotal</span><span id="ap-sum-subtotal">Rp 0</span></div>
+        <div class="flex justify-between text-slate-500"><span>Diskon</span><span id="ap-sum-diskon" class="text-emerald-600">- Rp 0</span></div>
+        <div class="flex justify-between text-slate-500"><span>Ongkir</span><span id="ap-sum-ongkir">+ Rp 0</span></div>
+        <div class="flex justify-between font-bold text-slate-800 pt-1 border-t border-slate-200"><span>Total Nilai PO</span><span id="ap-sum-total">Rp 0</span></div>
+      </div>
+      <p id="ap-no-price-note" class="text-[11px] text-amber-600 hidden">PO ini belum punya data harga (dibuat sebelum fitur nilai pembelian aktif) - valuasi stok tidak akan berubah saat barang diterima.</p>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeModal('modal-approve-po')" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition">Batal</button>
+        <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 transition shadow-sm">Approve PO</button>
       </div>
     </form>
   </div>
@@ -1313,6 +1422,39 @@ let db = { warehouses:[], materials:[], suppliers:[], inventory:[], transactionL
 let ui = { invPage:1, trxPage:1, matPage:1, poPage:1, supplierPage:1, assetsPage:1, casesPage:1, selectedPackCat:null, selectedPackWh:null, selectedPermRole:'Staff Gudang', bomSubview:'recipe' };
 let permMatrixState = null;
 
+// ===== OPTIMASI #1: lazy-load data per tab =====
+// CORE_KEYS = data referensi yang dipakai LINTAS tab (dropdown gudang/material di banyak
+// modal, dan rolePermissionMatrix yang menentukan tombol/menu apa saja yang tampil lewat
+// applyRoleUI()/can() - kalau ini belum termuat, seluruh sidebar navigasi bisa "hilang").
+// Karena itu CORE_KEYS SELALU dimuat di awal (login), tidak lazy seperti tab lain.
+//
+// TAB_DATA_KEYS = pemetaan tab -> key db yang benar-benar dibaca oleh fungsi render tab
+// tsb (ditelusuri langsung dari isi tiap fungsi render, bukan cuma dari DB_KEY_RENDER_MAP -
+// supaya tidak ada dependensi yang kelewat, misal renderDashboard baca purchaseOrders &
+// operationalCases meski keduanya tidak "memicu" renderDashboard di DB_KEY_RENDER_MAP).
+// Tab yang tidak terdaftar di sini (atau array kosong) berarti cuma butuh CORE_KEYS.
+const CORE_KEYS = ['warehouses', 'materials', 'rolePermissionMatrix'];
+const TAB_DATA_KEYS = {
+  dashboard:          ['inventory', 'transactionLogs', 'packLogs', 'purchaseOrders', 'operationalCases'],
+  warehouse_compare:  ['inventory', 'transactionLogs', 'packLogs', 'purchaseOrders', 'operationalCases', 'productivityLogs', 'clientOrderLogs', 'packCategories', 'productionTargets', 'overheadCosts', 'hppSettings'],
+  inventory:          ['inventory'],
+  transaction:        ['transactionLogs'],
+  outbound:           ['packCategories', 'bomRecipes', 'inventory', 'packLogs'],
+  po:                 ['purchaseOrders', 'suppliers'],
+  cases:              ['operationalCases'],
+  productivity:       ['productivityLogs', 'productivityTargets', 'clientOrderLogs', 'packLogs'],
+  warehouse:          [],
+  material:           [],
+  supplier:           ['suppliers'],
+  bom:                ['packCategories', 'bomRecipes', 'inventory', 'productionTargets', 'packLogs'],
+  hpp:                ['overheadCosts', 'hppSettings', 'handlingFees'],
+  assets:             ['warehouseAssets'],
+  users:              ['users', 'allRoleNames'],
+  roles:              ['rolePermissionMatrix', 'customRoles', 'allRoleNames', 'rolePermissionCeiling']
+};
+// Key yang datanya sudah termuat & fresh di `db` pada sesi berjalan ini.
+let loadedKeys = new Set();
+
 const CASE_CATEGORIES = ['Kehilangan Barang','Kerusakan Barang / Kemasan','Kesalahan Picking / Packing','Klaim Gudang','Keterlambatan Proses','Kerusakan Alat / Sistem','Kekurangan Stok Mendadak','Komplain Merchant / Customer','SDM & Kedisiplinan','Lainnya'];
 
 const CASE_CLAIM_CATEGORY = 'Klaim Gudang';
@@ -1335,7 +1477,6 @@ const OTHER_ACTIVITY_CATEGORIES = [
 
 const PERMISSION_MODULES = [
   { section:'Operasional', key:'dashboard', label:'Dashboard', icon:'layout-dashboard', ops:['r'] },
-  { section:'Operasional', key:'warehouse_compare', label:'Performance WH', icon:'git-compare', ops:['r'] },
   { section:'Operasional', key:'inventory', label:'Inventory', icon:'boxes', ops:['r'] },
   { section:'Operasional', key:'transaction', label:'Log Transaksi', icon:'arrow-left-right', ops:['r','c'] },
   { section:'Operasional', key:'outbound', label:'Outbound Packing', icon:'package-check', ops:['r','c'] },
@@ -1351,7 +1492,8 @@ const PERMISSION_MODULES = [
   { section:'Master Data', key:'hpp', label:'Kalkulator HPP', icon:'calculator', ops:['r','c','u','d'] },
   { section:'Master Data', key:'assets', label:'Aset Gudang', icon:'wrench', ops:['r','c','u','d'] },
   { section:'Administrasi', key:'users', label:'User & Akses', icon:'users', ops:['r','c','u','d'] },
-  { section:'Administrasi', key:'roles', label:'Role & Permission', icon:'shield-check', ops:['r','u'] }
+  { section:'Administrasi', key:'roles', label:'Role & Permission', icon:'shield-check', ops:['r','u'] },
+  { section:'Administrasi', key:'warehouse_compare', label:'Performance WH', icon:'git-compare', ops:['r'] }
 ];
 const PERMISSION_ROLES = [
   { key:'Super Admin', icon:'shield-alert', desc:'Akses penuh mutlak ke seluruh sistem — tidak bisa diubah.' },
@@ -1510,7 +1652,7 @@ function openModal(id){
   document.getElementById(id).classList.add('flex');
 }
 
-const NAMED_MODAL_IDS = ['modal-glossary','modal-manual-trx','modal-create-po','modal-receive-po','modal-case-detail'];
+const NAMED_MODAL_IDS = ['modal-glossary','modal-manual-trx','modal-create-po','modal-create-po-bulk','modal-receive-po','modal-approve-po','modal-case-detail'];
 document.addEventListener('keydown', function(e){
   if (e.key !== 'Escape') return;
   const generic = document.getElementById('modal-generic');
@@ -1639,7 +1781,7 @@ function applyRoleUI(){
   const masterGroup = document.getElementById('nav-master-group');
   if (masterGroup) masterGroup.classList.toggle('hidden', !['warehouse','material','supplier','bom','hpp','assets'].some(k=>can(k,'r')));
   const adminGroup = document.getElementById('nav-admin-group');
-  if (adminGroup) adminGroup.classList.toggle('hidden', !['users','roles'].some(k=>can(k,'r')));
+  if (adminGroup) adminGroup.classList.toggle('hidden', !['users','roles','warehouse_compare'].some(k=>can(k,'r')));
 
   document.querySelectorAll('[data-perm-module]').forEach(el => {
     const m = el.getAttribute('data-perm-module'), op = el.getAttribute('data-perm-op') || 'c';
@@ -1789,8 +1931,8 @@ async function handleLoginSubmit(e){
     document.getElementById('user-role').textContent = currentUser.role + (currentUser.resolvedWarehouseId ? ' · ' + currentUser.resolvedWarehouseId : ' · Semua Gudang');
     document.getElementById('out-packer-name').value = currentUser.namaUser;
     applyRoleUI();
-    switchTab('dashboard');
     await fetchAllData();
+    await switchTab('dashboard');
     document.getElementById('app-loading-skeleton').classList.add('hidden');
   } else {
     errBox.textContent = result.message || 'Username atau password salah.';
@@ -1801,6 +1943,7 @@ async function handleLoginSubmit(e){
 function logout(){ forceLogout(); }
 function forceLogout(){
   authToken = null; currentUser = null;
+  loadedKeys.clear(); // sesi baru = semua tab harus lazy-fetch ulang, jangan percaya status "sudah termuat" dari sesi/​user sebelumnya
   document.getElementById('app-section').classList.add('hidden');
   document.getElementById('app-section').classList.remove('flex');
   document.getElementById('login-section').classList.remove('hidden');
@@ -1815,7 +1958,7 @@ const DB_KEY_RENDER_MAP = {
 
   inventory: () => { renderInventoryTab(); renderDashboard(); renderBomCategoryList(); renderCapacitySummaryTable(); renderAggregatePurchaseRecommendation(); markCompareDirty(); },
   transactionLogs: () => { renderTransactionTab(); renderDashboard(); markCompareDirty(); },
-  purchaseOrders: () => { renderPOTab(); markCompareDirty(); },
+  purchaseOrders: () => { renderPOTab(); renderDashboard(); markCompareDirty(); },
   packCategories: () => { renderBomCategoryList(); renderCapacitySummaryTable(); markCompareDirty(); },
   bomRecipes: () => { renderBomCategoryList(); renderCapacitySummaryTable(); markCompareDirty(); },
 
@@ -1824,7 +1967,7 @@ const DB_KEY_RENDER_MAP = {
   overheadCosts: () => { renderHppTab(); markCompareDirty(); },
   hppSettings: () => { renderHppTab(); markCompareDirty(); },
   handlingFees: () => renderHppTab(),
-  operationalCases: () => { renderCasesTab(); markCompareDirty(); },
+  operationalCases: () => { renderCasesTab(); renderDashboard(); markCompareDirty(); },
   productivityLogs: () => { renderProductivityLogToday(); renderProductivityTab(); markCompareDirty(); },
 
   clientOrderLogs: () => { renderProductivityTab(); populateClientNameSuggestions(); markCompareDirty(); },
@@ -1858,61 +2001,81 @@ async function fetchPartialData(keys){
   }
 }
 
+// Bootstrap sekali di awal login: cukup CORE_KEYS (dipakai lintas tab) + data tab yang
+// langsung terlihat (dashboard). Tab lain baru ditarik saat benar-benar dibuka - lihat
+// ensureTabData(). Ini pengganti versi lama yang menarik+render SEMUA 15+ tab tiap login.
 async function fetchAllData(){
   const badge = document.getElementById('api-status');
   const refreshIcon = document.querySelector('#btn-refresh i');
   if (refreshIcon) refreshIcon.classList.add('animate-spin');
 
-  const data = await apiGet();
+  const initialKeys = Array.from(new Set(CORE_KEYS.concat(TAB_DATA_KEYS['dashboard'])));
+  const ok = await fetchPartialData(initialKeys);
   if (refreshIcon) refreshIcon.classList.remove('animate-spin');
 
-  if (!data.success) { badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-red-400"></span>Terputus'; return; }
+  if (!ok) { badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-red-400"></span>Terputus'; return; }
+  initialKeys.forEach(k => loadedKeys.add(k));
   badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>Terhubung';
-  db = {
-    warehouses: data.warehouses||[], materials: data.materials||[], suppliers: data.suppliers||[],
-    inventory: data.inventory||[], transactionLogs: data.transactionLogs||[], purchaseOrders: data.purchaseOrders||[],
-    packCategories: data.packCategories||[], bomRecipes: data.bomRecipes||[], packLogs: data.packLogs||[], users: data.users||[],
-    overheadCosts: data.overheadCosts||[], hppSettings: data.hppSettings||[], handlingFees: data.handlingFees||[],
-    operationalCases: data.operationalCases||[], productivityLogs: data.productivityLogs||[],
-    clientOrderLogs: data.clientOrderLogs||[],
-    productivityTargets: data.productivityTargets||[], warehouseAssets: data.warehouseAssets||[],
-    productionTargets: data.productionTargets||[],
-    rolePermissionMatrix: data.rolePermissionMatrix||{}, rolePermissionCeiling: data.rolePermissionCeiling||{},
-    customRoles: data.customRoles||[], allRoleNames: data.allRoleNames||[]
-  };
-  permMatrixState = JSON.parse(JSON.stringify(db.rolePermissionMatrix));
-  applyRoleUI();
-  populateWarehouseSelects();
-  renderDashboard();
-  renderWarehouseCompareTab();
-  renderInventoryTab();
-  renderTransactionTab();
-  renderPackLogTable();
-  renderPOTab();
-  renderWarehouseTab();
-  renderMaterialTab();
-  renderSupplierTab();
-  renderBomCategoryList();
-  renderCapacitySummaryTable();
-  renderAggregatePurchaseRecommendation();
-  renderHppTab();
-  renderUsersTab();
-  renderCasesTab();
-  renderAssetsTab();
-  renderProductivityLogToday();
-  renderProductivityTab();
-  renderRolePermissionTab();
-  lucide.createIcons();
+}
+
+// Refresh manual (tombol di header): sebelumnya selalu narik ULANG SEMUA 15+ tab meski cuma
+// 1 yang kelihatan. Sekarang cukup refresh key yang MEMANG sudah pernah dimuat di sesi ini -
+// jadi tetap cepat walau data sudah banyak, dan tetap "menyegarkan apa yang sedang dipakai".
+async function refreshCurrentView(){
+  const badge = document.getElementById('api-status');
+  const refreshIcon = document.querySelector('#btn-refresh i');
+  if (refreshIcon) refreshIcon.classList.add('animate-spin');
+
+  const keys = loadedKeys.size ? Array.from(loadedKeys) : Array.from(new Set(CORE_KEYS.concat(TAB_DATA_KEYS['dashboard'])));
+  const ok = await fetchPartialData(keys);
+  if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+
+  if (ok) {
+    keys.forEach(k => loadedKeys.add(k));
+    badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>Terhubung';
+  } else {
+    badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-red-400"></span>Terputus';
+  }
+}
+
+function showTabLoading(tab){
+  const tabEl = document.getElementById('tab-'+tab);
+  if (!tabEl || tabEl.querySelector('.tab-lazy-overlay')) return;
+  tabEl.classList.add('relative');
+  const overlay = document.createElement('div');
+  overlay.className = 'tab-lazy-overlay absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10';
+  overlay.innerHTML = '<span class="h-6 w-6 rounded-full border-2 border-slate-200 border-t-red-600 animate-spin"></span>';
+  tabEl.appendChild(overlay);
+}
+function hideTabLoading(tab){
+  const tabEl = document.getElementById('tab-'+tab);
+  const overlay = tabEl && tabEl.querySelector('.tab-lazy-overlay');
+  if (overlay) overlay.remove();
+}
+
+// Dipanggil tiap kali pindah tab: tarik cuma key yang tab ini butuhkan DAN belum termuat.
+// Kalau semua key-nya sudah ada di loadedKeys (pernah dibuka sebelumnya di sesi ini), tidak
+// ada fetch sama sekali - langsung tampil dari data yang sudah ada di memori.
+async function ensureTabData(tab){
+  const keys = TAB_DATA_KEYS[tab];
+  if (!keys || !keys.length) return true;
+  const missing = keys.filter(k => !loadedKeys.has(k));
+  if (!missing.length) return true;
+  showTabLoading(tab);
+  const ok = await fetchPartialData(missing);
+  if (ok) missing.forEach(k => loadedKeys.add(k));
+  hideTabLoading(tab);
+  return ok;
 }
 
 function populateWarehouseSelects(){
   const opts = db.warehouses.map(w => `<option value="${esc(w['Warehouse ID'])}">${esc(w['Warehouse ID'])} — ${esc(w['Warehouse Name'])}</option>`).join('');
   const optsAll = '<option value="">Semua Gudang</option>' + opts;
   ['inv-filter-wh','trx-filter-wh','mat-filter-wh','bom-filter-wh','case-filter-wh','prod-filter-wh','asset-filter-wh'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML = optsAll; });
-  ['out-wh','mt-wh','po-wh','mt-dest-wh','prodinput-wh'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML = opts; });
+  ['out-wh','mt-wh','po-wh','pobulk-wh','mt-dest-wh','prodinput-wh'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML = opts; });
 
   if (currentUser && currentUser.resolvedWarehouseId) {
-    document.querySelectorAll('#out-wh,#mt-wh,#po-wh,#prodinput-wh').forEach(sel => { sel.classList.add('wh-lock'); sel.value = currentUser.resolvedWarehouseId; sel.disabled = true; });
+    document.querySelectorAll('#out-wh,#mt-wh,#po-wh,#pobulk-wh,#prodinput-wh').forEach(sel => { sel.classList.add('wh-lock'); sel.value = currentUser.resolvedWarehouseId; sel.disabled = true; });
   }
   if (document.getElementById('out-wh').value) onOutboundWhChange();
   if (document.getElementById('prodinput-wh').value) renderProductivityLogToday();
@@ -1920,6 +2083,7 @@ function populateWarehouseSelects(){
   switchProductivitySubview('input');
   refreshMtMaterialOptions();
   refreshPoMaterialOptions();
+  refreshPoBulkMaterialOptions();
 }
 
 function materialsForWarehouseId(whId){
@@ -1928,16 +2092,21 @@ function materialsForWarehouseId(whId){
   return db.materials.filter(m => m['Warehouse Name'] === whName);
 }
 
-function switchTab(tab){
+async function switchTab(tab){
   document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
   document.querySelectorAll('.nav-btn').forEach(el => { el.classList.remove('bg-red-50','text-red-700'); el.classList.add('text-slate-600'); });
   const tabEl = document.getElementById('tab-'+tab);
   if(tabEl) { tabEl.classList.remove('hidden'); tabEl.classList.add('tab-enter'); }
   const navEl = document.querySelector(`[data-nav="${tab}"]`);
   if (navEl) { navEl.classList.add('bg-red-50','text-red-700'); navEl.classList.remove('text-slate-600'); }
-
-  if (tab === 'warehouse_compare' && compareTabDirty) renderWarehouseCompareTab();
   closeSidebar();
+
+  await ensureTabData(tab);
+
+  // Gudang Outbound bisa ter-set otomatis (dropdown dikunci) sebelum packCategories/bomRecipes/
+  // inventory tab ini selesai lazy-load - sinkronkan ulang preview BOM-nya sekarang datanya fresh.
+  if (tab === 'outbound' && document.getElementById('out-wh').value) onOutboundWhChange();
+  if (tab === 'warehouse_compare' && compareTabDirty) renderWarehouseCompareTab();
 }
 
 function isSidebarOpen(){
@@ -2161,6 +2330,7 @@ function computeWarehouseCompareData(){
         poPending: 0, caseAktif: 0, caseSelesai: 0, nominalKlaim: 0, orderKlienQty: 0,
         targetQty: 0, realisasiQty: 0, targetCatCount: 0,
         perRole: { 'Admin Print Name':0, 'Picker Name':0, 'Packer Name':0, 'Checker Name':0 },
+        perOtherCategory: {},
         dailyOutboundQty: {}
       };
     } else if (whName && stats[whId].name === whId) {
@@ -2217,9 +2387,14 @@ function computeWarehouseCompareData(){
   db.productivityLogs.forEach(p => {
     const dStr = toWIBDateStr(p['Date']);
     if (dStr < fromStr || dStr > toStr) return;
+    const s = ensure(p['Warehouse ID']);
     const role = PROD_ROLES.find(r => r.short === p['Role']);
-    if (!role) return;
-    ensure(p['Warehouse ID']).perRole[role.key] += Number(p['Qty Paket']||0);
+    if (role) { s.perRole[role.key] += Number(p['Qty Paket']||0); return; }
+    const cat = String(p['Role']||'').trim();
+    if (!cat) return;
+    if (!s.perOtherCategory[cat]) s.perOtherCategory[cat] = { total:0, totalPcs:0 };
+    s.perOtherCategory[cat].total += Number(p['Qty Paket']||0);
+    s.perOtherCategory[cat].totalPcs += Number(p['Qty Pcs']||0);
   });
 
   db.clientOrderLogs.forEach(c => {
@@ -2278,6 +2453,7 @@ function renderCompareInsights(stats, days){
   const byAttention = stats.slice().sort((a,b)=>(b.itemKritis+b.caseAktif)-(a.itemKritis+a.caseAktif))[0];
   const withMargin = stats.filter(s => s.marginPercent !== null && s.marginPercent !== undefined);
   const byMargin = withMargin.length ? withMargin.slice().sort((a,b)=>b.marginPercent-a.marginPercent)[0] : null;
+  const byOtherActivity = stats.map(s => ({ s, total: OTHER_ACTIVITY_CATEGORIES.reduce((a,c)=>a+(s.perOtherCategory[c.key]?.total||0),0) })).sort((a,b)=>b.total-a.total)[0];
 
   const cards = [];
   if (byOutbound.total > 0) cards.push({ icon:'trending-up', cls:'bg-emerald-50 border-emerald-100 text-emerald-600',
@@ -2288,6 +2464,8 @@ function renderCompareInsights(stats, days){
     text:`<b>${esc(byAttention.name)}</b> paling butuh perhatian — ${byAttention.itemKritis} item kritis, ${byAttention.caseAktif} case aktif.` });
   if (byMargin) cards.push({ icon:'percent', cls:'bg-purple-50 border-purple-100 text-purple-600',
     text:`<b>${esc(byMargin.name)}</b> margin terbaik — ${byMargin.marginPercent.toFixed(1)}% (HPP ${formatRupiah(byMargin.hppDihitung)} vs HF ${formatRupiah(byMargin.hfStandar)}).` });
+  if (byOtherActivity.total > 0) cards.push({ icon:'list-plus', cls:'bg-amber-50 border-amber-100 text-amber-600',
+    text:`<b>${esc(byOtherActivity.s.name)}</b> aktivitas operasional lain terbanyak — ${byOtherActivity.total.toLocaleString('id-ID')} qty dlm ${days} hari terakhir.` });
 
   wrap.innerHTML = cards.length ? cards.map(c => `<div class="flex items-start gap-2.5 rounded-xl border ${c.cls} p-3">
       <i data-lucide="${c.icon}" class="h-4 w-4 flex-shrink-0 mt-0.5"></i>
@@ -2341,6 +2519,25 @@ function renderCompareProductivityTable(stats, days){
       <td class="px-4 py-2.5 text-center">${lagBadge}</td>
     </tr>`;
   }).join('') : `<tr><td colspan="8" class="px-4 py-6 text-center text-slate-400">Belum ada data.</td></tr>`;
+}
+
+function renderCompareOtherActivityTable(stats){
+  const tbody = document.getElementById('tbl-compare-other-activity');
+  if (!tbody) return;
+  const pcsSub = pcs => pcs > 0 ? `<br><span class="text-[10px] font-normal text-slate-400">${pcs.toLocaleString('id-ID')} pcs</span>` : '';
+  tbody.innerHTML = stats.length ? stats.map(s => {
+    const total = OTHER_ACTIVITY_CATEGORIES.reduce((a,c) => a + (s.perOtherCategory[c.key]?.total||0), 0);
+    const totalPcs = OTHER_ACTIVITY_CATEGORIES.reduce((a,c) => a + (s.perOtherCategory[c.key]?.totalPcs||0), 0);
+    const cells = OTHER_ACTIVITY_CATEGORIES.map(c => {
+      const d = s.perOtherCategory[c.key] || { total:0, totalPcs:0 };
+      return `<td class="px-4 py-2.5 text-right">${d.total.toLocaleString('id-ID')}${pcsSub(d.totalPcs)}</td>`;
+    }).join('');
+    return `<tr class="hover:bg-slate-50">
+      <td class="px-4 py-2.5 font-medium text-slate-700">${esc(s.name)}</td>
+      ${cells}
+      <td class="px-4 py-2.5 text-right font-semibold text-slate-700">${total.toLocaleString('id-ID')}${pcsSub(totalPcs)}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="${OTHER_ACTIVITY_CATEGORIES.length+2}" class="px-4 py-6 text-center text-slate-400">Belum ada data.</td></tr>`;
 }
 
 function renderCompareCasesTable(stats){
@@ -2451,6 +2648,7 @@ function renderWarehouseCompareTab(){
   renderCompareInsights(stats, dayStrings.length);
   renderCompareKpiCards(stats);
   renderCompareProductivityTable(stats, dayStrings.length);
+  renderCompareOtherActivityTable(stats);
   renderCompareCasesTable(stats);
   renderCompareHppTable(stats);
   renderCompareTargetTable(stats);
@@ -2725,18 +2923,100 @@ function renderPackLogTable(){
   }).join('') : `<tr><td colspan="7" class="px-3 py-6 text-center text-slate-400 text-xs">Belum ada riwayat packing.</td></tr>`;
 }
 
+// Kalkulator nilai pembelian PO (subtotal, diskon, ongkir, total, harga efektif/unit).
+// Logikanya sengaja dibuat identik dengan computePoLandedCost_ di backend (Code.gs) supaya
+// preview di layar SELALU sinkron dengan angka yang benar-benar dipakai server untuk update stok.
+function computePoPricing(qty, harga, diskon, ongkir){
+  qty = Number(qty)||0; harga = Number(harga)||0;
+  diskon = Math.max(0, Number(diskon)||0); ongkir = Math.max(0, Number(ongkir)||0);
+  const subtotal = qty * harga;
+  const diskonClamped = Math.min(diskon, subtotal);
+  const total = Math.max(0, subtotal - diskonClamped + ongkir);
+  const unitCost = qty > 0 ? total / qty : 0;
+  return { subtotal, diskon: diskonClamped, ongkir, total, unitCost };
+}
+// Ringkasan nilai pembelian dari satu baris PO yang sudah tersimpan (dipakai di tabel & modal receive/approve).
+// Basis qty pakai Qty Approved kalau sudah ada (qty resmi), fallback ke Qty Ordered kalau masih OPEN.
+// Kalau PO sudah pernah diterima, harga efektif/unit dipakai dari nilai yang benar-benar disimpan
+// server (Landed Unit Cost) - lebih otentik dibanding hasil hitung ulang di sisi client.
+function poPricing(po){
+  const qtyOrdered = Number(po['Qty Ordered']||0);
+  const qtyApprovedRaw = po['Qty Approved'];
+  const qtyApproved = (qtyApprovedRaw!==undefined && qtyApprovedRaw!=='') ? Number(qtyApprovedRaw) : null;
+  const qtyBasis = qtyApproved!==null ? qtyApproved : qtyOrdered;
+  const harga = Number(po['Harga Satuan (Rp)']||0);
+  const diskon = Number(po['Diskon (Rp)']||0);
+  const ongkir = Number(po['Ongkir (Rp)']||0);
+  const calc = computePoPricing(qtyBasis, harga, diskon, ongkir);
+  const landedRaw = po['Landed Unit Cost (Rp)'];
+  const landed = (landedRaw!==undefined && landedRaw!=='' && Number(landedRaw)>0) ? Number(landedRaw) : null;
+  return {
+    harga, diskon: calc.diskon, ongkir: calc.ongkir, qtyBasis, hasPricing: harga > 0,
+    subtotal: calc.subtotal, total: calc.total, unitCost: landed!==null ? landed : calc.unitCost
+  };
+}
+
+// Dipakai bareng oleh form Buat PO (single) & Buat PO Bulk - keduanya butuh dropdown supplier yang sama persis.
+function populateSupplierSelect(selectId){
+  const el = document.getElementById(selectId);
+  if (el) el.innerHTML = db.suppliers.map(s => `<option value="${esc(s['Supplier ID'])}" data-name="${esc(s['Supplier Name'])}">${esc(s['Supplier ID'])} — ${esc(s['Supplier Name'])}</option>`).join('');
+}
 function refreshPoMaterialOptions(){
   const wh = document.getElementById('po-wh').value;
   document.getElementById('po-mat').innerHTML = materialsForWarehouseId(wh).map(m => `<option value="${esc(m['Material ID'])}">${esc(m['Material ID'])} — ${esc(m['Material Name'])}</option>`).join('');
-  document.getElementById('po-supplier').innerHTML = db.suppliers.map(s => `<option value="${esc(s['Supplier ID'])}" data-name="${esc(s['Supplier Name'])}">${esc(s['Supplier ID'])} — ${esc(s['Supplier Name'])}</option>`).join('');
+  populateSupplierSelect('po-supplier');
+  onPoMaterialChange();
 }
-function openCreatePOModal(){ openModal('modal-create-po'); refreshPoMaterialOptions(); }
+function onPoMaterialChange(){
+  const wh = document.getElementById('po-wh').value;
+  const matId = document.getElementById('po-mat').value;
+  const mat = materialsForWarehouseId(wh).find(m => m['Material ID']===matId);
+  document.getElementById('po-harga').value = mat ? Number(mat['Unit Price (Rp)']||0) : 0;
+  updatePoSummary();
+}
+function applyDiskonPercent(){
+  const qty = Number(document.getElementById('po-qty').value)||0;
+  const harga = Number(document.getElementById('po-harga').value)||0;
+  const pct = Math.min(100, Math.max(0, Number(document.getElementById('po-diskon-pct').value)||0));
+  const subtotal = qty*harga;
+  document.getElementById('po-diskon').value = subtotal>0 ? Math.round(subtotal * pct/100) : 0;
+  updatePoSummary();
+}
+function updatePoSummary(){
+  const qty = document.getElementById('po-qty').value;
+  const harga = document.getElementById('po-harga').value;
+  const diskon = document.getElementById('po-diskon').value;
+  const ongkir = document.getElementById('po-ongkir').value;
+  const r = computePoPricing(qty, harga, diskon, ongkir);
+  document.getElementById('po-sum-subtotal').textContent = formatRupiah(r.subtotal);
+  document.getElementById('po-sum-diskon').textContent = '- ' + formatRupiah(r.diskon);
+  document.getElementById('po-sum-ongkir').textContent = '+ ' + formatRupiah(r.ongkir);
+  document.getElementById('po-sum-total').textContent = formatRupiah(r.total);
+  document.getElementById('po-sum-unit').textContent = formatRupiah(r.unitCost) + ' / unit';
+}
+function openCreatePOModal(){
+  document.getElementById('po-qty').value = '';
+  document.getElementById('po-diskon').value = 0;
+  document.getElementById('po-diskon-pct').value = '';
+  document.getElementById('po-ongkir').value = 0;
+  document.getElementById('po-expected').value = '';
+  refreshPoMaterialOptions(); // reset dulu baru refresh, jadi onPoMaterialChange()->updatePoSummary() cukup sekali hitung (sebelumnya kepanggil 2x, hasil hitungan pertama kebuang)
+  openModal('modal-create-po');
+}
 async function submitCreatePO(e){
   e.preventDefault();
   const supSel = document.getElementById('po-supplier');
+  const qty = Number(document.getElementById('po-qty').value);
+  const harga = Number(document.getElementById('po-harga').value);
+  const diskon = Number(document.getElementById('po-diskon').value||0);
+  const ongkir = Number(document.getElementById('po-ongkir').value||0);
+  const pricing = computePoPricing(qty, harga, diskon, ongkir);
+  if (diskon > pricing.subtotal + 0.01) { showToast('Diskon tidak boleh lebih besar dari subtotal material.', 'error'); return; }
+
   const payload = { action:'CREATE_RO', destinationWhId: document.getElementById('po-wh').value, supplierId: supSel.value,
     supplierName: supSel.selectedOptions[0]?.dataset.name || '', materialId: document.getElementById('po-mat').value,
-    qtyOrdered: Number(document.getElementById('po-qty').value), expectedDate: document.getElementById('po-expected').value };
+    qtyOrdered: qty, hargaSatuan: harga, diskon: diskon, ongkir: ongkir,
+    expectedDate: document.getElementById('po-expected').value };
 
   const btn = e.submitter;
   toggleSubmitLoading(btn, true);
@@ -2745,6 +3025,144 @@ async function submitCreatePO(e){
 
   if (result.success) { showToast(result.message,'success'); closeModal('modal-create-po'); await fetchPartialData(['purchaseOrders']); }
   else showToast(result.message || 'Gagal membuat PO.', 'error');
+}
+
+// ===== Buat PO Bulk (beberapa item material sekaligus, 1 gudang + 1 supplier) =====
+let poBulkRows = [];
+function newPoBulkRow(){ return { materialId:'', qtyOrdered:'', hargaSatuan:'', diskon:0, ongkir:0 }; }
+
+function openCreatePOBulkModal(){
+  poBulkRows = [newPoBulkRow(), newPoBulkRow()];
+  document.getElementById('pobulk-expected').value = '';
+  refreshPoBulkMaterialOptions(); // reset dulu baru refresh, konsisten dgn pola openCreatePOModal()
+  openModal('modal-create-po-bulk');
+}
+
+function refreshPoBulkMaterialOptions(){
+  populateSupplierSelect('pobulk-supplier');
+  const wh = document.getElementById('pobulk-wh') ? document.getElementById('pobulk-wh').value : '';
+  // Kalau gudang tujuan diganti, material yang sudah kepilih di tiap baris bisa jadi sudah tidak valid
+  // di gudang baru - bersihkan dulu supaya state tidak nyimpen material "hantu" yang tidak lagi tampil.
+  const validIds = new Set(materialsForWarehouseId(wh).map(m => m['Material ID']));
+  poBulkRows.forEach(row => { if (row.materialId && !validIds.has(row.materialId)) { row.materialId=''; row.hargaSatuan=''; } });
+  renderPoBulkRows();
+}
+
+function renderPoBulkRows(){
+  const wrap = document.getElementById('pobulk-rows');
+  if (!wrap) return;
+  const wh = document.getElementById('pobulk-wh') ? document.getElementById('pobulk-wh').value : '';
+  const matList = materialsForWarehouseId(wh);
+  wrap.innerHTML = poBulkRows.map((row, idx) => {
+    const matOpts = '<option value="">Pilih material...</option>' + matList.map(m =>
+      `<option value="${esc(m['Material ID'])}" ${m['Material ID']===row.materialId?'selected':''}>${esc(m['Material ID'])} — ${esc(m['Material Name'])}</option>`
+    ).join('');
+    return `<div class="border border-slate-200 rounded-lg p-3 relative bg-white">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[11px] font-bold text-slate-400">Item #${idx+1}</span>
+        ${poBulkRows.length>1 ? `<button type="button" onclick="removePoBulkRow(${idx})" class="text-slate-300 hover:text-red-500 transition p-0.5" aria-label="Hapus item"><i data-lucide="x" class="h-3.5 w-3.5"></i></button>` : ''}
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <div class="col-span-2 sm:col-span-2">
+          <label class="block text-[10px] font-semibold text-slate-500 mb-1">Material</label>
+          <select id="pobulk-mat-${idx}" onchange="onPoBulkMaterialChange(${idx},this.value)" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs bg-white outline-none focus:border-red-600">${matOpts}</select>
+        </div>
+        <div><label class="block text-[10px] font-semibold text-slate-500 mb-1">Qty</label>
+          <input type="number" id="pobulk-qty-${idx}" min="0" step="any" value="${esc(row.qtyOrdered)}" oninput="updatePoBulkRow(${idx},'qtyOrdered',this.value)" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-red-600"></div>
+        <div><label class="block text-[10px] font-semibold text-slate-500 mb-1">Harga Satuan</label>
+          <input type="number" id="pobulk-harga-${idx}" min="0" step="any" value="${esc(row.hargaSatuan)}" oninput="updatePoBulkRow(${idx},'hargaSatuan',this.value)" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-red-600"></div>
+        <div><label class="block text-[10px] font-semibold text-slate-500 mb-1">Diskon (Rp)</label>
+          <input type="number" id="pobulk-diskon-${idx}" min="0" step="any" value="${esc(row.diskon)}" oninput="updatePoBulkRow(${idx},'diskon',this.value)" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-red-600"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-2 mt-2 items-end">
+        <div><label class="block text-[10px] font-semibold text-slate-500 mb-1">Ongkir (Rp, opsional)</label>
+          <input type="number" id="pobulk-ongkir-${idx}" min="0" step="any" value="${esc(row.ongkir)}" oninput="updatePoBulkRow(${idx},'ongkir',this.value)" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-red-600"></div>
+        <p class="text-[11px] text-slate-400 text-right pb-1.5">Subtotal: <span id="pobulk-subtotal-${idx}" class="font-semibold text-slate-600">Rp 0</span></p>
+      </div>
+    </div>`;
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+  updatePoBulkSummary();
+}
+
+function addPoBulkRow(){
+  poBulkRows.push(newPoBulkRow());
+  renderPoBulkRows();
+}
+function removePoBulkRow(idx){
+  if (poBulkRows.length <= 1) return; // selalu sisakan minimal 1 baris di form
+  poBulkRows.splice(idx, 1);
+  renderPoBulkRows();
+}
+// Perubahan qty/harga/diskon/ongkir TIDAK memicu render ulang seluruh baris (beda dgn addPoBulkRow/removePoBulkRow) -
+// supaya fokus & posisi kursor di input angka tidak hilang tiap kali user mengetik satu digit.
+function updatePoBulkRow(idx, field, val){
+  poBulkRows[idx][field] = val;
+  updatePoBulkSummary();
+}
+function onPoBulkMaterialChange(idx, materialId){
+  const wh = document.getElementById('pobulk-wh').value;
+  const mat = materialsForWarehouseId(wh).find(m => m['Material ID']===materialId);
+  poBulkRows[idx].materialId = materialId;
+  poBulkRows[idx].hargaSatuan = mat ? Number(mat['Unit Price (Rp)']||0) : '';
+  const hargaInput = document.getElementById('pobulk-harga-'+idx);
+  if (hargaInput) hargaInput.value = poBulkRows[idx].hargaSatuan;
+  updatePoBulkSummary();
+}
+function updatePoBulkSummary(){
+  let sumSubtotal=0, sumDiskon=0, sumOngkir=0, sumTotal=0, validCount=0;
+  poBulkRows.forEach((row, idx) => {
+    const r = computePoPricing(row.qtyOrdered, row.hargaSatuan, row.diskon, row.ongkir);
+    const el = document.getElementById('pobulk-subtotal-'+idx);
+    if (el) el.textContent = formatRupiah(r.subtotal);
+    if (row.materialId && Number(row.qtyOrdered)>0) {
+      validCount++;
+      sumSubtotal += r.subtotal; sumDiskon += r.diskon; sumOngkir += r.ongkir; sumTotal += r.total;
+    }
+  });
+  const setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  setText('pobulk-sum-count', validCount);
+  setText('pobulk-sum-subtotal', formatRupiah(sumSubtotal));
+  setText('pobulk-sum-diskon', '- ' + formatRupiah(sumDiskon));
+  setText('pobulk-sum-ongkir', '+ ' + formatRupiah(sumOngkir));
+  setText('pobulk-sum-total', formatRupiah(sumTotal));
+}
+
+async function submitCreatePOBulk(e){
+  e.preventDefault();
+  const wh = document.getElementById('pobulk-wh').value;
+  const supSel = document.getElementById('pobulk-supplier');
+  const expected = document.getElementById('pobulk-expected').value;
+
+  // Baris yang benar-benar kosong (tidak pernah disentuh) diabaikan diam-diam. Baris yang SUDAH mulai
+  // diisi tapi belum lengkap akan dapat pesan error spesifik, bukan ikut kebuang tanpa penjelasan.
+  const touched = poBulkRows.filter(r => r.materialId || Number(r.qtyOrdered)>0 || Number(r.hargaSatuan)>0);
+  if (!touched.length) { showToast('Isi minimal 1 item material.', 'error'); return; }
+
+  const items = [];
+  for (let i = 0; i < touched.length; i++) {
+    const r = touched[i];
+    const label = 'Item #' + (i+1);
+    if (!r.materialId) { showToast(label + ': material belum dipilih.', 'error'); return; }
+    const qty = Number(r.qtyOrdered), harga = Number(r.hargaSatuan);
+    if (!(qty > 0)) { showToast(label + ' (' + r.materialId + '): qty order harus lebih besar dari 0.', 'error'); return; }
+    if (!(harga >= 0)) { showToast(label + ' (' + r.materialId + '): harga satuan tidak valid.', 'error'); return; }
+    if (items.some(x => x.materialId === r.materialId)) { showToast(label + ': material ' + r.materialId + ' sudah dipilih di item lain - gabungkan jadi 1 item saja.', 'error'); return; }
+    const diskon = Number(r.diskon)||0, ongkir = Number(r.ongkir)||0;
+    if (diskon > qty*harga + 0.01) { showToast(label + ' (' + r.materialId + '): diskon tidak boleh lebih besar dari subtotal material.', 'error'); return; }
+    items.push({ materialId: r.materialId, qtyOrdered: qty, hargaSatuan: harga, diskon, ongkir });
+  }
+
+  const payload = { action:'CREATE_RO_BULK', destinationWhId: wh, supplierId: supSel.value,
+    supplierName: supSel.selectedOptions[0]?.dataset.name || '', expectedDate: expected, items };
+
+  const btn = e.submitter;
+  toggleSubmitLoading(btn, true);
+  const result = await apiPost(payload);
+  toggleSubmitLoading(btn, false);
+
+  if (result.success) { showToast(result.message,'success'); closeModal('modal-create-po-bulk'); await fetchPartialData(['purchaseOrders']); }
+  else showToast(result.message || 'Gagal membuat PO bulk.', 'error');
 }
 
 function renderPOTab(append){
@@ -2765,7 +3183,7 @@ function renderPOTab(append){
     if (status==='OPEN') {
       action = isAdmin()
         ? `<div class="flex items-center justify-center gap-1.5">
-             <button onclick="openApprovePOForm('${esc(po['PO Number'])}',${qtyOrdered})" class="px-2.5 py-1 rounded bg-slate-800 text-white text-xs font-semibold hover:bg-slate-900 transition shadow-sm">Approve</button>
+             <button onclick="openApprovePOForm('${esc(po['PO Number'])}')" class="px-2.5 py-1 rounded bg-slate-800 text-white text-xs font-semibold hover:bg-slate-900 transition shadow-sm">Approve</button>
              <button onclick="cancelPO('${esc(po['PO Number'])}')" class="px-2 py-1 rounded border border-red-200 text-red-600 text-xs font-semibold hover:bg-red-50 transition">Batal</button>
            </div>`
         : '<span class="text-xs text-slate-400 italic">Menunggu approval</span>';
@@ -2782,35 +3200,76 @@ function renderPOTab(append){
       action = '<span class="text-xs text-slate-400 italic">Dibatalkan</span>';
     }
 
+    const pr = poPricing(po);
+    const priceExtras = [pr.diskon>0?'disk':'', pr.ongkir>0?'ongkir':''].filter(Boolean).join('+');
+    const priceCell = pr.hasPricing
+      ? `<p class="font-semibold text-slate-700">${formatRupiah(pr.total)}</p><p class="text-[10px] text-slate-400">@ ${formatRupiah(pr.harga)}/unit${priceExtras?' · '+priceExtras:''}</p>`
+      : `<span class="text-slate-300 italic text-[11px]">- data harga -</span>`;
+
     return `<tr class="hover:bg-slate-50 transition">
       <td class="px-4 py-2.5 font-mono text-xs font-bold text-slate-700">${esc(po['PO Number'])}</td>
       <td class="px-4 py-2.5 text-slate-600">${esc(po['Destination WH ID'])}</td>
       <td class="px-4 py-2.5 text-slate-600">${esc(po['Supplier Name'])}</td>
       <td class="px-4 py-2.5"><p class="text-slate-700">${esc(po['Material ID'])}</p></td>
       <td class="px-4 py-2.5 text-right text-slate-600 text-xs">${qtyOrdered.toLocaleString('id-ID')} / ${qtyApproved!==null ? qtyApproved.toLocaleString('id-ID') : '-'} / ${qtyReceived.toLocaleString('id-ID')}</td>
+      <td class="px-4 py-2.5 text-right">${priceCell}</td>
       <td class="px-4 py-2.5 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badge}">${esc(status)}</span></td>
       <td class="px-4 py-2.5 text-center">${action}</td>
     </tr>`;
   }).join('');
   const tbl = document.getElementById('tbl-po');
   if (append) { if (items.length) tbl.insertAdjacentHTML('beforeend', rowsHtml); }
-  else { tbl.innerHTML = items.length ? rowsHtml : `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400 text-sm">Belum ada Purchase Order.</td></tr>`; }
+  else { tbl.innerHTML = items.length ? rowsHtml : `<tr><td colspan="8" class="px-4 py-8 text-center text-slate-400 text-sm">Belum ada Purchase Order.</td></tr>`; }
   renderScrollStatus('pg-po', 'po-scroll-sentinel', Math.min(ui.poPage*PAGE_SIZE, rows.length), rows.length, 'PO');
   observeSentinel('po-scroll-sentinel', () => { ui.poPage++; renderPOTab(true); });
 }
 
-function openApprovePOForm(poNumber, qtyOrdered){
-  openFormModal({
-    title: 'Approve PO ' + poNumber,
-    fields: [
-      { name:'qtyOrdered', label:'Qty Diajukan', value: qtyOrdered, type:'number', readonly:true },
-      { name:'qtyApproved', label:'Qty Di-approve', value: qtyOrdered, type:'number', step:'any', hint:'Boleh dikurangi atau ditambah dari qty yang diajukan, sesuai keputusan approval.' }
-    ],
-    onSubmit: async (data) => {
-      const result = await apiPost({ action:'APPROVE_PO', poNumber: poNumber, qtyApproved: Number(data.qtyApproved) });
-      if (result.success) { showToast(result.message,'success'); closeFormModal(); await fetchPartialData(['purchaseOrders']); } else showToast(result.message,'error');
-    }
+function openApprovePOForm(poNumber){
+  const po = db.purchaseOrders.find(p => p['PO Number']===poNumber);
+  if (!po) { showToast('PO tidak ditemukan.', 'error'); return; }
+  const qtyOrdered = Number(po['Qty Ordered']||0);
+  const el = document.getElementById('ap-qty-approved');
+
+  document.getElementById('ap-ponumber').value = poNumber;
+  document.getElementById('approve-po-info').textContent = poNumber + ' · ' + (po['Material ID']||'');
+  document.getElementById('ap-qty-ordered').value = qtyOrdered;
+  el.value = qtyOrdered;
+  el.dataset.harga = Number(po['Harga Satuan (Rp)']||0);
+  el.dataset.diskon = Number(po['Diskon (Rp)']||0);
+  el.dataset.ongkir = Number(po['Ongkir (Rp)']||0);
+
+  updateApprovePoSummary();
+  openModal('modal-approve-po');
+}
+function updateApprovePoSummary(){
+  const el = document.getElementById('ap-qty-approved');
+  const qty = Number(el.value||0);
+  const harga = Number(el.dataset.harga||0);
+  const diskon = Number(el.dataset.diskon||0);
+  const ongkir = Number(el.dataset.ongkir||0);
+  const hasPricing = harga > 0;
+
+  document.getElementById('approve-po-summary').classList.toggle('hidden', !hasPricing);
+  document.getElementById('ap-no-price-note').classList.toggle('hidden', hasPricing);
+  if (hasPricing) {
+    const r = computePoPricing(qty, harga, diskon, ongkir);
+    document.getElementById('ap-sum-harga').textContent = formatRupiah(harga) + '/unit';
+    document.getElementById('ap-sum-subtotal').textContent = formatRupiah(r.subtotal);
+    document.getElementById('ap-sum-diskon').textContent = '- ' + formatRupiah(r.diskon);
+    document.getElementById('ap-sum-ongkir').textContent = '+ ' + formatRupiah(r.ongkir);
+    document.getElementById('ap-sum-total').textContent = formatRupiah(r.total);
+  }
+}
+async function submitApprovePO(e){
+  e.preventDefault();
+  const btn = e.submitter;
+  toggleSubmitLoading(btn, true);
+  const result = await apiPost({
+    action:'APPROVE_PO', poNumber: document.getElementById('ap-ponumber').value,
+    qtyApproved: Number(document.getElementById('ap-qty-approved').value)
   });
+  toggleSubmitLoading(btn, false);
+  if (result.success) { showToast(result.message,'success'); closeModal('modal-approve-po'); await fetchPartialData(['purchaseOrders']); } else showToast(result.message,'error');
 }
 async function cancelPO(poNumber){
   if (!(await confirmDialog('Batalkan PO?', `PO ${poNumber} akan dibatalkan dan tidak bisa diproses lebih lanjut. Aksi ini tidak bisa dibatalkan balik.`))) return;
@@ -2823,6 +3282,16 @@ function openReceivePOModal(poNumber, sisa){
   document.getElementById('rp-qty').value = sisa > 0 ? sisa : '';
   document.getElementById('rp-close-short').checked = false;
   document.getElementById('rp-date').value = getWIBDateString();
+
+  const po = db.purchaseOrders.find(p => p['PO Number']===poNumber);
+  const costEl = document.getElementById('receive-po-cost-info');
+  const pr = po ? poPricing(po) : null;
+  if (pr && pr.hasPricing) {
+    costEl.classList.remove('hidden');
+    costEl.innerHTML = `Estimasi biaya masuk: <b>${formatRupiah(pr.unitCost)}/unit</b>. Harga rata-rata (weighted average) material ini akan otomatis disesuaikan begitu barang disimpan.`;
+  } else {
+    costEl.classList.add('hidden');
+  }
   openModal('modal-receive-po');
 }
 async function submitReceivePO(e){
@@ -3782,7 +4251,8 @@ function openMaterialForm(m){
       { name:'minSafetyStock', label:'Min Safety Stock', type:'number', value: m?m['Min Safety Stock']:0, step:'any' },
       { name:'rop', label:'Reorder Point (ROP)', type:'number', value: m?m['Reorder Point (ROP)']:0, step:'any' },
       { name:'maxStock', label:'Max Stock', type:'number', value: m?m['Max Stock']:0, step:'any', required:false },
-      { name:'unitPrice', label:'Harga Satuan (Rp)', type:'number', value: m?m['Unit Price (Rp)']:0, step:'any' },
+      { name:'unitPrice', label:'Harga Satuan (Rp)', type:'number', value: m?m['Unit Price (Rp)']:0, step:'any',
+        tooltip:'Ini harga rata-rata (weighted average) yang dipakai untuk valuasi stok & perhitungan biaya BOM/Handling Fee. Nilai ini OTOMATIS ter-update setiap kali Purchase Order untuk material ini diterima (mengikuti harga beli + ongkir - diskon di PO). Isi manual di sini hanya untuk stok awal / material baru yang belum pernah dibeli lewat PO.' },
       { name:'leadTime', label:'Lead Time (hari)', type:'number', value: m?m['Lead Time (Days)']:0, required:false },
       { name:'pakaiKonversi', label:'Pakai Satuan Konversi?', type:'select', value: hasKonversi?'Ya':'Tidak', required:false,
         options:[{value:'Tidak',label:'Tidak — resep BOM langsung pakai Satuan Stok di atas'},{value:'Ya',label:'Ya — resep BOM pakai satuan lain yang lebih kecil'}],
@@ -4320,7 +4790,9 @@ function openCreatePOModalPrefilled(whId, materialId, qty){
   document.getElementById('po-wh').value = whId;
   openCreatePOModal();
   document.getElementById('po-mat').value = materialId;
+  onPoMaterialChange(); // set ulang harga satuan ke material yang benar-benar dipilih (bukan default pilihan pertama dropdown)
   document.getElementById('po-qty').value = Math.max(1, Math.ceil(Number(qty)||0));
+  updatePoSummary();
 }
 
 function populateHppWarehouseSelect(){
