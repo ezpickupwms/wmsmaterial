@@ -159,6 +159,7 @@
           <button onclick="switchTab('users')" data-nav="users" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="users" class="h-4 w-4"></i>User &amp; Akses</button>
           <button onclick="switchTab('roles')" data-nav="roles" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="shield-check" class="h-4 w-4"></i>Role &amp; Permission</button>
           <button onclick="switchTab('warehouse_compare')" data-nav="warehouse_compare" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="git-compare" class="h-4 w-4"></i>Performance WH</button>
+          <button onclick="switchTab('ai-assistant')" data-nav="ai-assistant" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="sparkles" class="h-4 w-4"></i>AI Assistant</button>
         </nav>
       </div>
     </aside>
@@ -378,6 +379,7 @@
         </div>
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3.5 mb-4 flex flex-wrap gap-3 items-center">
           <select id="inv-filter-wh" onchange="ui.invPage=1; renderInventoryTab()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white outline-none focus:border-red-600"><option value="">Semua Gudang</option></select>
+          <label class="flex items-center gap-1.5 text-xs font-medium text-slate-600 cursor-pointer select-none"><input type="checkbox" id="inv-filter-forecast" onchange="ui.invPage=1; renderInventoryTab()" class="rounded border-slate-300 text-red-600 focus:ring-red-500">Hanya yang butuh perhatian (prediksi)</label>
           <div class="relative flex-1 min-w-[180px]">
             <i data-lucide="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400"></i>
             <input type="text" id="inv-search" oninput="ui.invPage=1; debouncedRenderInv()" placeholder="Cari material / ID..." class="w-full border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-sm outline-none focus:border-red-600">
@@ -391,6 +393,7 @@
               <th class="px-4 py-2.5">Satuan</th>
               <th class="px-4 py-2.5 text-right">On Hand</th><th class="px-4 py-2.5 text-right">Reserved</th><th class="px-4 py-2.5 text-right">Available</th>
               <th class="px-4 py-2.5 text-right">Valuasi</th><th class="px-4 py-2.5 text-center">Status</th>
+              <th class="px-4 py-2.5 text-center" title="Estimasi dari tren pemakaian OUT 60 hari terakhir dibanding Lead Time material - beda dari kolom Status yang statis.">Prediksi<i data-lucide="info" class="h-2.5 w-2.5 inline ml-0.5 text-slate-300"></i></th>
             </tr></thead>
             <tbody id="tbl-inventory" class="divide-y divide-slate-100"></tbody>
           </table></div>
@@ -1152,6 +1155,29 @@
         <p class="text-[11px] text-slate-400 mt-3 flex items-center gap-1.5"><i data-lucide="lock" class="h-3 w-3"></i>Kotak abu-abu terkunci = dibatasi langsung oleh sistem (backend) untuk role ini, tidak bisa diaktifkan lewat halaman ini. Tanda "–" = menu tersebut memang tidak punya operasi itu.</p>
       </div>
 
+      <div id="tab-ai-assistant" class="tab-content hidden">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="font-display text-xl font-bold text-slate-900 flex items-center gap-2"><i data-lucide="sparkles" class="h-5 w-5 text-red-700"></i>AI Assistant</h2>
+            <p class="text-sm text-slate-500 mt-0.5">Tanya stok, minta ringkasan, atau minta AI bantu catatkan transaksi/buat PO (tetap perlu konfirmasi manual).</p>
+          </div>
+          <button onclick="resetAiChat()" class="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-600 text-xs font-semibold px-3.5 py-2 rounded-lg hover:bg-slate-50 transition"><i data-lucide="rotate-ccw" class="h-3.5 w-3.5"></i>Percakapan Baru</button>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[65vh]">
+          <div id="ai-chat-messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-slate-50"></div>
+          <div class="flex-none border-t border-slate-200 p-3 bg-white">
+            <div class="flex items-end gap-2">
+              <textarea id="ai-chat-input" rows="1" placeholder="Tanya stok, minta ringkasan, atau suruh catat transaksi..." class="flex-1 resize-none border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700/30 focus:border-red-700 max-h-24"></textarea>
+              <button id="ai-chat-send-btn" onclick="sendAiChatMessage()" class="h-9 w-9 flex-none rounded-xl bg-red-800 text-white flex items-center justify-center hover:bg-red-700 disabled:opacity-50" title="Kirim"><i data-lucide="send" class="h-4 w-4"></i></button>
+            </div>
+            <div class="flex items-center justify-between gap-3 mt-1.5 px-0.5">
+              <p class="text-[10px] text-slate-400">AI bisa keliru — periksa sebelum konfirmasi aksi apapun.</p>
+              <p id="ai-quota-indicator" class="text-[10px] text-slate-400 whitespace-nowrap"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -1437,7 +1463,7 @@ const CORE_KEYS = ['warehouses', 'materials', 'rolePermissionMatrix'];
 const TAB_DATA_KEYS = {
   dashboard:          ['inventory', 'transactionLogs', 'packLogs', 'purchaseOrders', 'operationalCases'],
   warehouse_compare:  ['inventory', 'transactionLogs', 'packLogs', 'purchaseOrders', 'operationalCases', 'productivityLogs', 'clientOrderLogs', 'packCategories', 'productionTargets', 'overheadCosts', 'hppSettings'],
-  inventory:          ['inventory'],
+  inventory:          ['inventory', 'transactionLogs'],
   transaction:        ['transactionLogs'],
   outbound:           ['packCategories', 'bomRecipes', 'inventory', 'packLogs'],
   po:                 ['purchaseOrders', 'suppliers'],
@@ -1698,6 +1724,133 @@ async function apiGet(){
   }
 }
 
+let aiChatHistory = [];
+let aiChatBusy = false;
+
+function resetAiChat(){
+  aiChatHistory = [];
+  const box = document.getElementById('ai-chat-messages');
+  if (box) box.innerHTML = '';
+  appendAiBubble('model', 'Percakapan baru dimulai. Ada yang bisa dibantu?');
+}
+
+function appendAiBubble(role, text){
+  const box = document.getElementById('ai-chat-messages');
+  if (!box) return null;
+  const wrap = document.createElement('div');
+  wrap.className = role === 'user' ? 'flex justify-end' : 'flex justify-start';
+  const bubble = document.createElement('div');
+  bubble.className = role === 'user'
+    ? 'max-w-[85%] bg-red-800 text-white text-sm rounded-2xl rounded-br-sm px-3.5 py-2 whitespace-pre-wrap break-words'
+    : 'max-w-[90%] bg-white border border-slate-200 text-slate-700 text-sm rounded-2xl rounded-bl-sm px-3.5 py-2 whitespace-pre-wrap break-words shadow-sm';
+  bubble.textContent = text; // textContent (bukan innerHTML) - aman dari XSS tanpa perlu esc() manual
+  wrap.appendChild(bubble);
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
+  return wrap;
+}
+
+function appendAiTyping(){
+  const box = document.getElementById('ai-chat-messages');
+  if (!box) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'flex justify-start';
+  wrap.id = 'ai-typing-indicator';
+  wrap.innerHTML = '<div class="bg-white border border-slate-200 rounded-2xl rounded-bl-sm px-3.5 py-2.5 shadow-sm"><span class="flex gap-1"><span class="h-1.5 w-1.5 rounded-full bg-slate-300 animate-bounce"></span><span class="h-1.5 w-1.5 rounded-full bg-slate-300 animate-bounce" style="animation-delay:150ms"></span><span class="h-1.5 w-1.5 rounded-full bg-slate-300 animate-bounce" style="animation-delay:300ms"></span></span></div>';
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
+}
+function removeAiTyping(){
+  const el = document.getElementById('ai-typing-indicator');
+  if (el) el.remove();
+}
+
+function appendProposedActionCard(action, payload, summary){
+  const box = document.getElementById('ai-chat-messages');
+  if (!box) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'flex justify-start';
+  const card = document.createElement('div');
+  card.className = 'max-w-[90%] w-full bg-amber-50 border border-amber-200 rounded-2xl px-3.5 py-3 text-sm';
+  card.innerHTML = '<p class="font-medium text-amber-900 mb-2 flex items-center gap-1.5"><i data-lucide="zap" class="h-3.5 w-3.5"></i>Usulan aksi</p>'
+    + '<p class="text-slate-700 mb-3">' + esc(summary) + '</p>'
+    + '<div class="flex gap-2"><button class="ai-run-btn flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg py-2 transition-colors">Jalankan</button>'
+    + '<button class="ai-cancel-btn flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-lg py-2 transition-colors">Batalkan</button></div>';
+  wrap.appendChild(card);
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
+  lucide.createIcons();
+
+  card.querySelector('.ai-cancel-btn').addEventListener('click', function(){
+    card.innerHTML = '<p class="text-slate-400 text-xs italic">Usulan dibatalkan.</p>';
+  });
+  card.querySelector('.ai-run-btn').addEventListener('click', async function(){
+    const runBtn = card.querySelector('.ai-run-btn'), cancelBtn = card.querySelector('.ai-cancel-btn');
+    runBtn.disabled = true; cancelBtn.disabled = true; runBtn.textContent = 'Menjalankan...';
+    // Sengaja panggil apiPost dgn action+payload PERSIS spt form manual - lewat jalur PERMISSIONS + lock +
+    // audit trail yang SAMA, tidak ada jalur pintas khusus AI yang melewati validasi.
+    const result = await apiPost(Object.assign({ action: action }, payload));
+    if (result.success) {
+      card.innerHTML = '<p class="text-emerald-700 text-xs flex items-center gap-1.5"><i data-lucide="check-circle-2" class="h-3.5 w-3.5"></i>' + esc(result.message || 'Berhasil dijalankan.') + '</p>';
+      fetchAllData();
+    } else {
+      card.innerHTML = '<p class="text-red-600 text-xs flex items-center gap-1.5"><i data-lucide="x-circle" class="h-3.5 w-3.5"></i>Gagal: ' + esc(result.message || 'terjadi kesalahan.') + '</p>';
+    }
+    lucide.createIcons();
+  });
+}
+
+function updateAiQuotaIndicator(quota, provider){
+  const el = document.getElementById('ai-quota-indicator');
+  if (!el) return;
+  if (provider === 'groq') {
+    // Backend baru saja fallback ke Groq krn kuota gratis Gemini abis - Groq tidak punya angka
+    // rpmLeft/rpdLeft spt Gemini, jadi tampilkan status fallback-nya saja.
+    el.textContent = 'Lagi pakai cadangan (Groq) - kuota gratis Gemini kepake penuh';
+    el.className = 'text-[10px] whitespace-nowrap text-amber-500 font-medium';
+    return;
+  }
+  if (!quota) return; // respons ini tidak bawa data kuota - biarkan info terakhir yang tampil
+  const warn = (quota.rpmLeft <= 2 || quota.rpdLeft <= 10);
+  el.textContent = 'Sisa kuota AI: ' + quota.rpmLeft + '/' + quota.rpmLimit + ' menit ini · ' + quota.rpdLeft + '/' + quota.rpdLimit + ' hari ini';
+  el.className = 'text-[10px] whitespace-nowrap ' + (warn ? 'text-red-500 font-medium' : 'text-slate-400');
+}
+
+async function sendAiChatMessage(){
+  if (aiChatBusy) return;
+  const input = document.getElementById('ai-chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = ''; input.style.height = 'auto';
+  appendAiBubble('user', text);
+  aiChatHistory.push({ role: 'user', text: text });
+
+  aiChatBusy = true;
+  const sendBtn = document.getElementById('ai-chat-send-btn');
+  if (sendBtn) sendBtn.disabled = true;
+  appendAiTyping();
+
+  const result = await apiPost({ action: 'AI_CHAT', message: text, history: aiChatHistory.slice(-16) });
+
+  removeAiTyping();
+  aiChatBusy = false;
+  if (sendBtn) sendBtn.disabled = false;
+  updateAiQuotaIndicator(result.quota, result.provider);
+
+  if (!result.success) { appendAiBubble('model', result.message || 'Terjadi kesalahan, coba lagi.'); return; }
+  const reply = result.reply || '...';
+  appendAiBubble('model', reply);
+  aiChatHistory.push({ role: 'model', text: reply });
+  if (result.proposedAction) appendProposedActionCard(result.proposedAction.action, result.proposedAction.payload, result.proposedAction.summary);
+}
+
+(function initAiChatInputBehavior(){
+  const input = document.getElementById('ai-chat-input');
+  if (!input) return;
+  input.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAiChatMessage(); } });
+  input.addEventListener('input', function(){ this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 96) + 'px'; });
+})();
+
 function convertToBaseUnitClient(usageQty, material){
   const k1 = Number(material['konversi qty 1']) || 1;
   const k2 = Number(material['konversi qty 2']) || 1;
@@ -1782,6 +1935,9 @@ function applyRoleUI(){
   if (masterGroup) masterGroup.classList.toggle('hidden', !['warehouse','material','supplier','bom','hpp','assets'].some(k=>can(k,'r')));
   const adminGroup = document.getElementById('nav-admin-group');
   if (adminGroup) adminGroup.classList.toggle('hidden', !['users','roles','warehouse_compare'].some(k=>can(k,'r')));
+  // AI Assistant sengaja TIDAK ikut PERMISSION_MODULES/can() yg configurable - dikunci hard ke Super
+  // Admin biar konsisten sama pengecekan session.role !== ROLE_ADMIN di backend (handleAiChat_).
+  document.querySelectorAll('[data-nav="ai-assistant"]').forEach(el => el.classList.toggle('hidden', !isAdmin()));
 
   document.querySelectorAll('[data-perm-module]').forEach(el => {
     const m = el.getAttribute('data-perm-module'), op = el.getAttribute('data-perm-op') || 'c';
@@ -2100,6 +2256,7 @@ async function switchTab(tab){
   const navEl = document.querySelector(`[data-nav="${tab}"]`);
   if (navEl) { navEl.classList.add('bg-red-50','text-red-700'); navEl.classList.remove('text-slate-600'); }
   closeSidebar();
+  if (tab === 'ai-assistant' && aiChatHistory.length === 0) appendAiBubble('model', 'Halo! Saya bisa bantu cek stok, transaksi, PO, produktivitas, case, sampai bantu catatkan transaksi/buat PO (tinggal dikonfirmasi). Mau tanya apa?');
 
   await ensureTabData(tab);
 
@@ -2656,10 +2813,66 @@ function renderWarehouseCompareTab(){
   lucide.createIcons();
 }
 
+// ---- Prediksi stok: tren pemakaian OUT 60 hari terakhir vs Lead Time material ----
+// Rata-rata bergerak dari data transaksi ASLI (db.transactionLogs), BUKAN nebak - biar bisa
+// dipertanggungjawabkan. Formula & threshold ini SAMA PERSIS dgn versi server-side di Code.gs
+// (computeStockForecast_/aiQueryStockForecast_) - kalau salah satu diubah, ubah juga yang satunya,
+// supaya angka di tabel ini & di jawaban chat AI tidak pernah beda.
+function buildStockForecastIndex(){
+  const LOOKBACK_DAYS = 60, HALF = 30;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const dayMs = 86400000;
+  const sums = {}; // key: whId::matId -> {recent, prior} (total qty OUT per window, belum dibagi hari)
+  (db.transactionLogs||[]).forEach(t => {
+    if (String(t['Trx Type']).toUpperCase() !== 'OUT') return;
+    const ds = toWIBDateStr(t['Date']);
+    if (!ds) return;
+    const ageDays = Math.floor((now - new Date(ds)) / dayMs);
+    if (ageDays < 0 || ageDays >= LOOKBACK_DAYS) return;
+    const key = t['Origin WH ID'] + '::' + t['Material ID'];
+    if (!sums[key]) sums[key] = { recent:0, prior:0 };
+    if (ageDays < HALF) sums[key].recent += Number(t['Qty']) || 0; else sums[key].prior += Number(t['Qty']) || 0;
+  });
+  const materialByKey = {}; // Material sheet key-nya "Warehouse Name", Inventory key-nya "Warehouse ID" - join lewat nama gudang
+  (db.materials||[]).forEach(m => {
+    (db.warehouses||[]).filter(w => w['Warehouse Name'] === m['Warehouse Name'])
+      .forEach(w => { materialByKey[w['Warehouse ID'] + '::' + m['Material ID']] = m; });
+  });
+  const idx = {};
+  Object.keys(sums).forEach(key => {
+    const recentAvg = sums[key].recent / HALF;
+    if (recentAvg <= 0) return; // tidak ada pemakaian OUT 30 hari terakhir - tidak relevan diprediksi
+    const priorAvg = sums[key].prior / HALF;
+    let trend = 'STABIL';
+    if (priorAvg <= 0) trend = 'BARU'; else if (recentAvg / priorAvg >= 1.15) trend = 'NAIK'; else if (recentAvg / priorAvg <= 0.85) trend = 'TURUN';
+    const material = materialByKey[key];
+    idx[key] = { recentAvg, leadTime: material ? (Number(material['Lead Time (Days)']) || 0) : 0, trend };
+  });
+  return idx;
+}
+function stockForecastFor(idx, whId, matId, qtyOnHand){
+  const rec = idx[whId + '::' + matId];
+  if (!rec) return null;
+  const daysLeft = qtyOnHand / rec.recentAvg;
+  let urgency = 'AMAN';
+  if (daysLeft <= rec.leadTime) urgency = 'URGENT'; else if (daysLeft <= rec.leadTime + 7) urgency = 'WASPADA';
+  return { daysLeft, urgency, trend: rec.trend };
+}
+const FORECAST_TREND_ICON = { NAIK:'<i data-lucide="trending-up" class="h-3 w-3 text-red-500"></i>', TURUN:'<i data-lucide="trending-down" class="h-3 w-3 text-emerald-500"></i>', BARU:'<i data-lucide="sparkle" class="h-3 w-3 text-blue-400"></i>', STABIL:'' };
+function forecastCellHtml(fc){
+  if (!fc) return '<span class="text-slate-300 text-xs">–</span>';
+  const days = Math.max(0, Math.round(fc.daysLeft));
+  const cls = fc.urgency === 'URGENT' ? 'px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold' : fc.urgency === 'WASPADA' ? 'px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold' : 'text-slate-500';
+  return `<span class="inline-flex items-center gap-1 text-[11px] ${cls}">~${days}hr ${FORECAST_TREND_ICON[fc.trend]||''}</span>`;
+}
+
 function renderInventoryTab(append){
   const wh = document.getElementById('inv-filter-wh').value;
   const q = document.getElementById('inv-search').value.toLowerCase();
+  const onlyForecast = document.getElementById('inv-filter-forecast').checked;
+  const fcIdx = buildStockForecastIndex();
   let rows = db.inventory.filter(i => (!wh || i['Warehouse ID']===wh) && (!q || String(i['Material Name']).toLowerCase().includes(q) || String(i['Material ID']).toLowerCase().includes(q)));
+  if (onlyForecast) rows = rows.filter(i => { const fc = stockForecastFor(fcIdx, i['Warehouse ID'], i['Material ID'], Number(i['Qty On Hand'])||0); return fc && (fc.urgency==='URGENT' || fc.urgency==='WASPADA'); });
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   ui.invPage = Math.min(Math.max(1, ui.invPage), totalPages);
   const pageStart = append ? (ui.invPage-1) * PAGE_SIZE : 0;
@@ -2669,6 +2882,7 @@ function renderInventoryTab(append){
     const status = i['Status Alert'] || 'SAFE';
     const railColor = status==='CRITICAL' ? 'border-l-red-500' : status==='REORDER' ? 'border-l-amber-500' : 'border-l-emerald-500';
     const badgeColor = status==='CRITICAL' ? 'bg-red-100 text-red-700' : status==='REORDER' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700';
+    const fc = stockForecastFor(fcIdx, i['Warehouse ID'], i['Material ID'], Number(i['Qty On Hand'])||0);
     return `<tr class="status-rail ${railColor} hover:bg-slate-50 transition">
       <td class="px-4 py-2.5 font-medium text-slate-700">${esc(i['Warehouse ID'])}</td>
       <td class="px-4 py-2.5"><p class="font-medium text-slate-800">${esc(i['Material Name'])}</p><p class="text-[11px] text-slate-400 font-mono">${esc(i['Material ID'])}</p></td>
@@ -2679,13 +2893,15 @@ function renderInventoryTab(append){
       <td class="px-4 py-2.5 text-right font-bold text-slate-900">${Number(i['Qty Available']||0).toLocaleString('id-ID')}</td>
       <td class="px-4 py-2.5 text-right text-slate-600">${formatRupiah(i['Total Valuation (Rp)'])}</td>
       <td class="px-4 py-2.5 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}">${esc(status)}</span></td>
+      <td class="px-4 py-2.5 text-center">${forecastCellHtml(fc)}</td>
     </tr>`;
   }).join('');
   const tbl = document.getElementById('tbl-inventory');
   if (append) { if (items.length) tbl.insertAdjacentHTML('beforeend', rowsHtml); }
-  else { tbl.innerHTML = items.length ? rowsHtml : `<tr><td colspan="9" class="px-4 py-8 text-center text-slate-400 text-sm">Tidak ada data inventory yang cocok.</td></tr>`; }
+  else { tbl.innerHTML = items.length ? rowsHtml : `<tr><td colspan="10" class="px-4 py-8 text-center text-slate-400 text-sm">Tidak ada data inventory yang cocok.</td></tr>`; }
   renderScrollStatus('pg-inventory', 'inv-scroll-sentinel', Math.min(ui.invPage*PAGE_SIZE, rows.length), rows.length, 'inventory');
   observeSentinel('inv-scroll-sentinel', () => { ui.invPage++; renderInventoryTab(true); });
+  lucide.createIcons();
 }
 
 const MT_TYPE_META = {
