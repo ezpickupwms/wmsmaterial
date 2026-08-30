@@ -40,7 +40,8 @@
     body { overflow: visible !important; height: auto !important; }
     header, aside, #sidebar-backdrop, #toast-container, .no-print, button,
     #modal-confirm, #modal-generic, #modal-glossary, #modal-manual-trx,
-    #modal-create-po, #modal-receive-po, #modal-approve-po, #modal-case-detail { display: none !important; }
+    #modal-create-po, #modal-create-po-bulk, #modal-supplier-pricelist, #modal-pricelist-picker,
+    #modal-warehouse-area, #modal-receive-po, #modal-approve-po, #modal-case-detail { display: none !important; }
     #app-section { display: block !important; height: auto !important; }
     #app-section > div { display: block !important; overflow: visible !important; height: auto !important; }
     #main-content { overflow: visible !important; height: auto !important; padding: 0 !important; }
@@ -144,8 +145,8 @@
         <button onclick="switchTab('inventory')" data-nav="inventory" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="boxes" class="h-4 w-4"></i>Inventory</button>
         <button onclick="switchTab('transaction')" data-nav="transaction" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="arrow-left-right" class="h-4 w-4"></i>Log Transaksi</button>
         <button onclick="switchTab('outbound')" data-nav="outbound" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="package-check" class="h-4 w-4"></i>Outbound Packing</button>
-        <button onclick="switchTab('po')" data-nav="po" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="shopping-cart" class="h-4 w-4"></i>Purchase Order</button>
-        <button onclick="switchTab('cases')" data-nav="cases" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="alert-triangle" class="h-4 w-4"></i>Case Operasional</button>
+        <button onclick="switchTab('po')" data-nav="po" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="shopping-cart" class="h-4 w-4"></i>Purchase Order<span id="nav-badge-po" class="hidden ml-auto px-1.5 h-4 rounded-full bg-red-600 text-white text-[9px] font-bold flex items-center justify-center leading-none">0</span></button>
+        <button onclick="switchTab('cases')" data-nav="cases" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="alert-triangle" class="h-4 w-4"></i>Case Operasional<span id="nav-badge-cases" class="hidden ml-auto px-1.5 h-4 rounded-full bg-red-600 text-white text-[9px] font-bold flex items-center justify-center leading-none">0</span></button>
         <button onclick="switchTab('productivity')" data-nav="productivity" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="bar-chart-3" class="h-4 w-4"></i>Produktivitas Tim</button>
       </nav>
 
@@ -386,7 +387,7 @@
           <button data-perm-module="transaction" data-perm-op="c" onclick="openStockOpnameModal()" class="flex items-center gap-1.5 bg-slate-800 text-white text-xs font-semibold px-3.5 py-2.5 rounded-lg hover:bg-slate-900 transition shadow-sm"><i data-lucide="clipboard-edit" class="h-3.5 w-3.5"></i>Stock Opname</button>
         </div>
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3.5 mb-4 flex flex-wrap gap-3 items-center">
-          <select id="inv-filter-wh" onchange="ui.invPage=1; renderInventoryTab()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white outline-none focus:border-red-600"><option value="">Semua Gudang</option></select>
+          <select id="inv-filter-wh" onchange="ui.invPage=1; renderInventoryTab(); renderInventoryAreaUtilization();" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white outline-none focus:border-red-600"><option value="">Semua Gudang</option></select>
           <label class="flex items-center gap-1.5 text-xs font-medium text-slate-600 cursor-pointer select-none"><input type="checkbox" id="inv-filter-forecast" onchange="ui.invPage=1; renderInventoryTab()" class="rounded border-slate-300 text-red-600 focus:ring-red-500">Hanya yang butuh perhatian (prediksi)</label>
           <div class="relative flex-1 min-w-[180px]">
             <i data-lucide="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400"></i>
@@ -394,13 +395,14 @@
           </div>
           <button onclick="exportCsv('inventory')" class="ml-auto text-xs font-semibold text-slate-500 hover:text-red-700 flex items-center gap-1 transition"><i data-lucide="download" class="h-3.5 w-3.5"></i>Export CSV</button>
         </div>
+        <div id="inventory-area-summary"></div>
         <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div class="overflow-x-auto"><table class="w-full text-sm text-left">
             <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-400"><tr>
               <th class="px-4 py-2.5">Gudang</th><th class="px-4 py-2.5">Material</th><th class="px-4 py-2.5">Bin</th>
               <th class="px-4 py-2.5">Satuan</th>
               <th class="px-4 py-2.5 text-right">On Hand</th><th class="px-4 py-2.5 text-right">Reserved</th><th class="px-4 py-2.5 text-right">Available</th>
-              <th class="px-4 py-2.5 text-right">Valuasi</th><th class="px-4 py-2.5 text-center">Status</th>
+              <th class="px-4 py-2.5 text-right">Valuasi</th><th class="px-4 py-2.5 text-right">CBM</th><th class="px-4 py-2.5 text-center">Status</th>
               <th class="px-4 py-2.5 text-center" title="Estimasi dari tren pemakaian OUT 60 hari terakhir dibanding Lead Time material - beda dari kolom Status yang statis.">Prediksi<i data-lucide="info" class="h-2.5 w-2.5 inline ml-0.5 text-slate-300"></i></th>
             </tr></thead>
             <tbody id="tbl-inventory" class="divide-y divide-slate-100"></tbody>
@@ -819,7 +821,7 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div class="overflow-x-auto"><table class="w-full text-sm text-left">
             <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-400"><tr>
-              <th class="px-4 py-2.5">ID</th><th class="px-4 py-2.5">Nama</th><th class="px-4 py-2.5">Kota</th><th class="px-4 py-2.5">PIC</th><th class="px-4 py-2.5">Kontak</th><th class="px-4 py-2.5 text-center">Status</th><th class="px-4 py-2.5 text-center">Aksi</th>
+              <th class="px-4 py-2.5">ID</th><th class="px-4 py-2.5">Nama</th><th class="px-4 py-2.5">Kota</th><th class="px-4 py-2.5">PIC</th><th class="px-4 py-2.5">Kontak</th><th class="px-4 py-2.5 text-center">Status</th><th class="px-4 py-2.5 text-center">Kapasitas Area</th><th class="px-4 py-2.5 text-center">Aksi</th>
             </tr></thead>
             <tbody id="tbl-warehouse" class="divide-y divide-slate-100"></tbody>
           </table></div>
@@ -839,7 +841,7 @@
           <div class="overflow-x-auto"><table class="w-full text-sm text-left">
             <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-400"><tr>
               <th class="px-4 py-2.5">Material ID</th><th class="px-4 py-2.5">Nama</th><th class="px-4 py-2.5">Gudang</th><th class="px-4 py-2.5">Kategori</th>
-              <th class="px-4 py-2.5">UOM</th><th class="px-4 py-2.5 text-right">Min / ROP</th><th class="px-4 py-2.5 text-right">Harga</th><th class="px-4 py-2.5 text-center">Aksi</th>
+              <th class="px-4 py-2.5">UOM</th><th class="px-4 py-2.5 text-right">Min / ROP</th><th class="px-4 py-2.5 text-right">Harga</th><th class="px-4 py-2.5 text-right">Volume (CBM)</th><th class="px-4 py-2.5 text-center">Aksi</th>
             </tr></thead>
             <tbody id="tbl-material" class="divide-y divide-slate-100"></tbody>
           </table></div>
@@ -855,7 +857,7 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div class="overflow-x-auto"><table class="w-full text-sm text-left">
             <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-400"><tr>
-              <th class="px-4 py-2.5">ID</th><th class="px-4 py-2.5">Nama Supplier</th><th class="px-4 py-2.5">Kontak</th><th class="px-4 py-2.5">Fokus Kategori</th><th class="px-4 py-2.5 text-center">Rating</th><th class="px-4 py-2.5 text-center">Aksi</th>
+              <th class="px-4 py-2.5">ID</th><th class="px-4 py-2.5">Nama Supplier</th><th class="px-4 py-2.5">Kontak</th><th class="px-4 py-2.5">Fokus Kategori</th><th class="px-4 py-2.5 text-center">Rating</th><th class="px-4 py-2.5 text-center">Pricelist</th><th class="px-4 py-2.5 text-center">Aksi</th>
             </tr></thead>
             <tbody id="tbl-supplier" class="divide-y divide-slate-100"></tbody>
           </table></div>
@@ -1276,16 +1278,18 @@
       <div><label class="block text-xs font-semibold text-slate-600 mb-1">Gudang Tujuan</label>
         <select id="po-wh" onchange="refreshPoMaterialOptions()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-red-600"></select></div>
       <div><label class="block text-xs font-semibold text-slate-600 mb-1">Supplier</label>
-        <select id="po-supplier" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-red-600"></select></div>
+        <select id="po-supplier" onchange="onPoSupplierChange()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-red-600"></select>
+        <button type="button" id="po-pricelist-link" onclick="openPricelistPicker('single')" class="hidden mt-1.5 text-[11px] font-semibold text-red-600 hover:text-red-700"><i data-lucide="tag" class="h-3 w-3 inline -mt-0.5 mr-1"></i>Pilih dari pricelist supplier ini</button>
+      </div>
       <div><label class="block text-xs font-semibold text-slate-600 mb-1">Material</label>
         <select id="po-mat" onchange="onPoMaterialChange()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-red-600"></select></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Qty Order</label>
+        <div><label id="po-qty-label" class="block text-xs font-semibold text-slate-600 mb-1">Qty Order</label>
           <input type="number" id="po-qty" min="1" step="any" required oninput="updatePoSummary()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></div>
-        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Harga Satuan (Rp)</label>
+        <div><label id="po-harga-label" class="block text-xs font-semibold text-slate-600 mb-1">Harga Satuan (Rp)</label>
           <input type="number" id="po-harga" min="0" step="any" required oninput="updatePoSummary()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></div>
       </div>
-      <p class="text-[11px] text-slate-400 -mt-2">Harga satuan otomatis terisi dari harga terakhir material, boleh diubah sesuai penawaran supplier saat ini.</p>
+      <p id="po-harga-hint" class="text-[11px] text-slate-400 -mt-2">Pilih supplier &amp; material untuk saran harga otomatis. Harga tetap boleh diubah manual.</p>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="block text-xs font-semibold text-slate-600 mb-1">Diskon (Rp)</label>
           <input type="number" id="po-diskon" min="0" step="any" value="0" oninput="updatePoSummary()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600">
@@ -1323,14 +1327,17 @@
         <div><label class="block text-xs font-semibold text-slate-600 mb-1">Gudang Tujuan</label>
           <select id="pobulk-wh" onchange="refreshPoBulkMaterialOptions()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-red-600"></select></div>
         <div><label class="block text-xs font-semibold text-slate-600 mb-1">Supplier</label>
-          <select id="pobulk-supplier" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-red-600"></select></div>
+          <select id="pobulk-supplier" onchange="onPoBulkSupplierChange()" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-red-600"></select></div>
         <div><label class="block text-xs font-semibold text-slate-600 mb-1">Estimasi Tanggal Tiba</label>
           <input type="date" id="pobulk-expected" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></div>
       </div>
 
-      <div class="flex items-center justify-between pt-1">
+      <div class="flex items-center justify-between pt-1 flex-wrap gap-2">
         <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wide">Daftar Item Material</h4>
-        <button type="button" onclick="addPoBulkRow()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-red-600 border border-red-200 hover:bg-red-50 transition"><i data-lucide="plus" class="h-3.5 w-3.5"></i>Tambah Item</button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="openPricelistPicker('bulk')" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 border border-emerald-200 hover:bg-emerald-50 transition"><i data-lucide="tag" class="h-3.5 w-3.5"></i>Tambah dari Pricelist</button>
+          <button type="button" onclick="addPoBulkRow()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-red-600 border border-red-200 hover:bg-red-50 transition"><i data-lucide="plus" class="h-3.5 w-3.5"></i>Tambah Item</button>
+        </div>
       </div>
       <div id="pobulk-rows" class="space-y-2.5"></div>
 
@@ -1350,6 +1357,64 @@
   </div>
 </div>
 
+<div id="modal-supplier-pricelist" class="fixed inset-0 z-[200] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-1">
+      <h3 class="font-display font-bold text-lg text-slate-900">Pricelist — <span id="pricelist-supplier-name"></span></h3>
+      <button type="button" onclick="closeModal('modal-supplier-pricelist')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="h-5 w-5"></i></button>
+    </div>
+    <p class="text-[11px] text-slate-400 mb-4">Daftar harga material yang ditawarkan supplier ini. Dipakai sebagai saran harga otomatis waktu bikin PO.</p>
+    <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
+      <input type="text" id="pricelist-search" oninput="renderSupplierPricelistTable()" placeholder="Cari material..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm flex-1 min-w-[160px] outline-none focus:border-red-600">
+      <button type="button" data-perm-module="supplier" data-perm-op="c" onclick="openSupplierPriceForm()" class="flex items-center gap-1.5 bg-slate-800 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-900 transition shadow-sm shrink-0"><i data-lucide="plus" class="h-3.5 w-3.5"></i>Tambah Harga</button>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div class="overflow-x-auto max-h-[60vh] overflow-y-auto"><table class="w-full text-sm text-left">
+        <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-400 sticky top-0"><tr>
+          <th class="px-3 py-2">Material</th><th class="px-3 py-2 text-right">Harga</th><th class="px-3 py-2 text-right">MOQ</th><th class="px-3 py-2 text-center">Status</th><th class="px-3 py-2">Catatan</th><th class="px-3 py-2 text-center">Aksi</th>
+        </tr></thead>
+        <tbody id="tbl-supplier-pricelist" class="divide-y divide-slate-100"></tbody>
+      </table></div>
+    </div>
+    <div class="flex justify-end pt-4">
+      <button type="button" onclick="closeModal('modal-supplier-pricelist')" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-pricelist-picker" class="fixed inset-0 z-[230] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-1">
+      <h3 class="font-display font-bold text-lg text-slate-900">Pilih dari Pricelist Supplier</h3>
+      <button type="button" onclick="closeModal('modal-pricelist-picker')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="h-5 w-5"></i></button>
+    </div>
+    <p id="picker-supplier-name" class="text-[11px] text-slate-400 mb-3"></p>
+    <input type="text" id="picker-search" oninput="renderPricelistPicker()" placeholder="Cari material..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm w-full mb-3 outline-none focus:border-red-600">
+    <div id="picker-list" class="space-y-1.5 max-h-[60vh] overflow-y-auto"></div>
+    <div class="flex justify-end gap-2 pt-4">
+      <button type="button" onclick="closeModal('modal-pricelist-picker')" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition">Batal</button>
+      <button type="button" id="picker-apply-btn" onclick="applyPricelistPicker()" class="hidden px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition shadow-sm">Tambah Item Terpilih</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-warehouse-area" class="fixed inset-0 z-[200] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-1">
+      <h3 class="font-display font-bold text-lg text-slate-900">Area Inventori — <span id="area-warehouse-name"></span></h3>
+      <button type="button" onclick="closeModal('modal-warehouse-area')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="h-5 w-5"></i></button>
+    </div>
+    <p class="text-[11px] text-slate-400 mb-4">Bagi gudang ini jadi beberapa area penyimpanan (mis. Storage Material, Storage Deadstock) lengkap kapasitas CBM-nya (Panjang x Lebar x Tinggi). Kapasitas terpakai dihitung otomatis dari stok material yang ditempatkan di area masing-masing.</p>
+    <div class="flex justify-end mb-3">
+      <button type="button" data-perm-module="warehouse" data-perm-op="c" onclick="openInventoryAreaForm()" class="flex items-center gap-1.5 bg-slate-800 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-900 transition shadow-sm"><i data-lucide="plus" class="h-3.5 w-3.5"></i>Tambah Area</button>
+    </div>
+    <div id="area-list" class="space-y-3"></div>
+    <div class="flex justify-end pt-4">
+      <button type="button" onclick="closeModal('modal-warehouse-area')" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-receive-po" class="fixed inset-0 z-[220] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
   <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100">
     <h3 class="font-display font-bold text-lg text-slate-900 mb-1">Terima Barang PO</h3>
@@ -1357,7 +1422,7 @@
     <div id="receive-po-cost-info" class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-[11px] text-slate-500 mb-3 hidden"></div>
     <form onsubmit="submitReceivePO(event)" class="space-y-3">
       <input type="hidden" id="rp-ponumber">
-      <div><label class="block text-xs font-semibold text-slate-600 mb-1">Qty Diterima Sekarang (sesuai fisik)</label>
+      <div><label id="rp-qty-label" class="block text-xs font-semibold text-slate-600 mb-1">Qty Diterima Sekarang (sesuai fisik)</label>
         <input type="number" id="rp-qty" min="1" step="any" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-600">
         <p class="text-[11px] text-slate-400 mt-1">Boleh diisi beda dari sisa perkiraan kalau jumlah fisik yang datang lebih atau kurang.</p></div>
       <div><label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Terima</label>
@@ -1381,13 +1446,13 @@
     <form onsubmit="submitApprovePO(event)" class="space-y-3">
       <input type="hidden" id="ap-ponumber">
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Qty Diajukan</label>
+        <div><label id="ap-qty-ordered-label" class="block text-xs font-semibold text-slate-600 mb-1">Qty Diajukan</label>
           <input type="number" id="ap-qty-ordered" readonly class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-100 text-slate-500"></div>
-        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Qty Di-approve</label>
+        <div><label id="ap-qty-approved-label" class="block text-xs font-semibold text-slate-600 mb-1">Qty Di-approve</label>
           <input type="number" id="ap-qty-approved" min="0.01" step="any" required oninput="updateApprovePoSummary()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></div>
       </div>
       <p class="text-[11px] text-slate-400 -mt-2">Qty boleh dikurangi/ditambah dari yang diajukan, sesuai keputusan approval.</p>
-      <div><label class="block text-xs font-semibold text-slate-600 mb-1">Harga Satuan Final (Rp)</label>
+      <div><label id="ap-harga-label" class="block text-xs font-semibold text-slate-600 mb-1">Harga Satuan Final (Rp)</label>
         <input type="number" id="ap-harga" min="0" step="any" oninput="updateApprovePoSummary()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="block text-xs font-semibold text-slate-600 mb-1">Diskon Final (Rp)</label>
@@ -1489,7 +1554,7 @@ const PAGE_SIZE = 12;
 
 let authToken = null;
 let currentUser = null;
-let db = { warehouses:[], materials:[], suppliers:[], inventory:[], transactionLogs:[], purchaseOrders:[], packCategories:[], bomRecipes:[], packLogs:[], users:[], overheadCosts:[], hppSettings:[], handlingFees:[], operationalCases:[], productivityLogs:[], clientOrderLogs:[], productivityTargets:[], warehouseAssets:[], productionTargets:[], rolePermissionMatrix:{}, rolePermissionCeiling:{}, customRoles:[], allRoleNames:[] };
+let db = { warehouses:[], materials:[], suppliers:[], supplierPricelist:[], inventoryAreas:[], inventory:[], transactionLogs:[], purchaseOrders:[], packCategories:[], bomRecipes:[], packLogs:[], users:[], overheadCosts:[], hppSettings:[], handlingFees:[], operationalCases:[], productivityLogs:[], clientOrderLogs:[], productivityTargets:[], warehouseAssets:[], productionTargets:[], rolePermissionMatrix:{}, rolePermissionCeiling:{}, customRoles:[], allRoleNames:[] };
 let ui = { invPage:1, trxPage:1, matPage:1, poPage:1, supplierPage:1, assetsPage:1, casesPage:1, selectedPackCat:null, selectedPackWh:null, selectedPermRole:'Staff Gudang', bomSubview:'recipe' };
 let permMatrixState = null;
 
@@ -1504,19 +1569,19 @@ let permMatrixState = null;
 // supaya tidak ada dependensi yang kelewat, misal renderDashboard baca purchaseOrders &
 // operationalCases meski keduanya tidak "memicu" renderDashboard di DB_KEY_RENDER_MAP).
 // Tab yang tidak terdaftar di sini (atau array kosong) berarti cuma butuh CORE_KEYS.
-const CORE_KEYS = ['warehouses', 'materials', 'rolePermissionMatrix'];
+const CORE_KEYS = ['warehouses', 'materials', 'suppliers', 'supplierPricelist', 'inventoryAreas', 'rolePermissionMatrix'];
 const TAB_DATA_KEYS = {
   dashboard:          ['inventory', 'transactionLogs', 'packLogs', 'purchaseOrders', 'operationalCases', 'clientOrderLogs'],
   warehouse_compare:  ['inventory', 'transactionLogs', 'packLogs', 'purchaseOrders', 'operationalCases', 'productivityLogs', 'clientOrderLogs', 'packCategories', 'productionTargets', 'overheadCosts', 'hppSettings'],
   inventory:          ['inventory', 'transactionLogs'],
   transaction:        ['transactionLogs'],
   outbound:           ['packCategories', 'bomRecipes', 'inventory', 'packLogs'],
-  po:                 ['purchaseOrders', 'suppliers'],
+  po:                 ['purchaseOrders'],
   cases:              ['operationalCases'],
   productivity:       ['productivityLogs', 'productivityTargets', 'clientOrderLogs', 'packLogs'],
   warehouse:          [],
   material:           [],
-  supplier:           ['suppliers'],
+  supplier:           [],
   bom:                ['packCategories', 'bomRecipes', 'inventory', 'productionTargets', 'packLogs'],
   hpp:                ['overheadCosts', 'hppSettings', 'handlingFees'],
   assets:             ['warehouseAssets'],
@@ -1723,7 +1788,7 @@ function openModal(id){
   document.getElementById(id).classList.add('flex');
 }
 
-const NAMED_MODAL_IDS = ['modal-glossary','modal-manual-trx','modal-create-po','modal-create-po-bulk','modal-receive-po','modal-approve-po','modal-case-detail'];
+const NAMED_MODAL_IDS = ['modal-glossary','modal-manual-trx','modal-create-po','modal-create-po-bulk','modal-supplier-pricelist','modal-pricelist-picker','modal-warehouse-area','modal-receive-po','modal-approve-po','modal-case-detail'];
 document.addEventListener('keydown', function(e){
   if (e.key !== 'Escape') return;
   const generic = document.getElementById('modal-generic');
@@ -1951,6 +2016,16 @@ function buildMaterialUomIndex(){
   return function(materialId, warehouseId){
     const whName = whNameById[warehouseId] || warehouseId;
     return uomByKey[materialId+'||'+whName] || '-';
+  };
+}
+function buildMaterialCbmIndex(){
+  const whNameById = {};
+  db.warehouses.forEach(w => { whNameById[w['Warehouse ID']] = w['Warehouse Name']; });
+  const cbmByKey = {};
+  db.materials.forEach(m => { cbmByKey[m['Material ID']+'||'+m['Warehouse Name']] = Number(m['Volume per Unit (CBM)']||0); });
+  return function(materialId, warehouseId){
+    const whName = whNameById[warehouseId] || warehouseId;
+    return cbmByKey[materialId+'||'+whName] || 0;
   };
 }
 
@@ -2185,13 +2260,15 @@ function forceLogout(){
 
 const DB_KEY_RENDER_MAP = {
   warehouses: () => { populateWarehouseSelects(); renderWarehouseTab(); markCompareDirty(); },
+  inventoryAreas: () => { renderWarehouseTab(); renderInventoryAreaUtilization(); if (typeof currentAreaWarehouseId !== 'undefined' && currentAreaWarehouseId) renderWarehouseAreaList(); },
 
   materials: () => { renderMaterialTab(); renderBomCategoryList(); renderCapacitySummaryTable(); renderAggregatePurchaseRecommendation(); },
   suppliers: () => renderSupplierTab(),
+  supplierPricelist: () => { renderSupplierTab(); if (typeof currentPricelistSupplierId !== 'undefined' && currentPricelistSupplierId) renderSupplierPricelistTable(); },
 
-  inventory: () => { renderInventoryTab(); renderDashboard(); renderBomCategoryList(); renderCapacitySummaryTable(); renderAggregatePurchaseRecommendation(); markCompareDirty(); },
+  inventory: () => { renderInventoryTab(); renderDashboard(); renderBomCategoryList(); renderCapacitySummaryTable(); renderAggregatePurchaseRecommendation(); renderInventoryAreaUtilization(); markCompareDirty(); },
   transactionLogs: () => { renderTransactionTab(); renderDashboard(); markCompareDirty(); },
-  purchaseOrders: () => { renderPOTab(); renderDashboard(); markCompareDirty(); },
+  purchaseOrders: () => { renderPOTab(); renderDashboard(); markCompareDirty(); updateSidebarBadges(); },
   packCategories: () => { renderBomCategoryList(); renderCapacitySummaryTable(); markCompareDirty(); },
   bomRecipes: () => { renderBomCategoryList(); renderCapacitySummaryTable(); markCompareDirty(); },
 
@@ -2200,7 +2277,7 @@ const DB_KEY_RENDER_MAP = {
   overheadCosts: () => { renderHppTab(); markCompareDirty(); },
   hppSettings: () => { renderHppTab(); markCompareDirty(); },
   handlingFees: () => renderHppTab(),
-  operationalCases: () => { renderCasesTab(); renderDashboard(); markCompareDirty(); },
+  operationalCases: () => { renderCasesTab(); renderDashboard(); markCompareDirty(); updateSidebarBadges(); },
   productivityLogs: () => { renderProductivityLogToday(); renderProductivityTab(); markCompareDirty(); },
 
   clientOrderLogs: () => { renderProductivityTab(); populateClientNameSuggestions(); markCompareDirty(); },
@@ -2379,6 +2456,21 @@ function barRow(label, value, max, colorClass, valueLabel){
   const pct = max > 0 ? Math.max(2, (value/max)*100) : 0;
   return `<div><div class="flex justify-between text-xs mb-1"><span class="font-medium text-slate-600 truncate pr-2">${esc(label)}</span><span class="text-slate-500 flex-shrink-0">${esc(valueLabel!==undefined?valueLabel:value)}</span></div>
     <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full ${colorClass}" style="width:${pct}%"></div></div></div>`;
+}
+
+function updateSidebarBadges(){
+  const poBadge = document.getElementById('nav-badge-po');
+  if (poBadge) {
+    const pendingPO = db.purchaseOrders.filter(p => p['PO Status']==='OPEN' || p['PO Status']==='APPROVED').length;
+    poBadge.textContent = pendingPO;
+    poBadge.classList.toggle('hidden', pendingPO===0);
+  }
+  const caseBadge = document.getElementById('nav-badge-cases');
+  if (caseBadge) {
+    const activeCases = db.operationalCases.filter(c => c['Status']==='Terbuka' || c['Status']==='Diproses').length;
+    caseBadge.textContent = activeCases;
+    caseBadge.classList.toggle('hidden', activeCases===0);
+  }
 }
 
 function renderDashboard(){
@@ -2563,7 +2655,7 @@ function computeWarehouseCompareData(){
     if (!stats[whId]) {
       stats[whId] = {
         id: whId, name: whName || whId,
-        valuasi: 0, itemKritis: 0, outboundQtyToday: 0, outboundValueToday: 0, outboundValueRange: 0, inboundValueToday: 0, inboundValueRange: 0,
+        valuasi: 0, itemKritis: 0, outboundQtyToday: 0, outboundQtyRange: 0, outboundValueToday: 0, outboundValueRange: 0, inboundValueToday: 0, inboundValueRange: 0,
         poPending: 0, caseAktif: 0, caseSelesai: 0, nominalKlaim: 0, orderKlienQty: 0,
         targetQty: 0, realisasiQty: 0, targetCatCount: 0,
         perRole: { 'Admin Print Name':0, 'Picker Name':0, 'Packer Name':0, 'Checker Name':0 },
@@ -2606,7 +2698,7 @@ function computeWarehouseCompareData(){
     const s = ensure(p['Warehouse ID']);
     const qty = getPackQty(p);
     if (dStr === todayStr) s.outboundQtyToday += qty;
-    if (dStr >= fromStr && dStr <= toStr) s.dailyOutboundQty[dStr] = (s.dailyOutboundQty[dStr]||0) + qty;
+    if (dStr >= fromStr && dStr <= toStr) { s.outboundQtyRange += qty; s.dailyOutboundQty[dStr] = (s.dailyOutboundQty[dStr]||0) + qty; }
   });
 
   db.purchaseOrders.forEach(p => {
@@ -2722,10 +2814,10 @@ function renderCompareKpiCards(stats){
       <div class="grid grid-cols-2 gap-3 text-xs">
         <div><p class="text-slate-400">Valuasi Stok</p><p class="font-bold text-slate-800">${formatRupiah(s.valuasi)}</p></div>
         <div><p class="text-slate-400">Item Kritis</p><p class="font-bold ${s.itemKritis>0?'text-red-600':'text-slate-800'}">${s.itemKritis}</p></div>
-        <div><p class="text-slate-400">Outbound Hari Ini</p><p class="font-bold text-slate-800">${s.outboundQtyToday.toLocaleString('id-ID')} pkt</p></div>
+        <div><p class="text-slate-400">Outbound Periode Ini</p><p class="font-bold text-slate-800">${s.outboundQtyRange.toLocaleString('id-ID')} pkt</p></div>
         <div><p class="text-slate-400">PO Pending</p><p class="font-bold ${s.poPending>0?'text-amber-600':'text-slate-800'}">${s.poPending}</p></div>
         <div><p class="text-slate-400">Case Aktif</p><p class="font-bold ${s.caseAktif>0?'text-red-600':'text-slate-800'}">${s.caseAktif}</p></div>
-        <div><p class="text-slate-400">Nilai Outbound Hr Ini</p><p class="font-bold text-slate-800">${formatRupiah(s.outboundValueToday)}</p></div>
+        <div><p class="text-slate-400">Nilai Outbound Periode Ini</p><p class="font-bold text-slate-800">${formatRupiah(s.outboundValueRange)}</p></div>
       </div>
     </div>`).join('') : '<p class="text-sm text-slate-400 col-span-full text-center py-6">Belum ada data gudang.</p>';
 }
@@ -2958,11 +3050,14 @@ function renderInventoryTab(append){
   const pageStart = append ? (ui.invPage-1) * PAGE_SIZE : 0;
   const items = rows.slice(pageStart, ui.invPage * PAGE_SIZE);
   const getUom = buildMaterialUomIndex();
+  const getCbm = buildMaterialCbmIndex();
   const rowsHtml = items.map(i => {
     const status = i['Status Alert'] || 'SAFE';
     const railColor = status==='CRITICAL' ? 'border-l-red-500' : status==='REORDER' ? 'border-l-amber-500' : 'border-l-emerald-500';
     const badgeColor = status==='CRITICAL' ? 'bg-red-100 text-red-700' : status==='REORDER' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700';
     const fc = stockForecastFor(fcIdx, i['Warehouse ID'], i['Material ID'], Number(i['Qty On Hand'])||0);
+    const cbmPerUnit = getCbm(i['Material ID'], i['Warehouse ID']);
+    const cbmTotal = cbmPerUnit * Number(i['Qty On Hand']||0);
     return `<tr class="status-rail ${railColor} hover:bg-slate-50 transition">
       <td class="px-4 py-2.5 font-medium text-slate-700">${esc(i['Warehouse ID'])}</td>
       <td class="px-4 py-2.5"><p class="font-medium text-slate-800">${esc(i['Material Name'])}</p><p class="text-[11px] text-slate-400 font-mono">${esc(i['Material ID'])}</p></td>
@@ -2972,13 +3067,14 @@ function renderInventoryTab(append){
       <td class="px-4 py-2.5 text-right text-slate-500">${Number(i['Qty Reserved']||0).toLocaleString('id-ID')}</td>
       <td class="px-4 py-2.5 text-right font-bold text-slate-900">${Number(i['Qty Available']||0).toLocaleString('id-ID')}</td>
       <td class="px-4 py-2.5 text-right text-slate-600">${formatRupiah(i['Total Valuation (Rp)'])}</td>
+      <td class="px-4 py-2.5 text-right text-slate-500">${cbmPerUnit>0 ? cbmTotal.toLocaleString('id-ID',{maximumFractionDigits:3}) : '<span class="text-slate-300">-</span>'}</td>
       <td class="px-4 py-2.5 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}">${esc(status)}</span></td>
       <td class="px-4 py-2.5 text-center">${forecastCellHtml(fc)}</td>
     </tr>`;
   }).join('');
   const tbl = document.getElementById('tbl-inventory');
   if (append) { if (items.length) tbl.insertAdjacentHTML('beforeend', rowsHtml); }
-  else { tbl.innerHTML = items.length ? rowsHtml : `<tr><td colspan="10" class="px-4 py-8 text-center text-slate-400 text-sm">Tidak ada data inventory yang cocok.</td></tr>`; }
+  else { tbl.innerHTML = items.length ? rowsHtml : `<tr><td colspan="11" class="px-4 py-8 text-center text-slate-400 text-sm">Tidak ada data inventory yang cocok.</td></tr>`; }
   renderScrollStatus('pg-inventory', 'inv-scroll-sentinel', Math.min(ui.invPage*PAGE_SIZE, rows.length), rows.length, 'inventory');
   observeSentinel('inv-scroll-sentinel', () => { ui.invPage++; renderInventoryTab(true); });
   lucide.createIcons();
@@ -3231,6 +3327,13 @@ function computePoPricing(qty, harga, diskon, ongkir){
   const unitCost = qty > 0 ? total / qty : 0;
   return { subtotal, diskon: diskonClamped, ongkir, total, unitCost };
 }
+// UOM material dari 1 baris PO - dipakai di tabel PO & modal approve/receive supaya qty & harga
+// per unit selalu jelas satuannya (sebelumnya cuma nampilin angka polos / teks generik "unit").
+function poMaterialUom(po){
+  if (!po) return 'unit';
+  const mat = materialsForWarehouseId(po['Destination WH ID']).find(m => m['Material ID']===po['Material ID']);
+  return mat ? (mat['UOM'] || 'unit') : 'unit';
+}
 // Ringkasan nilai pembelian dari satu baris PO yang sudah tersimpan (dipakai di tabel & modal receive/approve).
 // Basis qty pakai Qty Approved kalau sudah ada (qty resmi), fallback ke Qty Ordered kalau masih OPEN.
 // Kalau PO sudah pernah diterima, harga efektif/unit dipakai dari nilai yang benar-benar disimpan
@@ -3261,13 +3364,37 @@ function refreshPoMaterialOptions(){
   const wh = document.getElementById('po-wh').value;
   document.getElementById('po-mat').innerHTML = materialsForWarehouseId(wh).map(m => `<option value="${esc(m['Material ID'])}">${esc(m['Material ID'])} — ${esc(m['Material Name'])}</option>`).join('');
   populateSupplierSelect('po-supplier');
+  onPoSupplierChange();
+}
+function onPoSupplierChange(){
+  const supplierId = document.getElementById('po-supplier').value;
+  const link = document.getElementById('po-pricelist-link');
+  if (link) link.classList.toggle('hidden', activePricelistForSupplier(supplierId).length === 0);
   onPoMaterialChange();
 }
 function onPoMaterialChange(){
   const wh = document.getElementById('po-wh').value;
   const matId = document.getElementById('po-mat').value;
+  const supplierId = document.getElementById('po-supplier').value;
   const mat = materialsForWarehouseId(wh).find(m => m['Material ID']===matId);
-  document.getElementById('po-harga').value = mat ? Number(mat['Unit Price (Rp)']||0) : 0;
+  const price = getSupplierPriceFor(supplierId, matId);
+  document.getElementById('po-harga').value = price ? Number(price['Harga Satuan (Rp)']||0) : (mat ? Number(mat['Unit Price (Rp)']||0) : 0);
+  const uom = mat ? (mat['UOM'] || 'unit') : 'unit';
+  const qtyLabel = document.getElementById('po-qty-label');
+  if (qtyLabel) qtyLabel.textContent = 'Qty Order (' + uom + ')';
+  const hargaLabel = document.getElementById('po-harga-label');
+  if (hargaLabel) hargaLabel.textContent = 'Harga Satuan (Rp / ' + uom + ')';
+  const hint = document.getElementById('po-harga-hint');
+  if (hint) {
+    if (price) {
+      const moqTxt = Number(price['MOQ']||0) > 0 ? ` • MOQ ${Number(price['MOQ']).toLocaleString('id-ID')} ${uom}` : '';
+      hint.textContent = `Harga dari pricelist supplier ini${moqTxt}. Tetap boleh diubah manual.`;
+      hint.className = 'text-[11px] text-emerald-600 -mt-2';
+    } else {
+      hint.textContent = 'Belum ada pricelist untuk supplier ini — harga dari harga umum material, boleh diubah manual.';
+      hint.className = 'text-[11px] text-slate-400 -mt-2';
+    }
+  }
   updatePoSummary();
 }
 function applyDiskonPercent(){
@@ -3353,6 +3480,8 @@ function renderPoBulkRows(){
     const matOpts = '<option value="">Pilih material...</option>' + matList.map(m =>
       `<option value="${esc(m['Material ID'])}" ${m['Material ID']===row.materialId?'selected':''}>${esc(m['Material ID'])} — ${esc(m['Material Name'])}</option>`
     ).join('');
+    const rowMat = matList.find(m => m['Material ID']===row.materialId);
+    const uom = rowMat ? (rowMat['UOM'] || 'unit') : 'unit';
     return `<div class="border border-slate-200 rounded-lg p-3 relative bg-white">
       <div class="flex items-center justify-between mb-2">
         <span class="text-[11px] font-bold text-slate-400">Item #${idx+1}</span>
@@ -3363,9 +3492,9 @@ function renderPoBulkRows(){
           <label class="block text-[10px] font-semibold text-slate-500 mb-1">Material</label>
           <select id="pobulk-mat-${idx}" onchange="onPoBulkMaterialChange(${idx},this.value)" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs bg-white outline-none focus:border-red-600">${matOpts}</select>
         </div>
-        <div><label class="block text-[10px] font-semibold text-slate-500 mb-1">Qty</label>
+        <div><label class="block text-[10px] font-semibold text-slate-500 mb-1">Qty${rowMat?' ('+esc(uom)+')':''}</label>
           <input type="number" id="pobulk-qty-${idx}" min="0" step="any" value="${esc(row.qtyOrdered)}" oninput="updatePoBulkRow(${idx},'qtyOrdered',this.value)" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-red-600"></div>
-        <div><label class="block text-[10px] font-semibold text-slate-500 mb-1">Harga Satuan</label>
+        <div><label class="block text-[10px] font-semibold text-slate-500 mb-1">Harga${rowMat?' (Rp/'+esc(uom)+')':' Satuan'}</label>
           <input type="number" id="pobulk-harga-${idx}" min="0" step="any" value="${esc(row.hargaSatuan)}" oninput="updatePoBulkRow(${idx},'hargaSatuan',this.value)" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-red-600"></div>
         <div><label class="block text-[10px] font-semibold text-slate-500 mb-1">Diskon (Rp)</label>
           <input type="number" id="pobulk-diskon-${idx}" min="0" step="any" value="${esc(row.diskon)}" oninput="updatePoBulkRow(${idx},'diskon',this.value)" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-red-600"></div>
@@ -3398,12 +3527,23 @@ function updatePoBulkRow(idx, field, val){
 }
 function onPoBulkMaterialChange(idx, materialId){
   const wh = document.getElementById('pobulk-wh').value;
+  const supplierId = document.getElementById('pobulk-supplier').value;
   const mat = materialsForWarehouseId(wh).find(m => m['Material ID']===materialId);
+  const price = getSupplierPriceFor(supplierId, materialId);
   poBulkRows[idx].materialId = materialId;
-  poBulkRows[idx].hargaSatuan = mat ? Number(mat['Unit Price (Rp)']||0) : '';
-  const hargaInput = document.getElementById('pobulk-harga-'+idx);
-  if (hargaInput) hargaInput.value = poBulkRows[idx].hargaSatuan;
-  updatePoBulkSummary();
+  poBulkRows[idx].hargaSatuan = price ? Number(price['Harga Satuan (Rp)']||0) : (mat ? Number(mat['Unit Price (Rp)']||0) : '');
+  renderPoBulkRows();
+}
+// Ganti supplier di header form -> harga baris yang materialnya sudah kepilih ikut disegarkan
+// (kalau supplier baru punya pricelist utk material itu), baris yang belum pilih material dibiarkan.
+function onPoBulkSupplierChange(){
+  const supplierId = document.getElementById('pobulk-supplier').value;
+  poBulkRows.forEach(row => {
+    if (!row.materialId) return;
+    const price = getSupplierPriceFor(supplierId, row.materialId);
+    if (price) row.hargaSatuan = Number(price['Harga Satuan (Rp)']||0);
+  });
+  renderPoBulkRows();
 }
 function updatePoBulkSummary(){
   let sumSubtotal=0, sumDiskon=0, sumOngkir=0, sumTotal=0, validCount=0;
@@ -3496,10 +3636,11 @@ function renderPOTab(append){
       action = '<span class="text-xs text-slate-400 italic">Dibatalkan</span>';
     }
 
+    const uom = poMaterialUom(po);
     const pr = poPricing(po);
     const priceExtras = [pr.diskon>0?'disk':'', pr.ongkir>0?'ongkir':''].filter(Boolean).join('+');
     const priceCell = pr.hasPricing
-      ? `<p class="font-semibold text-slate-700">${formatRupiah(pr.total)}</p><p class="text-[10px] text-slate-400">@ ${formatRupiah(pr.harga)}/unit${priceExtras?' · '+priceExtras:''}</p>`
+      ? `<p class="font-semibold text-slate-700">${formatRupiah(pr.total)}</p><p class="text-[10px] text-slate-400">@ ${formatRupiah(pr.harga)}/${esc(uom)}${priceExtras?' · '+priceExtras:''}</p>`
       : `<span class="text-slate-300 italic text-[11px]">- data harga -</span>`;
 
     return `<tr class="hover:bg-slate-50 transition">
@@ -3507,7 +3648,7 @@ function renderPOTab(append){
       <td class="px-4 py-2.5 text-slate-600">${esc(po['Destination WH ID'])}</td>
       <td class="px-4 py-2.5 text-slate-600">${esc(po['Supplier Name'])}</td>
       <td class="px-4 py-2.5"><p class="text-slate-700">${esc(po['Material ID'])}</p></td>
-      <td class="px-4 py-2.5 text-right text-slate-600 text-xs">${qtyOrdered.toLocaleString('id-ID')} / ${qtyApproved!==null ? qtyApproved.toLocaleString('id-ID') : '-'} / ${qtyReceived.toLocaleString('id-ID')}</td>
+      <td class="px-4 py-2.5 text-right text-slate-600 text-xs">${qtyOrdered.toLocaleString('id-ID')} / ${qtyApproved!==null ? qtyApproved.toLocaleString('id-ID') : '-'} / ${qtyReceived.toLocaleString('id-ID')} <span class="text-slate-400">${esc(uom)}</span></td>
       <td class="px-4 py-2.5 text-right">${priceCell}</td>
       <td class="px-4 py-2.5 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badge}">${esc(status)}</span></td>
       <td class="px-4 py-2.5 text-center">${action}</td>
@@ -3524,9 +3665,13 @@ function openApprovePOForm(poNumber){
   const po = db.purchaseOrders.find(p => p['PO Number']===poNumber);
   if (!po) { showToast('PO tidak ditemukan.', 'error'); return; }
   const qtyOrdered = Number(po['Qty Ordered']||0);
+  const uom = poMaterialUom(po);
 
   document.getElementById('ap-ponumber').value = poNumber;
   document.getElementById('approve-po-info').textContent = poNumber + ' · ' + (po['Material ID']||'');
+  document.getElementById('ap-qty-ordered-label').textContent = 'Qty Diajukan (' + uom + ')';
+  document.getElementById('ap-qty-approved-label').textContent = 'Qty Di-approve (' + uom + ')';
+  document.getElementById('ap-harga-label').textContent = 'Harga Satuan Final (Rp / ' + uom + ')';
   document.getElementById('ap-qty-ordered').value = qtyOrdered;
   document.getElementById('ap-qty-approved').value = qtyOrdered;
   // Harga/diskon/ongkir diisi dari nilai PO saat ini, tapi sekarang EDITABLE (bukan cuma ditampilkan) -
@@ -3557,12 +3702,13 @@ function updateApprovePoSummary(){
   document.getElementById('approve-po-summary').classList.toggle('hidden', !hasPricing);
   document.getElementById('ap-no-price-note').classList.toggle('hidden', hasPricing);
   if (hasPricing) {
+    const po = db.purchaseOrders.find(p => p['PO Number']===document.getElementById('ap-ponumber').value);
     const r = computePoPricing(qty, harga, diskon, ongkir);
     document.getElementById('ap-sum-subtotal').textContent = formatRupiah(r.subtotal);
     document.getElementById('ap-sum-diskon').textContent = '- ' + formatRupiah(r.diskon);
     document.getElementById('ap-sum-ongkir').textContent = '+ ' + formatRupiah(r.ongkir);
     document.getElementById('ap-sum-total').textContent = formatRupiah(r.total);
-    document.getElementById('ap-sum-unit').textContent = formatRupiah(r.unitCost) + ' / unit';
+    document.getElementById('ap-sum-unit').textContent = formatRupiah(r.unitCost) + ' / ' + poMaterialUom(po);
   }
 }
 async function submitApprovePO(e){
@@ -3588,18 +3734,21 @@ async function cancelPO(poNumber){
   if (result.success) { showToast(result.message,'success'); await fetchPartialData(['purchaseOrders']); } else showToast(result.message,'error');
 }
 function openReceivePOModal(poNumber, sisa){
+  const po = db.purchaseOrders.find(p => p['PO Number']===poNumber);
+  const uom = poMaterialUom(po);
+
   document.getElementById('rp-ponumber').value = poNumber;
-  document.getElementById('receive-po-info').textContent = `${poNumber} · sisa perkiraan: ${sisa} (boleh isi beda kalau fisik yang datang lebih atau kurang)`;
+  document.getElementById('receive-po-info').textContent = `${poNumber} · sisa perkiraan: ${sisa} ${uom} (boleh isi beda kalau fisik yang datang lebih atau kurang)`;
+  document.getElementById('rp-qty-label').textContent = 'Qty Diterima Sekarang (' + uom + ', sesuai fisik)';
   document.getElementById('rp-qty').value = sisa > 0 ? sisa : '';
   document.getElementById('rp-close-short').checked = false;
   document.getElementById('rp-date').value = getWIBDateString();
 
-  const po = db.purchaseOrders.find(p => p['PO Number']===poNumber);
   const costEl = document.getElementById('receive-po-cost-info');
   const pr = po ? poPricing(po) : null;
   if (pr && pr.hasPricing) {
     costEl.classList.remove('hidden');
-    costEl.innerHTML = `Estimasi biaya masuk: <b>${formatRupiah(pr.unitCost)}/unit</b>. Harga rata-rata (weighted average) material ini akan otomatis disesuaikan begitu barang disimpan.`;
+    costEl.innerHTML = `Estimasi biaya masuk: <b>${formatRupiah(pr.unitCost)}/${esc(uom)}</b>. Harga rata-rata (weighted average) material ini akan otomatis disesuaikan begitu barang disimpan.`;
   } else {
     costEl.classList.add('hidden');
   }
@@ -4483,7 +4632,9 @@ function exportProductivityCsv(){
 }
 
 function renderWarehouseTab(){
-  document.getElementById('tbl-warehouse').innerHTML = db.warehouses.length ? db.warehouses.map(w => `
+  document.getElementById('tbl-warehouse').innerHTML = db.warehouses.length ? db.warehouses.map(w => {
+    const areaCount = db.inventoryAreas.filter(a => a['Warehouse ID']===w['Warehouse ID']).length;
+    return `
     <tr class="hover:bg-slate-50 transition">
       <td class="px-4 py-2.5 font-mono text-xs font-bold text-slate-700">${esc(w['Warehouse ID'])}</td>
       <td class="px-4 py-2.5 font-medium text-slate-800">${esc(w['Warehouse Name'])}</td>
@@ -4491,8 +4642,129 @@ function renderWarehouseTab(){
       <td class="px-4 py-2.5 text-slate-600">${esc(w['PIC Name'])}</td>
       <td class="px-4 py-2.5 text-slate-500">${esc(w['Contact Number'])}</td>
       <td class="px-4 py-2.5 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${w['Status']==='ACTIVE'?'bg-emerald-100 text-emerald-700':'bg-slate-100 text-slate-500'}">${esc(w['Status']||'ACTIVE')}</span></td>
-      <td class="px-4 py-2.5 text-center">${can('warehouse','u') ? `<button onclick='openWarehouseForm(${escAttrJson(w)})' class="text-slate-600 hover:text-red-700"><i data-lucide="edit-3" class="h-4 w-4"></i></button>` : '-'}</td>
-    </tr>`).join('') : `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400 text-sm">Belum ada data gudang.</td></tr>`;
+      <td class="px-4 py-2.5 text-center">
+        <button onclick="openWarehouseAreaManage('${esc(w['Warehouse ID'])}')" title="Kelola area penyimpanan & kapasitas CBM gudang ini" class="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full transition ${areaCount ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}">
+          <i data-lucide="box" class="h-3 w-3"></i>${areaCount ? areaCount+' area' : 'Belum ada'}
+        </button>
+      </td>
+      <td class="px-4 py-2.5 text-center whitespace-nowrap">
+        ${can('warehouse','u') ? `<button onclick='openWarehouseForm(${escAttrJson(w)})' class="text-slate-600 hover:text-red-700 mr-2"><i data-lucide="edit-3" class="h-4 w-4"></i></button>` : ''}
+        ${can('warehouse','d') ? `<button onclick="deleteWarehouse('${esc(w['Warehouse ID'])}')" class="text-slate-600 hover:text-red-700"><i data-lucide="trash-2" class="h-4 w-4"></i></button>` : ''}
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="8" class="px-4 py-8 text-center text-slate-400 text-sm">Belum ada data gudang.</td></tr>`;
+  lucide.createIcons();
+}
+async function deleteWarehouse(warehouseId){
+  if (!(await confirmDialog('Hapus gudang ini?', 'Gudang yang masih punya data Material terdaftar tidak bisa dihapus — kosongkan dulu materialnya.'))) return;
+  const result = await apiPost({ action:'DELETE_WAREHOUSE', warehouseId });
+  if (result.success) { showToast(result.message,'success'); await fetchPartialData(['warehouses']); } else showToast(result.message,'error');
+}
+
+// ===== Area Inventori & Kapasitas CBM =====
+// OPTIMASI: sebelumnya computeAreaUsage(wh, areaId) di-scan ulang db.materials + db.inventory
+// PENUH tiap kali dipanggil - kalau ada N area, jadi N x scan penuh. Fungsi ini scan SEKALI,
+// hasilnya dipakai buat semua area sekaligus (index areaId -> total CBM terpakai).
+function buildAreaUsageIndex(){
+  const whNameToId = {};
+  db.warehouses.forEach(w => { whNameToId[w['Warehouse Name']] = w['Warehouse ID']; });
+  const invQtyByKey = {};
+  db.inventory.forEach(i => { invQtyByKey[i['Warehouse ID']+'||'+i['Material ID']] = Number(i['Qty On Hand']||0); });
+  const usage = {};
+  db.materials.forEach(m => {
+    if (!m['Area ID']) return;
+    const whId = whNameToId[m['Warehouse Name']];
+    if (!whId) return;
+    const qty = invQtyByKey[whId+'||'+m['Material ID']] || 0;
+    usage[m['Area ID']] = (usage[m['Area ID']] || 0) + qty * Number(m['Volume per Unit (CBM)']||0);
+  });
+  return usage;
+}
+let currentAreaWarehouseId = null;
+function openWarehouseAreaManage(warehouseId){
+  const wh = db.warehouses.find(w => w['Warehouse ID']===warehouseId);
+  if (!wh) return;
+  currentAreaWarehouseId = warehouseId;
+  document.getElementById('area-warehouse-name').textContent = wh['Warehouse Name'];
+  renderWarehouseAreaList();
+  openModal('modal-warehouse-area');
+}
+function renderWarehouseAreaList(){
+  if (!currentAreaWarehouseId) return;
+  const areas = db.inventoryAreas.filter(a => a['Warehouse ID']===currentAreaWarehouseId).sort((a,b)=>String(a['Nama Area']).localeCompare(String(b['Nama Area'])));
+  const listEl = document.getElementById('area-list');
+  if (!areas.length) { listEl.innerHTML = `<p class="text-center text-slate-400 text-sm py-6">Belum ada area untuk gudang ini.</p>`; return; }
+  const usageIndex = buildAreaUsageIndex();
+  listEl.innerHTML = areas.map(a => {
+    const capacity = Number(a['Kapasitas CBM']||0);
+    const used = usageIndex[a['Area ID']] || 0;
+    const pct = capacity > 0 ? Math.min(100, (used/capacity)*100) : 0;
+    const barColor = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-emerald-500';
+    return `
+    <div class="border border-slate-200 rounded-xl p-3.5">
+      <div class="flex items-center justify-between gap-2 mb-1">
+        <div class="min-w-0">
+          <p class="text-sm font-semibold text-slate-800 truncate">${esc(a['Nama Area'])}</p>
+          <p class="text-[11px] text-slate-400">${Number(a['Panjang (m)']||0).toLocaleString('id-ID')}m × ${Number(a['Lebar (m)']||0).toLocaleString('id-ID')}m × ${Number(a['Tinggi (m)']||0).toLocaleString('id-ID')}m${a['Catatan'] ? ' • '+esc(a['Catatan']) : ''}</p>
+        </div>
+        <div class="flex items-center gap-1 shrink-0">
+          ${can('warehouse','u') ? `<button onclick='openInventoryAreaForm(${escAttrJson(a)})' class="text-slate-400 hover:text-red-700 p-1"><i data-lucide="edit-3" class="h-3.5 w-3.5"></i></button>` : ''}
+          ${can('warehouse','d') ? `<button onclick="deleteInventoryArea('${esc(a['Area ID'])}')" class="text-slate-400 hover:text-red-700 p-1"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i></button>` : ''}
+        </div>
+      </div>
+      <div class="h-2 bg-slate-100 rounded-full overflow-hidden mt-2"><div class="h-full rounded-full ${barColor}" style="width:${pct}%"></div></div>
+      <p class="text-[11px] text-slate-500 mt-1">${used.toLocaleString('id-ID',{maximumFractionDigits:2})} / ${capacity.toLocaleString('id-ID',{maximumFractionDigits:2})} CBM terpakai (${pct.toFixed(0)}%)</p>
+    </div>`;
+  }).join('');
+  lucide.createIcons();
+}
+function openInventoryAreaForm(area){
+  const isEdit = !!area;
+  openFormModal({
+    title: isEdit ? 'Edit Area — ' + area['Nama Area'] : 'Tambah Area Inventori',
+    fields: [
+      { name:'areaName', label:'Nama Area', value: area?area['Nama Area']:'', placeholder:'mis. Storage Material, Storage Deadstock' },
+      { name:'panjang', label:'Panjang (m)', type:'number', value: area?area['Panjang (m)']:'', step:'0.01' },
+      { name:'lebar', label:'Lebar (m)', type:'number', value: area?area['Lebar (m)']:'', step:'0.01' },
+      { name:'tinggi', label:'Tinggi (m)', type:'number', value: area?area['Tinggi (m)']:'', step:'0.01',
+        tooltip:'Kapasitas dalam CBM (meter kubik) dihitung otomatis dari Panjang × Lebar × Tinggi.' },
+      { name:'catatan', label:'Catatan (opsional)', value: area?area['Catatan']:'', required:false }
+    ],
+    onSubmit: async (data) => {
+      const result = await apiPost(Object.assign({ action: isEdit ? 'EDIT_INVENTORY_AREA' : 'ADD_INVENTORY_AREA', warehouseId: currentAreaWarehouseId, areaId: isEdit?area['Area ID']:undefined }, data));
+      if (result.success) { showToast(result.message,'success'); closeFormModal(); await fetchPartialData(['inventoryAreas']); } else showToast(result.message,'error');
+    }
+  });
+}
+async function deleteInventoryArea(areaId){
+  if (!(await confirmDialog('Hapus area ini?', 'Area yang masih dipakai material tidak bisa dihapus.'))) return;
+  const result = await apiPost({ action:'DELETE_INVENTORY_AREA', areaId });
+  if (result.success) { showToast(result.message,'success'); await fetchPartialData(['inventoryAreas']); } else showToast(result.message,'error');
+}
+function renderInventoryAreaUtilization(){
+  const el = document.getElementById('inventory-area-summary');
+  if (!el) return;
+  const whId = document.getElementById('inv-filter-wh') ? document.getElementById('inv-filter-wh').value : '';
+  const areas = db.inventoryAreas.filter(a => !whId || a['Warehouse ID']===whId);
+  if (!areas.length) { el.innerHTML = ''; return; }
+  const usageIndex = buildAreaUsageIndex();
+  el.innerHTML = `<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-4">
+    <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Kapasitas Area Inventori</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    ${areas.map(a => {
+      const capacity = Number(a['Kapasitas CBM']||0);
+      const used = usageIndex[a['Area ID']] || 0;
+      const pct = capacity > 0 ? Math.min(100, (used/capacity)*100) : 0;
+      const barColor = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-emerald-500';
+      const whInfo = db.warehouses.find(w => w['Warehouse ID']===a['Warehouse ID']);
+      return `<div class="border border-slate-100 rounded-lg p-3">
+        <div class="flex items-center justify-between text-xs mb-1"><span class="font-semibold text-slate-700 truncate pr-2">${esc(a['Nama Area'])}${!whId&&whInfo?' <span class=\"text-slate-400 font-normal\">('+esc(whInfo['Warehouse Name'])+')</span>':''}</span><span class="text-slate-500 shrink-0">${pct.toFixed(0)}%</span></div>
+        <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full ${barColor}" style="width:${pct}%"></div></div>
+        <p class="text-[11px] text-slate-400 mt-1">${used.toLocaleString('id-ID',{maximumFractionDigits:2})} / ${capacity.toLocaleString('id-ID',{maximumFractionDigits:2})} CBM</p>
+      </div>`;
+    }).join('')}
+    </div>
+  </div>`;
 }
 function openWarehouseForm(w){
   const isEdit = !!w;
@@ -4532,14 +4804,27 @@ function renderMaterialTab(append){
       <td class="px-4 py-2.5 text-slate-500">${esc(m['UOM'])}</td>
       <td class="px-4 py-2.5 text-right text-slate-600">${Number(m['Min Safety Stock']||0)} / ${Number(m['Reorder Point (ROP)']||0)}</td>
       <td class="px-4 py-2.5 text-right text-slate-600">${formatRupiah(m['Unit Price (Rp)'])}</td>
-      <td class="px-4 py-2.5 text-center">${can('material','u') ? `<button onclick='openMaterialForm(${escAttrJson(m)})' class="text-slate-600 hover:text-red-700"><i data-lucide="edit-3" class="h-4 w-4"></i></button>` : '-'}</td>
+      <td class="px-4 py-2.5 text-right">${Number(m['Volume per Unit (CBM)']||0) > 0
+        ? `<div class="text-slate-700 font-medium">${Number(m['Volume per Unit (CBM)']).toLocaleString('id-ID',{maximumFractionDigits:6})}</div><div class="text-[10px] text-slate-400">${Number(m['Panjang per Unit (cm)']||0)}×${Number(m['Lebar per Unit (cm)']||0)}×${Number(m['Tinggi per Unit (cm)']||0)} cm</div>`
+        : `<span class="text-slate-300">-</span>`}</td>
+      <td class="px-4 py-2.5 text-center whitespace-nowrap">
+        ${can('material','u') ? `<button onclick='openMaterialForm(${escAttrJson(m)})' class="text-slate-600 hover:text-red-700 mr-2"><i data-lucide="edit-3" class="h-4 w-4"></i></button>` : ''}
+        ${can('material','d') ? `<button onclick="deleteMaterial('${esc(m['Material ID'])}','${esc(m['Warehouse Name'])}')" class="text-slate-600 hover:text-red-700"><i data-lucide="trash-2" class="h-4 w-4"></i></button>` : ''}
+      </td>
     </tr>`).join('');
   const tbl = document.getElementById('tbl-material');
   if (append) { if (items.length) tbl.insertAdjacentHTML('beforeend', rowsHtml); }
-  else { tbl.innerHTML = items.length ? rowsHtml : `<tr><td colspan="8" class="px-4 py-8 text-center text-slate-400 text-sm">Tidak ada material yang cocok.</td></tr>`; }
+  else { tbl.innerHTML = items.length ? rowsHtml : `<tr><td colspan="9" class="px-4 py-8 text-center text-slate-400 text-sm">Tidak ada material yang cocok.</td></tr>`; }
   renderScrollStatus('pg-material', 'mat-scroll-sentinel', Math.min(ui.matPage*PAGE_SIZE, rows.length), rows.length, 'material');
   observeSentinel('mat-scroll-sentinel', () => { ui.matPage++; renderMaterialTab(true); });
   lucide.createIcons();
+}
+async function deleteMaterial(materialId, warehouseName){
+  const wh = db.warehouses.find(w => w['Warehouse Name']===warehouseName);
+  if (!wh) return;
+  if (!(await confirmDialog('Hapus material ini?', 'Material yang masih ada stoknya atau dipakai di resep BOM tidak bisa dihapus.'))) return;
+  const result = await apiPost({ action:'DELETE_MATERIAL', warehouseId: wh['Warehouse ID'], materialId });
+  if (result.success) { showToast(result.message,'success'); await fetchPartialData(['materials','inventory']); } else showToast(result.message,'error');
 }
 
 const scrollObservers = {};
@@ -4586,6 +4871,16 @@ function openMaterialForm(m){
       { name:'unitPrice', label:'Harga Satuan (Rp)', type:'number', value: m?m['Unit Price (Rp)']:0, step:'any',
         tooltip:'Ini harga rata-rata (weighted average) yang dipakai untuk valuasi stok & perhitungan biaya BOM/Handling Fee. Nilai ini OTOMATIS ter-update setiap kali Purchase Order untuk material ini diterima (mengikuti harga beli + ongkir - diskon di PO). Isi manual di sini hanya untuk stok awal / material baru yang belum pernah dibeli lewat PO.' },
       { name:'leadTime', label:'Lead Time (hari)', type:'number', value: m?m['Lead Time (Days)']:0, required:false },
+      { name:'panjangCm', label:'Panjang per Unit (cm)', type:'number', value: m?(m['Panjang per Unit (cm)']||0):0, step:'any', required:false,
+        tooltip:'Panjang 1 satuan stok material ini (cm). Bersama Lebar & Tinggi, dipakai hitung Volume (CBM) otomatis — dipakai untuk kapasitas Area Inventori (menu Gudang > badge Kapasitas Area). Kosongkan/0 kalau belum perlu dihitung.' },
+      { name:'lebarCm', label:'Lebar per Unit (cm)', type:'number', value: m?(m['Lebar per Unit (cm)']||0):0, step:'any', required:false },
+      { name:'tinggiCm', label:'Tinggi per Unit (cm)', type:'number', value: m?(m['Tinggi per Unit (cm)']||0):0, step:'any', required:false,
+        tooltip:'Volume (CBM) = Panjang × Lebar × Tinggi ÷ 1.000.000, dihitung otomatis waktu disimpan — hasilnya langsung tampil di kolom "Volume (CBM)" tabel Master Material.' },
+      { name:'beratGram', label:'Berat per Unit (gram)', type:'number', value: m?(m['Berat per Unit (gram)']||0):0, step:'any', required:false,
+        tooltip:'Berat (gramasi) 1 satuan stok material ini, dalam gram.' },
+      { name:'areaId', label:'Area Penyimpanan', type:'select', value: m?(m['Area ID']||''):'', required:false,
+        options: [{value:'',label:'— Belum ditentukan —'}].concat(db.inventoryAreas.map(a => { const w = db.warehouses.find(x=>x['Warehouse ID']===a['Warehouse ID']); return {value:a['Area ID'], label:a['Nama Area']+(w?' ('+w['Warehouse Name']+')':'')}; })),
+        tooltip:'Area gudang tempat material ini disimpan (kelola daftar area lewat menu Gudang, tombol "Kapasitas Area"). Pilih area yang gudangnya sama dengan Gudang yang dipilih di atas.' },
       { name:'pakaiKonversi', label:'Pakai Satuan Konversi?', type:'select', value: hasKonversi?'Ya':'Tidak', required:false,
         options:[{value:'Tidak',label:'Tidak — resep BOM langsung pakai Satuan Stok di atas'},{value:'Ya',label:'Ya — resep BOM pakai satuan lain yang lebih kecil'}],
         tooltip:'Pilih "Ya" HANYA kalau resep BOM (tab Kategori & BOM) untuk material ini ditulis dalam satuan yang lebih kecil dari Satuan Stok. Contoh: Bubble Wrap disimpan per "roll" tapi dipakai per "gram" di resep -> pilih Ya.' },
@@ -4614,18 +4909,29 @@ function renderSupplierTab(append){
   ui.supplierPage = Math.min(Math.max(1, ui.supplierPage), totalPages);
   const pageStart = append ? (ui.supplierPage-1) * PAGE_SIZE : 0;
   const items = rows.slice(pageStart, ui.supplierPage * PAGE_SIZE);
-  const rowsHtml = items.map(s => `
+  const rowsHtml = items.map(s => {
+    const priceCount = db.supplierPricelist.filter(p => p['Supplier ID']===s['Supplier ID'] && p['Status']!=='Non-Aktif').length;
+    return `
     <tr class="hover:bg-slate-50 transition">
       <td class="px-4 py-2.5 font-mono text-xs font-bold text-slate-700">${esc(s['Supplier ID'])}</td>
       <td class="px-4 py-2.5 font-medium text-slate-800">${esc(s['Supplier Name'])}</td>
       <td class="px-4 py-2.5 text-slate-500 text-xs">${esc(s['Contact Person'])}<br>${esc(s['Phone / Email'])}</td>
       <td class="px-4 py-2.5 text-slate-500">${esc(s['Category Focus'])}</td>
       <td class="px-4 py-2.5 text-center text-amber-500 font-bold">★ ${esc(s['Rating (1-5)'])}</td>
-      <td class="px-4 py-2.5 text-center">${can('supplier','u') ? `<button onclick='openSupplierForm(${escAttrJson(s)})' class="text-slate-600 hover:text-red-700"><i data-lucide="edit-3" class="h-4 w-4"></i></button>` : '-'}</td>
-    </tr>`).join('');
+      <td class="px-4 py-2.5 text-center">
+        <button onclick="openSupplierPricelist('${esc(s['Supplier ID'])}')" title="Lihat & kelola daftar harga material dari supplier ini" class="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full transition ${priceCount ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}">
+          <i data-lucide="tag" class="h-3 w-3"></i>${priceCount ? priceCount+' harga' : 'Belum ada'}
+        </button>
+      </td>
+      <td class="px-4 py-2.5 text-center whitespace-nowrap">
+        ${can('supplier','u') ? `<button onclick='openSupplierForm(${escAttrJson(s)})' class="text-slate-600 hover:text-red-700 mr-2"><i data-lucide="edit-3" class="h-4 w-4"></i></button>` : ''}
+        ${can('supplier','d') ? `<button onclick="deleteSupplier('${esc(s['Supplier ID'])}')" class="text-slate-600 hover:text-red-700"><i data-lucide="trash-2" class="h-4 w-4"></i></button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
   const tbl = document.getElementById('tbl-supplier');
   if (append) { if (items.length) tbl.insertAdjacentHTML('beforeend', rowsHtml); }
-  else { tbl.innerHTML = items.length ? rowsHtml : `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400 text-sm">Belum ada data supplier.</td></tr>`; }
+  else { tbl.innerHTML = items.length ? rowsHtml : `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400 text-sm">Belum ada data supplier.</td></tr>`; }
   renderScrollStatus('pg-supplier', 'supplier-scroll-sentinel', Math.min(ui.supplierPage*PAGE_SIZE, rows.length), rows.length, 'supplier');
   observeSentinel('supplier-scroll-sentinel', () => { ui.supplierPage++; renderSupplierTab(true); });
   lucide.createIcons();
@@ -4647,6 +4953,167 @@ function openSupplierForm(s){
       if (result.success) { showToast(result.message,'success'); closeFormModal(); await fetchPartialData(['suppliers']); } else showToast(result.message,'error');
     }
   });
+}
+
+// ===== Pricelist Supplier: kelola harga material per supplier + picker saat bikin PO =====
+let currentPricelistSupplierId = null;
+let pricelistPickerMode = null;
+let pricelistPickerSupplierId = null;
+let pricelistPickerWh = null;
+let pricelistPickerSelected = new Set();
+
+function uniqueMaterialCatalog(){
+  const map = new Map();
+  db.materials.forEach(m => { if (!map.has(m['Material ID'])) map.set(m['Material ID'], m); });
+  return Array.from(map.values()).sort((a,b) => String(a['Material Name']).localeCompare(String(b['Material Name'])));
+}
+function getSupplierPriceFor(supplierId, materialId){
+  if (!supplierId || !materialId) return null;
+  return db.supplierPricelist.find(p => p['Supplier ID']===supplierId && p['Material ID']===materialId && p['Status']!=='Non-Aktif') || null;
+}
+function activePricelistForSupplier(supplierId){
+  return db.supplierPricelist.filter(p => p['Supplier ID']===supplierId && p['Status']!=='Non-Aktif');
+}
+
+function openSupplierPricelist(supplierId){
+  const sup = db.suppliers.find(s => s['Supplier ID']===supplierId);
+  if (!sup) return;
+  currentPricelistSupplierId = supplierId;
+  document.getElementById('pricelist-supplier-name').textContent = sup['Supplier Name'];
+  document.getElementById('pricelist-search').value = '';
+  renderSupplierPricelistTable();
+  openModal('modal-supplier-pricelist');
+}
+function renderSupplierPricelistTable(){
+  if (!currentPricelistSupplierId) return;
+  const q = (document.getElementById('pricelist-search').value||'').toLowerCase();
+  let rows = db.supplierPricelist.filter(p => p['Supplier ID']===currentPricelistSupplierId);
+  if (q) rows = rows.filter(p => String(p['Material Name']).toLowerCase().indexOf(q)!==-1 || String(p['Material ID']).toLowerCase().indexOf(q)!==-1);
+  rows = rows.slice().sort((a,b) => String(a['Material Name']).localeCompare(String(b['Material Name'])));
+  const tbl = document.getElementById('tbl-supplier-pricelist');
+  tbl.innerHTML = rows.length ? rows.map(p => `
+    <tr class="hover:bg-slate-50 transition">
+      <td class="px-3 py-2"><div class="font-medium text-slate-800">${esc(p['Material Name'])}</div><div class="font-mono text-[10px] text-slate-400">${esc(p['Material ID'])}</div></td>
+      <td class="px-3 py-2 text-right font-semibold text-slate-800">${formatRupiah(p['Harga Satuan (Rp)'])}</td>
+      <td class="px-3 py-2 text-right text-slate-500">${Number(p['MOQ']||0) > 0 ? Number(p['MOQ']).toLocaleString('id-ID') : '-'}</td>
+      <td class="px-3 py-2 text-center"><span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${p['Status']==='Non-Aktif' ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700'}">${esc(p['Status']||'Aktif')}</span></td>
+      <td class="px-3 py-2 text-slate-400 text-xs max-w-[220px] truncate" title="${esc(p['Catatan'])}">${esc(p['Catatan'])||'-'}</td>
+      <td class="px-3 py-2 text-center whitespace-nowrap">
+        ${can('supplier','u') ? `<button onclick='openSupplierPriceForm(${escAttrJson(p)})' class="text-slate-500 hover:text-red-700 mr-2"><i data-lucide="edit-3" class="h-3.5 w-3.5"></i></button>` : ''}
+        ${can('supplier','d') ? `<button onclick="deleteSupplierPrice('${esc(p['Supplier ID'])}','${esc(p['Material ID'])}')" class="text-slate-500 hover:text-red-700"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i></button>` : ''}
+      </td>
+    </tr>`).join('') : `<tr><td colspan="6" class="px-3 py-8 text-center text-slate-400 text-sm">Belum ada harga tercatat untuk supplier ini.</td></tr>`;
+  lucide.createIcons();
+}
+function openSupplierPriceForm(entry){
+  const isEdit = !!entry;
+  let materialOptions;
+  if (isEdit) {
+    materialOptions = [{ value: entry['Material ID'], label: entry['Material ID']+' — '+entry['Material Name'] }];
+  } else {
+    const alreadyPriced = new Set(db.supplierPricelist.filter(p => p['Supplier ID']===currentPricelistSupplierId).map(p => p['Material ID']));
+    materialOptions = uniqueMaterialCatalog().filter(m => !alreadyPriced.has(m['Material ID'])).map(m => ({ value: m['Material ID'], label: m['Material ID']+' — '+m['Material Name'] }));
+    if (!materialOptions.length) { showToast('Semua material sudah punya harga dari supplier ini.', 'error'); return; }
+  }
+  openFormModal({
+    title: isEdit ? 'Edit Harga — ' + entry['Material Name'] : 'Tambah Harga Material',
+    fields: [
+      { name:'materialId', label:'Material', type:'select', value: entry?entry['Material ID']:'', readonly: isEdit, options: materialOptions,
+        tooltip: 'Material/SKU yang ditawarkan supplier ini. Satu material cuma bisa punya satu harga per supplier — kalau sudah ada, edit yang lama.' },
+      { name:'hargaSatuan', label:'Harga Satuan (Rp)', type:'number', value: entry?entry['Harga Satuan (Rp)']:'', placeholder:'Sesuai satuan dasar material' },
+      { name:'moq', label:'MOQ (opsional)', type:'number', value: entry?entry['MOQ']:0, required:false,
+        tooltip: 'Minimum Order Quantity — jumlah minimal yang harus dipesan ke supplier ini dalam satu kali PO. Kosongkan/isi 0 kalau tidak ada minimum.' },
+      { name:'status', label:'Status', type:'select', value: entry?entry['Status']:'Aktif', required:false,
+        options:[{value:'Aktif',label:'Aktif'},{value:'Non-Aktif',label:'Non-Aktif'}],
+        tooltip: 'Non-Aktifkan kalau supplier sedang tidak menawarkan harga ini, tanpa perlu menghapus datanya. Harga Non-Aktif tidak disarankan otomatis saat bikin PO.' },
+      { name:'catatan', label:'Catatan (opsional)', type:'textarea', value: entry?entry['Catatan']:'', required:false, placeholder:'mis. harga khusus qty besar, syarat pembayaran, dll.' }
+    ],
+    onSubmit: async (data) => {
+      const result = await apiPost(Object.assign({ action: isEdit ? 'EDIT_SUPPLIER_PRICE' : 'ADD_SUPPLIER_PRICE', supplierId: currentPricelistSupplierId }, data));
+      if (result.success) { showToast(result.message,'success'); closeFormModal(); await fetchPartialData(['supplierPricelist']); } else showToast(result.message,'error');
+    }
+  });
+}
+async function deleteSupplierPrice(supplierId, materialId){
+  if (!(await confirmDialog('Hapus harga ini?', 'Harga material ini akan dihapus dari pricelist supplier.'))) return;
+  const result = await apiPost({ action:'DELETE_SUPPLIER_PRICE', supplierId, materialId });
+  if (result.success) { showToast(result.message,'success'); await fetchPartialData(['supplierPricelist']); } else showToast(result.message,'error');
+}
+async function deleteSupplier(supplierId){
+  if (!(await confirmDialog('Hapus supplier ini?', 'Seluruh data pricelist supplier ini juga akan ikut terhapus. Riwayat PO yang sudah pernah dibuat tidak akan berubah.'))) return;
+  const result = await apiPost({ action:'DELETE_SUPPLIER', supplierId });
+  if (result.success) { showToast(result.message,'success'); await fetchPartialData(['suppliers','supplierPricelist']); } else showToast(result.message,'error');
+}
+
+// Picker dipakai dari form PO single (mode 'single', klik = langsung pilih & tutup) maupun PO bulk
+// (mode 'bulk', centang banyak lalu "Tambah Item Terpilih"). Cuma nampilin material yang aktif di
+// pricelist supplier terpilih DAN terdaftar di Master Material gudang tujuan yang lagi dipilih di form.
+function openPricelistPicker(mode){
+  const supplierId = mode === 'bulk' ? document.getElementById('pobulk-supplier').value : document.getElementById('po-supplier').value;
+  const wh = mode === 'bulk' ? document.getElementById('pobulk-wh').value : document.getElementById('po-wh').value;
+  if (!supplierId) { showToast('Pilih supplier dulu.', 'error'); return; }
+  if (!wh) { showToast('Pilih gudang tujuan dulu.', 'error'); return; }
+  const validIds = new Set(materialsForWarehouseId(wh).map(m => m['Material ID']));
+  if (!activePricelistForSupplier(supplierId).some(p => validIds.has(p['Material ID']))) {
+    showToast('Belum ada material di pricelist supplier ini yang terdaftar untuk gudang tujuan ini.', 'error');
+    return;
+  }
+  const sup = db.suppliers.find(s => s['Supplier ID']===supplierId);
+  pricelistPickerMode = mode;
+  pricelistPickerSupplierId = supplierId;
+  pricelistPickerWh = wh;
+  pricelistPickerSelected = new Set();
+  document.getElementById('picker-supplier-name').textContent = sup ? sup['Supplier Name'] : supplierId;
+  document.getElementById('picker-search').value = '';
+  document.getElementById('picker-apply-btn').classList.toggle('hidden', mode !== 'bulk');
+  renderPricelistPicker();
+  openModal('modal-pricelist-picker');
+}
+function renderPricelistPicker(){
+  const q = (document.getElementById('picker-search').value||'').toLowerCase();
+  const validIds = new Set(materialsForWarehouseId(pricelistPickerWh).map(m => m['Material ID']));
+  let items = activePricelistForSupplier(pricelistPickerSupplierId).filter(p => validIds.has(p['Material ID']));
+  if (q) items = items.filter(p => String(p['Material Name']).toLowerCase().indexOf(q)!==-1 || String(p['Material ID']).toLowerCase().indexOf(q)!==-1);
+  items = items.slice().sort((a,b) => String(a['Material Name']).localeCompare(String(b['Material Name'])));
+  const listEl = document.getElementById('picker-list');
+  if (!items.length) { listEl.innerHTML = `<p class="text-center text-slate-400 text-sm py-6">Tidak ada material cocok.</p>`; return; }
+  listEl.innerHTML = items.map(p => {
+    const moqTxt = Number(p['MOQ']||0) > 0 ? ` • MOQ ${Number(p['MOQ']).toLocaleString('id-ID')}` : '';
+    if (pricelistPickerMode === 'bulk') {
+      const checked = pricelistPickerSelected.has(p['Material ID']);
+      return `<label class="flex items-center gap-3 px-3 py-2 rounded-lg border ${checked?'border-red-300 bg-red-50':'border-slate-200'} hover:bg-slate-50 cursor-pointer transition">
+        <input type="checkbox" ${checked?'checked':''} onchange="togglePricelistPick('${esc(p['Material ID'])}')" class="accent-red-600 h-4 w-4 shrink-0">
+        <div class="flex-1 min-w-0"><div class="text-sm font-medium text-slate-800 truncate">${esc(p['Material Name'])}</div><div class="text-[10px] text-slate-400 font-mono">${esc(p['Material ID'])}${moqTxt}</div></div>
+        <div class="text-sm font-semibold text-slate-800 shrink-0">${formatRupiah(p['Harga Satuan (Rp)'])}</div>
+      </label>`;
+    }
+    return `<button type="button" onclick="pickSinglePricelistItem('${esc(p['Material ID'])}')" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 hover:border-red-300 hover:bg-red-50 cursor-pointer transition text-left">
+      <div class="flex-1 min-w-0"><div class="text-sm font-medium text-slate-800 truncate">${esc(p['Material Name'])}</div><div class="text-[10px] text-slate-400 font-mono">${esc(p['Material ID'])}${moqTxt}</div></div>
+      <div class="text-sm font-semibold text-slate-800 shrink-0">${formatRupiah(p['Harga Satuan (Rp)'])}</div>
+    </button>`;
+  }).join('');
+}
+function togglePricelistPick(materialId){
+  if (pricelistPickerSelected.has(materialId)) pricelistPickerSelected.delete(materialId); else pricelistPickerSelected.add(materialId);
+  renderPricelistPicker();
+}
+function pickSinglePricelistItem(materialId){
+  document.getElementById('po-mat').value = materialId;
+  onPoMaterialChange();
+  closeModal('modal-pricelist-picker');
+}
+function applyPricelistPicker(){
+  if (!pricelistPickerSelected.size) { closeModal('modal-pricelist-picker'); return; }
+  poBulkRows = poBulkRows.filter(r => r.materialId || Number(r.qtyOrdered) > 0);
+  pricelistPickerSelected.forEach(materialId => {
+    const entry = getSupplierPriceFor(pricelistPickerSupplierId, materialId);
+    if (!entry) return;
+    poBulkRows.push({ materialId, qtyOrdered: Number(entry['MOQ']||0) > 0 ? Number(entry['MOQ']) : 1, hargaSatuan: Number(entry['Harga Satuan (Rp)']||0), diskon:0, ongkir:0 });
+  });
+  if (!poBulkRows.length) poBulkRows = [newPoBulkRow()];
+  renderPoBulkRows();
+  closeModal('modal-pricelist-picker');
+  showToast('Item dari pricelist berhasil ditambahkan.', 'success');
 }
 
 function renderBomCategoryList(){
@@ -4673,16 +5140,29 @@ function renderBomCategoryList(){
         : cap.maxQty <= 0 ? `<span class="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">0 pkt</span>`
         : `<span class="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600">${cap.maxQty.toLocaleString('id-ID')} pkt</span>`;
       return `
-      <button onclick="selectBomCategory('${esc(c['Warehouse ID'])}','${esc(c['Pack Category Code'])}')" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition ${ui.selectedPackCat===c['Pack Category Code']&&ui.selectedPackWh===c['Warehouse ID']?'bg-red-50':''}">
-        <div class="flex items-center justify-between gap-2">
-          <p class="text-sm font-semibold text-slate-800 truncate">${esc(c['Pack Category Code'])}</p>
-          ${badge}
-        </div>
-        <p class="text-xs text-slate-400">${esc(c['Pack Size Name'])}</p>
-      </button>`;
+      <div class="w-full flex items-stretch ${ui.selectedPackCat===c['Pack Category Code']&&ui.selectedPackWh===c['Warehouse ID']?'bg-red-50':''}">
+        <button onclick="selectBomCategory('${esc(c['Warehouse ID'])}','${esc(c['Pack Category Code'])}')" class="flex-1 min-w-0 text-left px-4 py-2.5 hover:bg-slate-50 transition">
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-sm font-semibold text-slate-800 truncate">${esc(c['Pack Category Code'])}</p>
+            ${badge}
+          </div>
+          <p class="text-xs text-slate-400">${esc(c['Pack Size Name'])}</p>
+        </button>
+        ${can('bom','d') ? `<button onclick="event.stopPropagation(); deletePackCategory('${esc(c['Warehouse ID'])}','${esc(c['Pack Category Code'])}')" title="Hapus kategori ini" class="flex-shrink-0 px-2 text-slate-300 hover:text-red-600 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i></button>` : ''}
+      </div>`;
     }).join('');
     return header + items;
   }).join('');
+  lucide.createIcons();
+}
+async function deletePackCategory(warehouseId, packCategoryCode){
+  if (!(await confirmDialog('Hapus kategori kemasan ini?', 'Seluruh resep BOM di kategori ini akan ikut terhapus.'))) return;
+  const result = await apiPost({ action:'DELETE_PACK_CATEGORY', warehouseId, packCategoryCode });
+  if (result.success) {
+    showToast(result.message,'success');
+    if (ui.selectedPackCat===packCategoryCode && ui.selectedPackWh===warehouseId) { ui.selectedPackCat=null; ui.selectedPackWh=null; }
+    await fetchPartialData(['packCategories','bomRecipes']);
+  } else showToast(result.message,'error');
 }
 function selectBomCategory(whId, code){
   ui.selectedPackWh = whId; ui.selectedPackCat = code;
@@ -5411,12 +5891,13 @@ const GLOSSARY_TERMS = [
   { category:'Menu & Navigasi', term:'Inventory', def:'Daftar stok AKTUAL tiap material di tiap gudang SAAT INI (angka sisa sekarang) - beda dengan Log Transaksi yang mencatat histori pergerakannya dari waktu ke waktu.' },
   { category:'Menu & Navigasi', term:'Log Transaksi', def:'Riwayat SETIAP pergerakan stok: IN (masuk), OUT (keluar), TRANSFER (pindah antar gudang), ADJUSTMENT (koreksi manual). Kalau Inventory menjawab "sisa berapa sekarang", menu ini menjawab "kenapa bisa jadi segitu".' },
   { category:'Menu & Navigasi', term:'Outbound Packing', def:'Tempat input AWB saat sebuah paket selesai dikemas. Begitu disimpan, stok material yang dipakai otomatis terpotong sesuai resep BOM kategori paket itu - tidak perlu catat pemakaian material manual satu-satu.' },
-  { category:'Menu & Navigasi', term:'Purchase Order', def:'Alur pembelian material dari supplier: ajukan PO -> di-approve (qty boleh dikurangi/ditambah approver, atau dibatalkan) -> dicatat saat barang diterima. Stok baru bertambah setelah tahap "diterima" - bisa bertahap/partial, dan qty yang diinput boleh beda dari yang disetujui kalau fisik yang datang lebih atau kurang.' },
+  { category:'Menu & Navigasi', term:'Purchase Order', def:'Alur pembelian material dari supplier: ajukan PO -> di-approve (qty boleh dikurangi/ditambah approver, atau dibatalkan) -> dicatat saat barang diterima. Stok baru bertambah setelah tahap "diterima" - bisa bertahap/partial, dan qty yang diinput boleh beda dari yang disetujui kalau fisik yang datang lebih atau kurang. Kalau supplier yang dipilih sudah punya Pricelist untuk material itu, Harga Satuan otomatis terisi dari sana.' },
   { category:'Menu & Navigasi', term:'Case Operasional', def:'Tiket pelaporan masalah operasional harian (barang hilang/rusak/telat, dst) per gudang beserta status penyelesaiannya - termasuk sub-kategori Klaim Gudang yang otomatis mencarikan siapa Packer-nya untuk investigasi.' },
   { category:'Menu & Navigasi', term:'Produktivitas Tim', def:'Rekap kinerja harian tiap orang di 4 tahap proses paket: Admin Print, Picker, Packer, Checker - berapa banyak Qty Paket yang mereka kerjakan.' },
   { category:'Menu & Navigasi', term:'Gudang (Master Gudang)', def:'Daftar lokasi/cabang gudang yang beroperasi. Menentukan pilihan gudang yang muncul di semua form lain di seluruh aplikasi.' },
-  { category:'Menu & Navigasi', term:'Material (Master Material)', def:'Katalog SEMUA bahan baku per gudang: satuan stok (UOM), titik pemesanan ulang (ROP), Safety Stock, dan aturan Konversi Satuan kalau resep BOM-nya ditulis dalam satuan berbeda dari satuan stoknya.' },
-  { category:'Menu & Navigasi', term:'Supplier (Master Supplier)', def:'Daftar vendor/pemasok tempat material dibeli - dipilih saat membuat Purchase Order baru.' },
+  { category:'Menu & Navigasi', term:'Material (Master Material)', def:'Katalog SEMUA bahan baku per gudang: satuan stok (UOM), titik pemesanan ulang (ROP), Safety Stock, aturan Konversi Satuan kalau resep BOM-nya beda satuan, dan dimensi per unit (Panjang/Lebar/Tinggi) yang otomatis dihitung jadi Volume (CBM) — dipakai untuk kapasitas Area Inventori di menu Gudang.' },
+  { category:'Menu & Navigasi', term:'Supplier (Master Supplier)', def:'Daftar vendor/pemasok tempat material dibeli - dipilih saat membuat Purchase Order baru. Tiap supplier bisa punya Pricelist sendiri (lihat istilah "Pricelist Supplier") lewat badge di kolom Pricelist pada tabel supplier.' },
+  { category:'Menu & Navigasi', term:'Pricelist Supplier', def:'Daftar harga material yang ditawarkan satu supplier tertentu - klik badge di kolom Pricelist pada baris supplier untuk tambah/edit/hapus. Saat membuat PO, harga di sini otomatis disarankan begitu supplier & material dipilih, dan bisa langsung "dibelanjakan" lewat tombol "Pilih dari Pricelist" / "Tambah dari Pricelist" di form PO tanpa isi harga manual satu-satu.' },
   { category:'Menu & Navigasi', term:'Kategori & BOM', def:'Atur resep tiap kategori kemasan: material apa saja & berapa banyak yang terpakai untuk 1 paket kategori itu. Ini dasar perhitungan otomatis di Outbound Packing (potong stok) dan Kalkulator HPP (estimasi biaya).' },
   { category:'Menu & Navigasi', term:'Kalkulator HPP', def:'Menghitung estimasi HPP (biaya material + handling fee + overhead) per kategori kemasan, dipakai untuk menentukan handling fee yang pas untuk tiap gudang.' },
   { category:'Menu & Navigasi', term:'Aset Gudang', def:'Inventaris peralatan/perlengkapan kerja gudang (mis. mesin, rak, alat bantu) yang dipakai berulang - beda dari Material yang isinya bahan baku habis pakai per transaksi.' },
