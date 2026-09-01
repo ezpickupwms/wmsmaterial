@@ -1188,7 +1188,7 @@
           </div>
           <button onclick="resetAiChat()" class="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-600 text-xs font-semibold px-3.5 py-2 rounded-lg hover:bg-slate-50 transition"><i data-lucide="rotate-ccw" class="h-3.5 w-3.5"></i>Percakapan Baru</button>
         </div>
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[65vh]">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[60vh]">
           <div id="ai-chat-messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3.5 bg-slate-50"></div>
           <div class="flex-none border-t border-slate-200 p-3 bg-white">
             <div id="ai-quick-suggestions" class="flex flex-wrap gap-1.5 mb-2.5">
@@ -2379,10 +2379,13 @@ async function ensureTabData(tab){
 }
 
 function populateWarehouseSelects(){
+  const scopedWhList = (currentUser && currentUser.resolvedWarehouseId) ? db.warehouses.filter(w => w['Warehouse ID']===currentUser.resolvedWarehouseId) : db.warehouses;
   const opts = db.warehouses.map(w => `<option value="${esc(w['Warehouse ID'])}">${esc(w['Warehouse ID'])} — ${esc(w['Warehouse Name'])}</option>`).join('');
-  const optsAll = '<option value="">Semua Gudang</option>' + opts;
+  const optsScoped = scopedWhList.map(w => `<option value="${esc(w['Warehouse ID'])}">${esc(w['Warehouse ID'])} — ${esc(w['Warehouse Name'])}</option>`).join('');
+  const optsAll = '<option value="">Semua Gudang</option>' + optsScoped;
   ['inv-filter-wh','trx-filter-wh','mat-filter-wh','bom-filter-wh','case-filter-wh','prod-filter-wh','asset-filter-wh'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML = optsAll; });
-  ['out-wh','mt-wh','po-wh','pobulk-wh','mt-dest-wh','prodinput-wh'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML = opts; });
+  ['out-wh','mt-wh','po-wh','pobulk-wh','prodinput-wh'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML = optsScoped; });
+  const mtDestEl = document.getElementById('mt-dest-wh'); if (mtDestEl) mtDestEl.innerHTML = opts;
 
   if (currentUser && currentUser.resolvedWarehouseId) {
     document.querySelectorAll('#out-wh,#mt-wh,#po-wh,#pobulk-wh,#prodinput-wh').forEach(sel => { sel.classList.add('wh-lock'); sel.value = currentUser.resolvedWarehouseId; sel.disabled = true; });
