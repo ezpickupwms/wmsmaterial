@@ -640,16 +640,62 @@ header{box-shadow:none;border-bottom:1px solid rgba(0,0,0,.16)}
 
       <div id="tab-po" class="tab-content hidden">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div><h2 class="font-display text-xl font-bold text-slate-900">Purchase Order</h2><p class="text-sm text-slate-500 mt-0.5">Alur pengajuan → approval → penerimaan barang.</p></div>
+          <div><h2 class="font-display text-xl font-bold text-slate-900">Purchase Order</h2><p class="text-sm text-slate-500 mt-0.5">Alur pengajuan → approval → penerimaan barang. <span class="text-slate-300">·</span> Nilai PO aktif: <span id="po-nilai-aktif" class="font-semibold text-slate-700">Rp 0</span></p></div>
           <div class="flex items-center gap-2">
             <button data-perm-module="po" data-perm-op="c" onclick="openCreatePOBulkModal()" class="flex items-center gap-1.5 bg-white text-red-600 border border-red-200 text-xs font-semibold px-3.5 py-2.5 rounded-lg hover:bg-red-50 transition shadow-sm"><i data-lucide="list-plus" class="h-3.5 w-3.5"></i>Buat PO Bulk</button>
             <button data-perm-module="po" data-perm-op="c" onclick="openCreatePOModal()" class="flex items-center gap-1.5 bg-red-600 text-white text-xs font-semibold px-3.5 py-2.5 rounded-lg hover:bg-red-700 transition shadow-sm"><i data-lucide="plus" class="h-3.5 w-3.5"></i>Buat PO Baru</button>
           </div>
         </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+          <div class="bg-white rounded-xl border border-slate-200 status-rail border-l-amber-500 p-3.5 shadow-sm">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Menunggu Approval</p>
+            <p id="po-kpi-open" class="font-display text-xl font-bold text-amber-600 mt-0.5">0</p>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 status-rail border-l-sky-500 p-3.5 shadow-sm">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Menunggu Barang</p>
+            <p id="po-kpi-approved" class="font-display text-xl font-bold text-sky-600 mt-0.5">0</p>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 status-rail border-l-orange-500 p-3.5 shadow-sm">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Diterima Sebagian</p>
+            <p id="po-kpi-partial" class="font-display text-xl font-bold text-orange-600 mt-0.5">0</p>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 status-rail border-l-red-600 p-3.5 shadow-sm">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">PO Terlambat</p>
+            <p id="po-kpi-overdue" class="font-display text-xl font-bold text-red-600 mt-0.5">0</p>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 status-rail border-l-emerald-500 p-3.5 shadow-sm">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Selesai (Bulan Ini)</p>
+            <p id="po-kpi-selesai" class="font-display text-xl font-bold text-emerald-600 mt-0.5">0</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3.5 mb-4 flex flex-wrap gap-3 items-center">
+          <select id="po-filter-wh" onchange="ui.poPage=1; renderPOTab()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white outline-none focus:border-red-600"><option value="">Semua Gudang</option></select>
+          <select id="po-filter-status" onchange="ui.poPage=1; renderPOTab()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white outline-none focus:border-red-600">
+            <option value="">Semua Status</option>
+            <option value="OPEN">OPEN</option>
+            <option value="APPROVED">APPROVED</option>
+            <option value="PARTIAL">PARTIAL</option>
+            <option value="COMPLETED">COMPLETED</option>
+            <option value="CANCELLED">CANCELLED</option>
+          </select>
+          <select id="po-filter-supplier" onchange="ui.poPage=1; renderPOTab()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white outline-none focus:border-red-600"><option value="">Semua Supplier</option></select>
+          <label class="flex items-center gap-1.5 text-xs font-medium text-slate-600 cursor-pointer select-none"><input type="checkbox" id="po-filter-overdue" onchange="ui.poPage=1; renderPOTab()" class="rounded border-slate-300 text-red-600 focus:ring-red-500">Hanya yang terlambat</label>
+          <input type="text" id="po-search" oninput="ui.poPage=1; debouncedRenderPO()" placeholder="Cari No. PO / material..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm flex-1 min-w-[140px] outline-none focus:border-red-600">
+
+          <div class="flex items-center gap-1.5 ml-auto bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Tgl Order:</span>
+            <input type="date" id="po-filter-start" onchange="ui.poPage=1; renderPOTab()" class="bg-transparent text-xs text-slate-700 outline-none">
+            <span class="text-slate-400 text-xs">-</span>
+            <input type="date" id="po-filter-end" onchange="ui.poPage=1; renderPOTab()" class="bg-transparent text-xs text-slate-700 outline-none">
+          </div>
+        </div>
+
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div class="overflow-x-auto"><table class="w-full text-sm text-left">
             <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-400"><tr>
-              <th class="px-4 py-2.5">No. PO</th><th class="px-4 py-2.5">Tujuan</th><th class="px-4 py-2.5">Supplier</th><th class="px-4 py-2.5">Material</th>
+              <th class="px-4 py-2.5">No. PO</th><th class="px-4 py-2.5">Tanggal</th><th class="px-4 py-2.5">Tujuan</th><th class="px-4 py-2.5">Supplier</th><th class="px-4 py-2.5">Material</th>
               <th class="px-4 py-2.5 text-right">Order / Disetujui / Diterima</th><th class="px-4 py-2.5 text-right">Nilai Pembelian</th><th class="px-4 py-2.5 text-center">Status</th><th class="px-4 py-2.5 text-center">Aksi</th>
             </tr></thead>
             <tbody id="tbl-po" class="divide-y divide-slate-100"></tbody>
@@ -664,7 +710,7 @@ header{box-shadow:none;border-bottom:1px solid rgba(0,0,0,.16)}
           <button data-perm-module="cases" data-perm-op="c" onclick="openCreateCaseModal()" class="flex items-center gap-1.5 bg-red-600 text-white text-xs font-semibold px-3.5 py-2.5 rounded-lg hover:bg-red-700 transition shadow-sm"><i data-lucide="plus" class="h-3.5 w-3.5"></i>Lapor Case Baru</button>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
           <div class="bg-white rounded-xl border border-slate-200 status-rail border-l-red-500 p-3.5 shadow-sm">
             <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Terbuka</p>
             <p id="case-kpi-terbuka" class="font-display text-xl font-bold text-red-600 mt-0.5">0</p>
@@ -677,13 +723,17 @@ header{box-shadow:none;border-bottom:1px solid rgba(0,0,0,.16)}
             <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Selesai (Bulan Ini)</p>
             <p id="case-kpi-selesai" class="font-display text-xl font-bold text-emerald-600 mt-0.5">0</p>
           </div>
+          <div class="bg-white rounded-xl border border-slate-200 status-rail border-l-sky-500 p-3.5 shadow-sm">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Rata-rata Waktu Selesai</p>
+            <p id="case-kpi-avgresolusi" class="font-display text-xl font-bold text-sky-600 mt-0.5">-</p>
+          </div>
           <div class="bg-white rounded-xl border border-slate-200 status-rail border-l-slate-400 p-3.5 shadow-sm">
             <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Total Case Tercatat</p>
             <p id="case-kpi-total" class="font-display text-xl font-bold text-slate-700 mt-0.5">0</p>
           </div>
         </div>
 
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3.5 mb-4 flex flex-wrap gap-3">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3.5 mb-4 flex flex-wrap gap-3 items-center">
           <select id="case-filter-wh" onchange="ui.casesPage=1; renderCasesTab()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white outline-none focus:border-red-600"><option value="">Semua Gudang</option></select>
           <select id="case-filter-status" onchange="ui.casesPage=1; renderCasesTab()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white outline-none focus:border-red-600">
             <option value="">Semua Status</option>
@@ -700,6 +750,13 @@ header{box-shadow:none;border-bottom:1px solid rgba(0,0,0,.16)}
             <option value="Kritis">Kritis</option>
           </select>
           <input type="text" id="case-search" oninput="ui.casesPage=1; debouncedRenderCases()" placeholder="Cari judul / Case ID..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm flex-1 min-w-[160px] outline-none focus:border-red-600">
+
+          <div class="flex items-center gap-1.5 ml-auto bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Tgl Lapor:</span>
+            <input type="date" id="case-filter-start" onchange="ui.casesPage=1; renderCasesTab()" class="bg-transparent text-xs text-slate-700 outline-none">
+            <span class="text-slate-400 text-xs">-</span>
+            <input type="date" id="case-filter-end" onchange="ui.casesPage=1; renderCasesTab()" class="bg-transparent text-xs text-slate-700 outline-none">
+          </div>
         </div>
 
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -1561,8 +1618,12 @@ header{box-shadow:none;border-bottom:1px solid rgba(0,0,0,.16)}
       <div><label id="rp-qty-label" class="block text-xs font-semibold text-slate-600 mb-1">Qty Diterima Sekarang (sesuai fisik)</label>
         <input type="number" id="rp-qty" min="1" step="any" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-600">
         <p class="text-[11px] text-slate-400 mt-1">Boleh diisi beda dari sisa perkiraan kalau jumlah fisik yang datang lebih atau kurang.</p></div>
-      <div><label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Terima</label>
-        <input type="date" id="rp-date" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-600"></div>
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Terima</label>
+          <input type="date" id="rp-date" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-600"></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Jam Terima</label>
+          <input type="time" id="rp-time" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-600"></div>
+      </div>
       <label class="flex items-start gap-2 text-xs text-slate-600 cursor-pointer pt-1">
         <input type="checkbox" id="rp-close-short" class="mt-0.5 flex-shrink-0">
         <span>Tandai PO ini <b>selesai sekarang</b> meski qty yang diterima kurang dari yang disetujui (sisanya dipastikan tidak akan datang lagi).</span>
@@ -1796,6 +1857,10 @@ function getWIBDateString() {
   const wib = getWIBDate();
   return `${wib.getFullYear()}-${String(wib.getMonth()+1).padStart(2,'0')}-${String(wib.getDate()).padStart(2,'0')}`;
 }
+function getWIBTimeString() {
+  const wib = getWIBDate();
+  return `${String(wib.getHours()).padStart(2,'0')}:${String(wib.getMinutes()).padStart(2,'0')}`;
+}
 
 setInterval(() => {
   const d = new Date();
@@ -1828,6 +1893,19 @@ function formatDate(v){
     return `${day} ${months[parseInt(parts[1], 10) - 1]} ${parts[0]}`;
   }
   return s;
+}
+// Buat field gabungan "YYYY-MM-DD HH:mm" (Waktu Diterima PO, Waktu Selesai Case) - disimpan backend
+// sbg string polos apa adanya (bukan Date object), jadi di sini juga cukup dipisah spasi, TANPA
+// konversi timezone apa pun (jamnya sudah WIB dari sononya, sama kayak semua jam lain di app ini).
+function formatDateTime(v){
+  if (!v) return '-';
+  const s = String(v).trim();
+  if (!s) return '-';
+  const spaceIdx = s.indexOf(' ');
+  if (spaceIdx === -1) return formatDate(s);
+  const datePart = s.slice(0, spaceIdx);
+  const timePart = s.slice(spaceIdx + 1);
+  return `${formatDate(datePart)}, ${timePart}`;
 }
 
 function getPackQty(p){
@@ -1903,6 +1981,7 @@ const debouncedRenderTrx = debounce(renderTransactionTab, 300);
 const debouncedRenderMat = debounce(renderMaterialTab, 300);
 const debouncedRenderCases = debounce(renderCasesTab, 300);
 const debouncedRenderAssets = debounce(renderAssetsTab, 300);
+const debouncedRenderPO = debounce(renderPOTab, 300);
 
 let _confirmResolve = null;
 function confirmDialog(title, message){
@@ -2402,7 +2481,7 @@ const DB_KEY_RENDER_MAP = {
   inventoryAreas: () => { renderWarehouseTab(); renderInventoryAreaUtilization(); if (typeof currentAreaWarehouseId !== 'undefined' && currentAreaWarehouseId) renderWarehouseAreaList(); },
 
   materials: () => { renderMaterialTab(); renderBomCategoryList(); renderCapacitySummaryTable(); renderAggregatePurchaseRecommendation(); },
-  suppliers: () => renderSupplierTab(),
+  suppliers: () => { renderSupplierTab(); populateSupplierSelect('po-filter-supplier', true); },
   supplierPricelist: () => { renderSupplierTab(); if (typeof currentPricelistSupplierId !== 'undefined' && currentPricelistSupplierId) renderSupplierPricelistTable(); },
 
   inventory: () => { renderInventoryTab(); renderDashboard(); renderBomCategoryList(); renderCapacitySummaryTable(); renderAggregatePurchaseRecommendation(); renderInventoryAreaUtilization(); markCompareDirty(); },
@@ -2522,7 +2601,7 @@ function populateWarehouseSelects(){
   const opts = db.warehouses.map(w => `<option value="${esc(w['Warehouse ID'])}">${esc(w['Warehouse ID'])} — ${esc(w['Warehouse Name'])}</option>`).join('');
   const optsScoped = scopedWhList.map(w => `<option value="${esc(w['Warehouse ID'])}">${esc(w['Warehouse ID'])} — ${esc(w['Warehouse Name'])}</option>`).join('');
   const optsAll = '<option value="">Semua Gudang</option>' + optsScoped;
-  ['inv-filter-wh','trx-filter-wh','mat-filter-wh','bom-filter-wh','case-filter-wh','prod-filter-wh','asset-filter-wh'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML = optsAll; });
+  ['inv-filter-wh','trx-filter-wh','mat-filter-wh','bom-filter-wh','case-filter-wh','prod-filter-wh','asset-filter-wh','po-filter-wh'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML = optsAll; });
   ['out-wh','mt-wh','po-wh','pobulk-wh','prodinput-wh'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML = optsScoped; });
   const mtDestEl = document.getElementById('mt-dest-wh'); if (mtDestEl) mtDestEl.innerHTML = opts;
 
@@ -3512,6 +3591,25 @@ function poMaterialUom(po){
   const mat = materialsForWarehouseId(po['Destination WH ID']).find(m => m['Material ID']===po['Material ID']);
   return mat ? (mat['UOM'] || 'unit') : 'unit';
 }
+// Nama material dari 1 baris PO - tabel PO sebelumnya cuma nampilin Material ID, susah dibaca cepat
+// pas lagi memantau banyak PO sekaligus.
+function poMaterialName(po){
+  if (!po) return '';
+  const mat = materialsForWarehouseId(po['Destination WH ID']).find(m => m['Material ID']===po['Material ID']);
+  return mat ? (mat['Material Name'] || '') : '';
+}
+// PO dianggap "terlambat" kalau statusnya masih berjalan (OPEN/APPROVED/PARTIAL - belum selesai atau
+// dibatalkan) DAN tanggal estimasi tiba sudah lewat hari ini. Ini beda dari "Delivery Performance"
+// (ON-TIME/DELAYED) yang baru terisi backend SETELAH PO selesai diterima - cuma laporan hasil akhir.
+// Fungsi ini proaktif: memberi sinyal SEBELUM barangnya benar-benar datang, saat masih bisa dikejar.
+function poIsOverdue(po){
+  if (!po) return false;
+  const status = po['PO Status'] || 'OPEN';
+  if (status !== 'OPEN' && status !== 'APPROVED' && status !== 'PARTIAL') return false;
+  const exp = po['Expected Date'];
+  if (!exp || exp === '-') return false;
+  return toWIBDateStr(exp) < getWIBDateString();
+}
 // Ringkasan nilai pembelian dari satu baris PO yang sudah tersimpan (dipakai di tabel & modal receive/approve).
 // Basis qty pakai Qty Approved kalau sudah ada (qty resmi), fallback ke Qty Ordered kalau masih OPEN.
 // Kalau PO sudah pernah diterima, harga efektif/unit dipakai dari nilai yang benar-benar disimpan
@@ -3521,22 +3619,44 @@ function poPricing(po){
   const qtyApprovedRaw = po['Qty Approved'];
   const qtyApproved = (qtyApprovedRaw!==undefined && qtyApprovedRaw!=='') ? Number(qtyApprovedRaw) : null;
   const qtyBasis = qtyApproved!==null ? qtyApproved : qtyOrdered;
+  const qtyReceived = Number(po['Qty Received']||0);
   const harga = Number(po['Harga Satuan (Rp)']||0);
   const diskon = Number(po['Diskon (Rp)']||0);
   const ongkir = Number(po['Ongkir (Rp)']||0);
   const calc = computePoPricing(qtyBasis, harga, diskon, ongkir);
   const landedRaw = po['Landed Unit Cost (Rp)'];
   const landed = (landedRaw!==undefined && landedRaw!=='' && Number(landedRaw)>0) ? Number(landedRaw) : null;
+
+  // Harga final per qty: PO COMPLETED artinya Qty Received sudah FINAL (tidak nambah lagi). Kalau beda
+  // dari Qty Approved (diterima kurang/lebih dari yang disetujui - fitur penerimaan partial memang
+  // mengizinkan ini), maka Nilai Pembelian & harga/unit yang dihitung dari Qty Approved di atas cuma
+  // estimasi lama yang sudah gak nyambung sama fisik yang benar-benar masuk. Di bawah ini dihitung ULANG
+  // memakai Qty Received sbg basis qty - harga satuan tetap per unit (jadi subtotalnya ikut naik/turun
+  // mengikuti qty diterima), sementara diskon & ongkir tetap lump-sum apa adanya (tidak ikut skala qty).
+  const qtyDiff = qtyApproved!==null ? qtyReceived - qtyApproved : 0;
+  const isFinal = po['PO Status'] === 'COMPLETED' && qtyReceived > 0 && harga > 0;
+  let finalTotal = null, finalUnitCost = null;
+  if (isFinal) {
+    const finalCalc = computePoPricing(qtyReceived, harga, diskon, ongkir);
+    finalTotal = finalCalc.total;
+    finalUnitCost = finalCalc.unitCost;
+  }
+
   return {
     harga, diskon: calc.diskon, ongkir: calc.ongkir, qtyBasis, hasPricing: harga > 0,
-    subtotal: calc.subtotal, total: calc.total, unitCost: landed!==null ? landed : calc.unitCost
+    subtotal: calc.subtotal, total: calc.total, unitCost: landed!==null ? landed : calc.unitCost,
+    qtyReceived, qtyDiff, isFinal, finalTotal, finalUnitCost
   };
 }
 
-// Dipakai bareng oleh form Buat PO (single) & Buat PO Bulk - keduanya butuh dropdown supplier yang sama persis.
-function populateSupplierSelect(selectId){
+// Dipakai bareng oleh form Buat PO (single), Buat PO Bulk, dan filter tabel PO - semua butuh dropdown
+// supplier yang sama persis. includeAllOption=true nambahin opsi "Semua Supplier" di paling atas,
+// khusus dropdown filter (form create tetap wajib pilih 1 supplier, jadi tidak dipakai di situ).
+function populateSupplierSelect(selectId, includeAllOption){
   const el = document.getElementById(selectId);
-  if (el) el.innerHTML = db.suppliers.map(s => `<option value="${esc(s['Supplier ID'])}" data-name="${esc(s['Supplier Name'])}">${esc(s['Supplier ID'])} — ${esc(s['Supplier Name'])}</option>`).join('');
+  if (!el) return;
+  const opts = db.suppliers.map(s => `<option value="${esc(s['Supplier ID'])}" data-name="${esc(s['Supplier Name'])}">${esc(s['Supplier ID'])} — ${esc(s['Supplier Name'])}</option>`).join('');
+  el.innerHTML = includeAllOption ? '<option value="">Semua Supplier</option>' + opts : opts;
 }
 function refreshPoMaterialOptions(){
   const wh = document.getElementById('po-wh').value;
@@ -3780,7 +3900,45 @@ async function submitCreatePOBulk(e){
 }
 
 function renderPOTab(append){
-  const rows = db.purchaseOrders.slice().reverse();
+  const whFilter = document.getElementById('po-filter-wh').value;
+  const statusFilter = document.getElementById('po-filter-status').value;
+  const supplierFilter = document.getElementById('po-filter-supplier').value;
+  const onlyOverdue = document.getElementById('po-filter-overdue').checked;
+  const start = document.getElementById('po-filter-start').value;
+  const end = document.getElementById('po-filter-end').value;
+  const q = (document.getElementById('po-search').value || '').toLowerCase();
+
+  const all = db.purchaseOrders || [];
+  const rows = all.filter(po => {
+    let passDate = true;
+    if (start || end) {
+      const dStr = toWIBDateStr(po['Order Date']);
+      if (dStr) {
+        const d = new Date(dStr).setHours(0,0,0,0);
+        if (start && d < new Date(start).setHours(0,0,0,0)) passDate = false;
+        if (end && d > new Date(end).setHours(0,0,0,0)) passDate = false;
+      }
+    }
+    return passDate &&
+      (!whFilter || po['Destination WH ID']===whFilter) &&
+      (!statusFilter || (po['PO Status']||'OPEN')===statusFilter) &&
+      (!supplierFilter || po['Supplier ID']===supplierFilter) &&
+      (!onlyOverdue || poIsOverdue(po)) &&
+      (!q || String(po['PO Number']).toLowerCase().includes(q) || String(po['Material ID']).toLowerCase().includes(q) || poMaterialName(po).toLowerCase().includes(q));
+  }).slice().reverse();
+
+  // KPI monitoring dihitung dari SELURUH data (bukan hasil filter tabel) - sama seperti pola di tab
+  // Case Operasional, supaya kartu ringkasan tetap jadi gambaran besar walau tabel di bawah lagi
+  // difilter ke gudang/status/supplier tertentu.
+  const monthStr = getWIBDateString().slice(0,7);
+  const activeStatuses = ['OPEN','APPROVED','PARTIAL'];
+  document.getElementById('po-kpi-open').textContent = all.filter(po=>(po['PO Status']||'OPEN')==='OPEN').length;
+  document.getElementById('po-kpi-approved').textContent = all.filter(po=>po['PO Status']==='APPROVED').length;
+  document.getElementById('po-kpi-partial').textContent = all.filter(po=>po['PO Status']==='PARTIAL').length;
+  document.getElementById('po-kpi-overdue').textContent = all.filter(po=>poIsOverdue(po)).length;
+  document.getElementById('po-kpi-selesai').textContent = all.filter(po=>po['PO Status']==='COMPLETED' && toWIBDateStr(po['Actual Date']).slice(0,7)===monthStr).length;
+  document.getElementById('po-nilai-aktif').textContent = formatRupiah(all.filter(po=>activeStatuses.indexOf(po['PO Status']||'OPEN')!==-1).reduce((sum,po)=>sum+poPricing(po).total,0));
+
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   ui.poPage = Math.min(Math.max(1, ui.poPage), totalPages);
   const pageStart = append ? (ui.poPage-1) * PAGE_SIZE : 0;
@@ -3792,6 +3950,7 @@ function renderPOTab(append){
     const qtyApprovedRaw = po['Qty Approved'];
     const qtyApproved = (qtyApprovedRaw!==undefined && qtyApprovedRaw!=='') ? Number(qtyApprovedRaw) : null;
     const qtyReceived = Number(po['Qty Received']||0);
+    const overdue = poIsOverdue(po);
 
     let action = '<span class="text-xs text-slate-400">-</span>';
     if (status==='OPEN') {
@@ -3815,26 +3974,38 @@ function renderPOTab(append){
     }
 
     const uom = poMaterialUom(po);
+    const matName = poMaterialName(po);
     const pr = poPricing(po);
     const priceExtras = [pr.diskon>0?'disk':'', pr.ongkir>0?'ongkir':''].filter(Boolean).join('+');
+    // Begitu PO COMPLETED, tampilkan Nilai Pembelian & harga/unit versi FINAL (basis qty yang BENERAN
+    // diterima), bukan versi estimasi basis qty disetujui - supaya kalau ada selisih penerimaan
+    // (partial receiving boleh kurang/lebih dari yang disetujui), angka yang ditampilkan selalu
+    // mencerminkan yang benar-benar terjadi.
+    const showTotal = pr.isFinal ? pr.finalTotal : pr.total;
+    const showUnitCost = pr.isFinal ? pr.finalUnitCost : pr.unitCost;
+    const selisihNote = (pr.isFinal && Math.abs(pr.qtyDiff) > 0.001)
+      ? `<p class="text-[9px] font-semibold ${pr.qtyDiff>0?'text-sky-600':'text-amber-600'}">Diterima ${pr.qtyDiff>0?'lebih':'kurang'} ${Math.abs(pr.qtyDiff).toLocaleString('id-ID')} ${esc(uom)} dari disetujui</p>`
+      : '';
     const priceCell = pr.hasPricing
-      ? `<p class="font-semibold text-slate-700">${formatRupiah(pr.total)}</p><p class="text-[10px] text-slate-400">@ ${formatRupiah(pr.harga)}/${esc(uom)}${priceExtras?' · '+priceExtras:''}</p>`
+      ? `<p class="font-semibold text-slate-700">${formatRupiah(showTotal)}</p><p class="text-[10px] text-slate-400">@ ${formatRupiah(showUnitCost)}/${esc(uom)}${priceExtras?' · '+priceExtras:''}${pr.isFinal?' · final':''}</p>${selisihNote}`
       : `<span class="text-slate-300 italic text-[11px]">- data harga -</span>`;
+    const dateCell = `<p class="text-slate-600">${formatDate(po['Order Date'])}</p><p class="text-[10px] ${overdue?'text-red-600 font-semibold':'text-slate-400'}">Estimasi: ${formatDate(po['Expected Date'])}${overdue?' · Terlambat':''}</p>${qtyReceived>0?`<p class="text-[10px] text-emerald-600">Diterima: ${formatDateTime(po['Waktu Diterima'])}</p>`:''}`;
 
-    return `<tr class="hover:bg-slate-50 transition">
+    return `<tr class="hover:bg-slate-50 transition ${overdue?'bg-red-50/40':''}">
       <td class="px-4 py-2.5 font-mono text-xs font-bold text-slate-700">${esc(po['PO Number'])}</td>
+      <td class="px-4 py-2.5 text-xs">${dateCell}</td>
       <td class="px-4 py-2.5 text-slate-600">${esc(po['Destination WH ID'])}</td>
       <td class="px-4 py-2.5 text-slate-600">${esc(po['Supplier Name'])}</td>
-      <td class="px-4 py-2.5"><p class="text-slate-700">${esc(po['Material ID'])}</p></td>
+      <td class="px-4 py-2.5"><p class="text-slate-700">${esc(po['Material ID'])}</p>${matName?`<p class="text-[10px] text-slate-400">${esc(matName)}</p>`:''}</td>
       <td class="px-4 py-2.5 text-right text-slate-600 text-xs">${qtyOrdered.toLocaleString('id-ID')} / ${qtyApproved!==null ? qtyApproved.toLocaleString('id-ID') : '-'} / ${qtyReceived.toLocaleString('id-ID')} <span class="text-slate-400">${esc(uom)}</span></td>
       <td class="px-4 py-2.5 text-right">${priceCell}</td>
-      <td class="px-4 py-2.5 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badge}">${esc(status)}</span></td>
+      <td class="px-4 py-2.5 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badge}">${esc(status)}</span>${overdue?'<p class="mt-1 text-[9px] font-bold text-red-600 uppercase tracking-wide">Terlambat</p>':''}</td>
       <td class="px-4 py-2.5 text-center">${action}</td>
     </tr>`;
   }).join('');
   const tbl = document.getElementById('tbl-po');
   if (append) { if (items.length) tbl.insertAdjacentHTML('beforeend', rowsHtml); }
-  else { tbl.innerHTML = items.length ? rowsHtml : `<tr><td colspan="8" class="px-4 py-8 text-center text-slate-400 text-sm">Belum ada Purchase Order.</td></tr>`; }
+  else { tbl.innerHTML = items.length ? rowsHtml : `<tr><td colspan="9" class="px-4 py-8 text-center text-slate-400 text-sm">Tidak ada Purchase Order yang cocok dengan filter.</td></tr>`; }
   renderScrollStatus('pg-po', 'po-scroll-sentinel', Math.min(ui.poPage*PAGE_SIZE, rows.length), rows.length, 'PO');
   observeSentinel('po-scroll-sentinel', () => { ui.poPage++; renderPOTab(true); });
 }
@@ -3921,6 +4092,7 @@ function openReceivePOModal(poNumber, sisa){
   document.getElementById('rp-qty').value = sisa > 0 ? sisa : '';
   document.getElementById('rp-close-short').checked = false;
   document.getElementById('rp-date').value = getWIBDateString();
+  document.getElementById('rp-time').value = getWIBTimeString();
 
   const costEl = document.getElementById('receive-po-cost-info');
   const pr = po ? poPricing(po) : null;
@@ -3940,6 +4112,7 @@ async function submitReceivePO(e){
   const result = await apiPost({
     action:'RECEIVE_PO', poNumber: document.getElementById('rp-ponumber').value,
     qtyReceived: Number(document.getElementById('rp-qty').value), actualDate: document.getElementById('rp-date').value,
+    actualTime: document.getElementById('rp-time').value,
     closeAsComplete: document.getElementById('rp-close-short').checked, operator: currentUser.namaUser
   });
   toggleSubmitLoading(btn, false);
@@ -3961,20 +4134,52 @@ function renderCasesTab(append){
   const statusFilter = document.getElementById('case-filter-status').value;
   const prioFilter = document.getElementById('case-filter-prioritas').value;
   const q = (document.getElementById('case-search').value||'').toLowerCase();
+  const start = document.getElementById('case-filter-start').value;
+  const end = document.getElementById('case-filter-end').value;
 
   const all = db.operationalCases || [];
-  const rows = all.filter(c =>
-    (!whFilter || c['Warehouse ID']===whFilter) &&
-    (!statusFilter || c['Status']===statusFilter) &&
-    (!prioFilter || c['Prioritas']===prioFilter) &&
-    (!q || String(c['Judul']).toLowerCase().includes(q) || String(c['Case ID']).toLowerCase().includes(q))
-  ).slice().reverse();
+  const rows = all.filter(c => {
+    let passDate = true;
+    if (start || end) {
+      const dStr = toWIBDateStr(c['Tanggal Lapor']);
+      if (dStr) {
+        const d = new Date(dStr).setHours(0,0,0,0);
+        if (start && d < new Date(start).setHours(0,0,0,0)) passDate = false;
+        if (end && d > new Date(end).setHours(0,0,0,0)) passDate = false;
+      }
+    }
+    return passDate &&
+      (!whFilter || c['Warehouse ID']===whFilter) &&
+      (!statusFilter || c['Status']===statusFilter) &&
+      (!prioFilter || c['Prioritas']===prioFilter) &&
+      (!q || String(c['Judul']).toLowerCase().includes(q) || String(c['Case ID']).toLowerCase().includes(q));
+  }).slice().reverse();
 
   const monthStr = getWIBDateString().slice(0,7);
+  const doneStatuses = ['Selesai','Ditutup'];
   document.getElementById('case-kpi-terbuka').textContent = all.filter(c=>c['Status']==='Terbuka').length;
   document.getElementById('case-kpi-diproses').textContent = all.filter(c=>c['Status']==='Diproses').length;
-  document.getElementById('case-kpi-selesai').textContent = all.filter(c=>c['Status']==='Selesai' && String(c['Tanggal Update']||'').slice(0,7)===monthStr).length;
+  // Pakai Waktu Selesai (persis kapan case itu MASUK status selesai/ditutup), bukan Tanggal Update -
+  // field itu ikut ke-update tiap kali baris case diedit apa pun (mis. ganti PIC bulan depan), jadi
+  // kalau dipakai buat "selesai bulan ini" bisa salah hitung case yang sebenarnya selesai bulan lalu.
+  document.getElementById('case-kpi-selesai').textContent = all.filter(c=>c['Status']==='Selesai' && String(c['Waktu Selesai']||'').slice(0,7)===monthStr).length;
   document.getElementById('case-kpi-total').textContent = all.length;
+
+  // Rata-rata waktu penyelesaian (Tanggal Lapor -> Waktu Selesai), dalam hari. Cuma case yang statusnya
+  // sudah selesai/ditutup DAN sudah punya Waktu Selesai yang dihitung (case lama dari sebelum field ini
+  // ada belum kebagian Waktu Selesai, jadi wajar dilewati daripada dianggap 0 hari).
+  const doneWithTime = all.filter(c => doneStatuses.indexOf(c['Status'])!==-1 && c['Waktu Selesai']);
+  if (doneWithTime.length) {
+    const totalDays = doneWithTime.reduce((sum, c) => {
+      const tglLapor = new Date(toWIBDateStr(c['Tanggal Lapor']));
+      const tglSelesai = new Date(String(c['Waktu Selesai']).split(' ')[0]);
+      const days = (tglSelesai - tglLapor) / 86400000;
+      return sum + (isFinite(days) ? Math.max(0, days) : 0);
+    }, 0);
+    document.getElementById('case-kpi-avgresolusi').textContent = (totalDays / doneWithTime.length).toFixed(1) + ' hari';
+  } else {
+    document.getElementById('case-kpi-avgresolusi').textContent = '-';
+  }
 
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   ui.casesPage = Math.min(Math.max(1, ui.casesPage), totalPages);
@@ -4033,7 +4238,7 @@ function openCaseDetailModal(caseId){
   document.getElementById('cd-caseid').textContent = c['Case ID'];
   document.getElementById('cd-status-badge').className = `px-2 py-0.5 rounded-full text-[10px] font-bold ${caseStatusBadge(c['Status'])}`;
   document.getElementById('cd-status-badge').textContent = c['Status'];
-  document.getElementById('cd-meta').textContent = `${esc(c['Warehouse ID'])} · Dilaporkan ${formatDate(c['Tanggal Lapor'])} · Update terakhir ${formatDate(c['Tanggal Update'])}`;
+  document.getElementById('cd-meta').textContent = `${esc(c['Warehouse ID'])} · Dilaporkan ${formatDate(c['Tanggal Lapor'])} · Update terakhir ${formatDate(c['Tanggal Update'])}${c['Waktu Selesai'] ? ' · Selesai ' + formatDateTime(c['Waktu Selesai']) : ''}`;
   document.getElementById('cd-judul').textContent = c['Judul'] || '-';
   document.getElementById('cd-deskripsi').textContent = c['Deskripsi'] || '-';
   document.getElementById('cd-kategori').textContent = c['Kategori'] || '-';
