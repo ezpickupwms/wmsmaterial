@@ -23,6 +23,10 @@
   /* Tidak ada shade amber/yellow/orange yang ter-compile di CSS statis file ini - dipakai utk
      bar peringatan (capacity 70-89%) yang butuh warna beda dari hijau (aman) & merah (kritis). */
   .bg-warn-bar { background-color: #f59e0b; }
+  /* max-w-2xl juga tidak ke-generate di CSS Tailwind statis file ini (sama seperti bg-warn-bar) -
+     dipakai utk modal form dengan banyak field (mis. Master Material) supaya muat tata letak 2 kolom
+     tanpa scroll panjang. */
+  .modal-box-wide { max-width: 42rem; }
   #app-sidebar { transition: width .18s ease-in-out; }
   .nav-btn { position: relative; }
   .nav-btn.nav-active { border-left-width: 3px; }
@@ -1198,6 +1202,25 @@ header{box-shadow:none;border-bottom:1px solid rgba(0,0,0,.16)}
           <select id="hpp-filter-wh" onchange="renderHppTab()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-red-600 min-w-[220px]"></select>
         </div>
 
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+          <div class="bg-white rounded-xl border border-slate-200 p-4">
+            <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400"><span>Total Overhead / Bulan</span><span class="relative inline-flex"><button type="button" class="info-tip-btn" onclick="toggleInfoTip('tip-hpp-stat-overhead',event)" aria-label="Info"><i data-lucide="info" style="width:9px;height:9px"></i></button><div id="tip-hpp-stat-overhead" class="info-tip-pop hidden">Jumlah seluruh item di tabel "Biaya Overhead Bulanan" gudang ini.</div></span></p>
+            <p id="hpp-stat-overhead-total" class="font-display text-xl font-bold text-slate-900 mt-1.5">Rp 0</p>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-4">
+            <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400"><span>Overhead / Paket</span><span class="relative inline-flex"><button type="button" class="info-tip-btn" onclick="toggleInfoTip('tip-hpp-stat-perpack',event)" aria-label="Info"><i data-lucide="info" style="width:9px;height:9px"></i></button><div id="tip-hpp-stat-perpack" class="info-tip-pop hidden">Total Overhead / Bulan dibagi Estimasi Volume Paket / Bulan (panel Volume &amp; Margin) - beban overhead yang ditanggung tiap paket.</div></span></p>
+            <p id="hpp-stat-overhead-pack" class="font-display text-xl font-bold text-slate-900 mt-1.5">Rp 0</p>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-4">
+            <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400"><span>Rata-rata HPP / Paket</span><span class="relative inline-flex"><button type="button" class="info-tip-btn" onclick="toggleInfoTip('tip-hpp-stat-avghpp',event)" aria-label="Info"><i data-lucide="info" style="width:9px;height:9px"></i></button><div id="tip-hpp-stat-avghpp" class="info-tip-pop hidden">Rata-rata HPP (biaya material + overhead) dari semua kategori kemasan gudang ini di tabel bawah.</div></span></p>
+            <p id="hpp-stat-avg-hpp" class="font-display text-xl font-bold text-slate-900 mt-1.5">Rp 0</p>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-4">
+            <p class="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400"><span>Margin Rata-rata (Realisasi)</span><span class="relative inline-flex"><button type="button" class="info-tip-btn" onclick="toggleInfoTip('tip-hpp-stat-avgmargin',event)" aria-label="Info"><i data-lucide="info" style="width:9px;height:9px"></i></button><div id="tip-hpp-stat-avgmargin" class="info-tip-pop hidden">Rata-rata selisih Handling Fee Final vs HPP (dalam %) dari semua kategori - bisa beda dari setting "Margin Handling Fee (%)" kalau Handling Fee Final pernah ditimpa manual.</div></span></p>
+            <p id="hpp-stat-avg-margin" class="font-display text-xl font-bold text-slate-900 mt-1.5">0%</p>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
           <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between gap-2">
@@ -1407,7 +1430,7 @@ header{box-shadow:none;border-bottom:1px solid rgba(0,0,0,.16)}
 </div>
 
 <div id="modal-generic" class="fixed inset-0 z-[220] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-  <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[88vh] overflow-y-auto border border-slate-100">
+  <div id="modal-generic-box" class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[88vh] overflow-y-auto border border-slate-100">
     <h3 id="generic-modal-title" class="font-display font-bold text-lg text-slate-900 mb-4">Form</h3>
     <form onsubmit="submitFormModal(event)">
       <div id="generic-modal-fields"></div>
@@ -5241,34 +5264,47 @@ function openMaterialForm(m){
   const konversiRatio = m ? (Number(m['konversi qty 1']||1) / Number(m['konversi qty 2']||1)) : '';
   openFormModal({
     title: isEdit ? 'Edit Material' : 'Tambah Material',
+    wide: true,
     fields: [
+      { type:'section', icon:'info', label:'Informasi Umum' },
       { name:'warehouseId', label:'Gudang', type:'select', value: whId, readonly: isEdit, options: db.warehouses.map(w=>({value:w['Warehouse ID'],label:w['Warehouse ID']+' — '+w['Warehouse Name']})) },
       { name:'materialId', label:'Material ID', value: m?m['Material ID']:'', readonly: isEdit, placeholder:'mis. KNG-BOX-002' },
       { name:'materialName', label:'Nama Material', value: m?m['Material Name']:'' },
       { name:'category', label:'Kategori Umum', value: m?m['Category']:'', required:false, placeholder:'mis. Packaging' },
       { name:'packCategoryCode', label:'Kode Kategori (Pack Code)', value: m?m['Pack Category Code']:'', required:false, placeholder:'mis. PACK-11 (jika terkait BOM)' },
       { name:'uom', label:'Satuan Stok (UOM)', value: m?m['UOM']:'', placeholder:'mis. roll, pcs, box', tooltip:'Satuan utama material ini dihitung & disimpan di stok gudang. Kalau resep BOM (tab Kategori & BOM) ditulis dalam satuan yang SAMA seperti ini, biarkan "Pakai Satuan Konversi?" di bawah = Tidak.' },
+
+      { type:'section', icon:'coins', label:'Stok & Harga' },
       { name:'minSafetyStock', label:'Min Safety Stock', type:'number', value: m?m['Min Safety Stock']:0, step:'any' },
       { name:'rop', label:'Reorder Point (ROP)', type:'number', value: m?m['Reorder Point (ROP)']:0, step:'any' },
       { name:'maxStock', label:'Max Stock', type:'number', value: m?m['Max Stock']:0, step:'any', required:false },
       { name:'unitPrice', label:'Harga Satuan (Rp)', type:'number', value: m?m['Unit Price (Rp)']:0, step:'any',
         tooltip:'Ini harga rata-rata (weighted average) yang dipakai untuk valuasi stok & perhitungan biaya BOM/Handling Fee. Nilai ini OTOMATIS ter-update setiap kali Purchase Order untuk material ini diterima (mengikuti harga beli + ongkir - diskon di PO). Isi manual di sini hanya untuk stok awal / material baru yang belum pernah dibeli lewat PO.' },
       { name:'leadTime', label:'Lead Time (hari)', type:'number', value: m?m['Lead Time (Days)']:0, required:false },
-      { name:'panjangCm', label:'Panjang per Unit (cm)', type:'number', value: m?(m['Panjang per Unit (cm)']||0):0, step:'any', required:false,
-        tooltip:'Panjang 1 satuan stok material ini (cm). Bersama Lebar & Tinggi, dipakai hitung Volume (CBM) otomatis — dipakai untuk kapasitas Area Inventori (menu Gudang > badge Kapasitas Area). Kosongkan/0 kalau belum perlu dihitung.' },
-      { name:'lebarCm', label:'Lebar per Unit (cm)', type:'number', value: m?(m['Lebar per Unit (cm)']||0):0, step:'any', required:false },
-      { name:'tinggiCm', label:'Tinggi per Unit (cm)', type:'number', value: m?(m['Tinggi per Unit (cm)']||0):0, step:'any', required:false,
-        tooltip:'Volume (CBM) = Panjang × Lebar × Tinggi ÷ 1.000.000, dihitung otomatis waktu disimpan — hasilnya langsung tampil di kolom "Volume (CBM)" tabel Master Material.' },
-      { name:'beratGram', label:'Berat per Unit (gram)', type:'number', value: m?(m['Berat per Unit (gram)']||0):0, step:'any', required:false,
-        tooltip:'Berat (gramasi) 1 satuan stok material ini, dalam gram.' },
       { name:'areaId', label:'Area Penyimpanan', type:'select', value: m?(m['Area ID']||''):'', required:false,
         options: [{value:'',label:'— Belum ditentukan —'}].concat(db.inventoryAreas.map(a => { const w = db.warehouses.find(x=>x['Warehouse ID']===a['Warehouse ID']); return {value:a['Area ID'], label:a['Nama Area']+(w?' ('+w['Warehouse Name']+')':'')}; })),
         tooltip:'Area gudang tempat material ini disimpan (kelola daftar area lewat menu Gudang, tombol "Kapasitas Area"). Pilih area yang gudangnya sama dengan Gudang yang dipilih di atas.' },
-      { name:'pakaiKonversi', label:'Pakai Satuan Konversi?', type:'select', value: hasKonversi?'Ya':'Tidak', required:false,
+
+      { type:'section', icon:'ruler', label:'Dimensi & Berat per Unit',
+        tooltip:'Dipakai untuk menghitung Volume (CBM) otomatis, dasar kapasitas Area Inventori (menu Gudang > badge Kapasitas Area). Kosongkan/0 kalau belum perlu dihitung.' },
+      { type:'group', name:'dimensiGroup', label:'Panjang × Lebar × Tinggi per Unit (cm)', oninput:'updateMaterialDimPreview()',
+        previewId:'gf-dim-preview', previewLabel:'Estimasi Volume (CBM):',
+        tooltip:'Panjang, Lebar, dan Tinggi 1 satuan stok material ini (cm), berurutan. Volume (CBM) = P × L × T ÷ 1.000.000, dihitung otomatis waktu disimpan — hasilnya tampil di kolom "Volume (CBM)" tabel Master Material.',
+        subfields: [
+          { name:'panjangCm', short:'Panjang', value: m?(m['Panjang per Unit (cm)']||0):0, step:'any' },
+          { name:'lebarCm', short:'Lebar', value: m?(m['Lebar per Unit (cm)']||0):0, step:'any' },
+          { name:'tinggiCm', short:'Tinggi', value: m?(m['Tinggi per Unit (cm)']||0):0, step:'any' }
+        ] },
+      { name:'beratGram', label:'Berat per Unit (gram)', type:'number', value: m?(m['Berat per Unit (gram)']||0):0, step:'any', required:false, full:true,
+        tooltip:'Berat (gramasi) 1 satuan stok material ini, dalam gram.' },
+
+      { type:'section', icon:'repeat', label:'Konversi Satuan (opsional)',
+        tooltip:'Isi HANYA kalau resep BOM kategori kemasan pakai satuan lebih kecil dari Satuan Stok di atas.' },
+      { name:'pakaiKonversi', label:'Pakai Satuan Konversi?', type:'select', value: hasKonversi?'Ya':'Tidak', required:false, full:true,
         options:[{value:'Tidak',label:'Tidak — resep BOM langsung pakai Satuan Stok di atas'},{value:'Ya',label:'Ya — resep BOM pakai satuan lain yang lebih kecil'}],
         tooltip:'Pilih "Ya" HANYA kalau resep BOM (tab Kategori & BOM) untuk material ini ditulis dalam satuan yang lebih kecil dari Satuan Stok. Contoh: Bubble Wrap disimpan per "roll" tapi dipakai per "gram" di resep -> pilih Ya.' },
       { name:'konversiUOM', label:'Satuan Konversi', value: m?(m['konversi UOM']||''):'', required:false, placeholder:'mis. gram', showWhen:{field:'pakaiKonversi', value:'Ya'} },
-      { name:'konversiRatio', label:'1 Satuan Stok Setara Berapa Satuan Konversi?', type:'number', value: konversiRatio, step:'any', required:false, showWhen:{field:'pakaiKonversi', value:'Ya'},
+      { name:'konversiRatio', label:'1 Satuan Stok = Berapa Satuan Konversi?', type:'number', value: konversiRatio, step:'any', required:false, showWhen:{field:'pakaiKonversi', value:'Ya'},
         tooltip:'Contoh: Bubble Wrap Satuan Stok = "roll", Satuan Konversi = "gram". Kalau 1 roll = 3000 gram, isi 3000 di sini. Resep BOM lalu ditulis dalam gram, sistem otomatis menghitung potongan stok dalam roll saat packing.' }
     ],
     onSubmit: async (data) => {
@@ -5284,6 +5320,16 @@ function openMaterialForm(m){
       if (result.success) { showToast(result.message,'success'); closeFormModal(); await fetchPartialData(['materials']); } else showToast(result.message,'error');
     }
   });
+  updateMaterialDimPreview();
+}
+function updateMaterialDimPreview(){
+  const p = Number((document.getElementById('gf-panjangCm')||{}).value || 0);
+  const l = Number((document.getElementById('gf-lebarCm')||{}).value || 0);
+  const t = Number((document.getElementById('gf-tinggiCm')||{}).value || 0);
+  const el = document.getElementById('gf-dim-preview');
+  if (!el) return;
+  const cbm = (p * l * t) / 1000000;
+  el.textContent = cbm > 0 ? cbm.toLocaleString('id-ID',{maximumFractionDigits:6}) + ' CBM/unit' : '— (isi dimensi utk hitung otomatis)';
 }
 
 function renderSupplierTab(append){
@@ -6027,6 +6073,8 @@ function renderHppTab(){
   if (!whId) {
     document.getElementById('tbl-overhead-items').innerHTML = `<tr><td colspan="3" class="px-4 py-8 text-center text-slate-400 text-sm">Belum ada data gudang.</td></tr>`;
     document.getElementById('tbl-hpp-category').innerHTML = '';
+    ['hpp-stat-overhead-total','hpp-stat-overhead-pack','hpp-stat-avg-hpp'].forEach(id => document.getElementById(id).textContent = 'Rp 0');
+    document.getElementById('hpp-stat-avg-margin').textContent = '0%';
     return;
   }
 
@@ -6059,9 +6107,13 @@ function renderOverheadItemsTable(whId){
     <tr class="hover:bg-slate-50 transition">
       <td class="px-4 py-2 text-slate-700">${esc(o['Item Name'])}</td>
       <td class="px-4 py-2 text-right text-slate-600">${formatRupiah(o['Monthly Cost (Rp)'])}</td>
-      <td class="px-4 py-2 text-center">${can('hpp','d') ? `<button onclick="deleteOverheadItem(${Number(o._row)},'${esc(whId)}')" class="text-red-500 hover:text-red-700 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i></button>` : '-'}</td>
+      <td class="px-4 py-2 text-center whitespace-nowrap">
+        ${can('hpp','u') ? `<button onclick='openOverheadItemForm(${escAttrJson(o)})' class="text-slate-500 hover:text-red-700 mr-2"><i data-lucide="edit-3" class="h-3.5 w-3.5"></i></button>` : ''}
+        ${can('hpp','d') ? `<button onclick="deleteOverheadItem(${Number(o._row)},'${esc(whId)}')" class="text-red-500 hover:text-red-700 transition"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i></button>` : ''}
+      </td>
     </tr>`).join('') : `<tr><td colspan="3" class="px-4 py-6 text-center text-slate-400 text-sm">Belum ada biaya overhead untuk gudang ini.</td></tr>`;
   document.getElementById('hpp-total-overhead').textContent = formatRupiah(total);
+  document.getElementById('hpp-stat-overhead-total').textContent = formatRupiah(total);
   lucide.createIcons();
 }
 
@@ -6077,10 +6129,12 @@ function renderHppCategoryTable(){
   if (!whId) return;
   const overheadPerPack = currentOverheadPerPack();
   document.getElementById('hpp-overhead-per-pack').textContent = formatRupiah(overheadPerPack);
+  document.getElementById('hpp-stat-overhead-pack').textContent = formatRupiah(overheadPerPack);
 
   const margin = Number(document.getElementById('hpp-margin').value || 0);
   const cats = db.packCategories.filter(c => c['Warehouse ID']===whId);
 
+  let sumHpp = 0, sumMarginRealisasi = 0;
   document.getElementById('tbl-hpp-category').innerHTML = cats.length ? cats.map(c => {
     const code = c['Pack Category Code'];
     const materialCost = materialCostForCategory(whId, code);
@@ -6088,17 +6142,30 @@ function renderHppCategoryTable(){
     const suggestedFee = hpp * (1 + margin/100);
     const saved = db.handlingFees.find(h => h['Warehouse ID']===whId && h['Pack Category Code']===code);
     const finalFee = saved ? Number(saved['Handling Fee (Rp)']) : suggestedFee;
+    sumHpp += hpp;
+    sumMarginRealisasi += hpp > 0 ? ((finalFee - hpp) / hpp * 100) : 0;
     return `<tr class="hover:bg-slate-50 transition">
       <td class="px-4 py-2.5"><p class="font-semibold text-slate-800">${esc(code)}</p><p class="text-[11px] text-slate-400">${esc(c['Pack Size Name'])}</p></td>
       <td class="px-4 py-2.5 text-right text-slate-600">${formatRupiah(materialCost)}</td>
       <td class="px-4 py-2.5 text-right text-slate-600">${formatRupiah(overheadPerPack)}</td>
-      <td class="px-4 py-2.5 text-right font-bold text-slate-900">${formatRupiah(hpp)}</td>
+      <td class="px-4 py-2.5 text-right"><p class="font-bold text-slate-900">${formatRupiah(hpp)}</p><p class="text-[10px] text-slate-400">${formatRupiah(materialCost)} + ${formatRupiah(overheadPerPack)}</p></td>
       <td class="px-4 py-2.5 text-right text-emerald-600">${formatRupiah(suggestedFee)}</td>
       <td class="px-4 py-2.5 text-right">
         <input type="number" min="0" step="1" value="${Math.round(finalFee)}" data-fee-input="${esc(code)}" data-hpp="${hpp}" data-material="${materialCost}" data-overhead="${overheadPerPack}" data-margin="${margin}" ${can('hpp','u')?'':'disabled'} class="w-32 border border-slate-300 rounded-lg px-2 py-1.5 text-right text-sm font-semibold outline-none focus:border-red-600 disabled:bg-slate-50 disabled:text-slate-400">
       </td>
     </tr>`;
   }).join('') : `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400 text-sm">Belum ada kategori kemasan untuk gudang ini. Tambahkan lewat menu Kategori &amp; BOM.</td></tr>`;
+
+  document.getElementById('hpp-stat-avg-hpp').textContent = cats.length ? formatRupiah(sumHpp / cats.length) : 'Rp 0';
+  const avgMarginEl = document.getElementById('hpp-stat-avg-margin');
+  if (cats.length) {
+    const avgMargin = sumMarginRealisasi / cats.length;
+    avgMarginEl.textContent = avgMargin.toFixed(1) + '%';
+    avgMarginEl.className = 'font-display text-xl font-bold mt-1.5 ' + (avgMargin >= 0 ? 'text-emerald-600' : 'text-red-600');
+  } else {
+    avgMarginEl.textContent = '0%';
+    avgMarginEl.className = 'font-display text-xl font-bold text-slate-900 mt-1.5';
+  }
 }
 
 async function saveHppSettings(){
@@ -6113,17 +6180,21 @@ async function saveHppSettings(){
   else showToast(result.message || 'Gagal menyimpan pengaturan.', 'error');
 }
 
-function openOverheadItemForm(){
+function openOverheadItemForm(item){
   const whId = document.getElementById('hpp-filter-wh').value;
   if (!whId) { showToast('Pilih gudang terlebih dahulu.', 'error'); return; }
+  const isEdit = !!item;
   openFormModal({
-    title: 'Tambah Biaya Overhead',
+    title: isEdit ? 'Edit Biaya Overhead' : 'Tambah Biaya Overhead',
     fields: [
-      { name:'itemName', label:'Nama Item Biaya', placeholder:'mis. Sewa Gudang, Listrik, Gaji Staff' },
-      { name:'monthlyCost', label:'Biaya per Bulan (Rp)', type:'number', step:'any' }
+      { name:'itemName', label:'Nama Item Biaya', value: isEdit?item['Item Name']:'', placeholder:'mis. Sewa Gudang, Listrik, Gaji Staff' },
+      { name:'monthlyCost', label:'Biaya per Bulan (Rp)', type:'number', value: isEdit?item['Monthly Cost (Rp)']:'', step:'any' }
     ],
     onSubmit: async (data) => {
-      const result = await apiPost(Object.assign({ action:'ADD_OVERHEAD_ITEM', warehouseId: whId }, data));
+      const payload = isEdit
+        ? Object.assign({ action:'EDIT_OVERHEAD_ITEM', row: Number(item._row) }, data)
+        : Object.assign({ action:'ADD_OVERHEAD_ITEM', warehouseId: whId }, data);
+      const result = await apiPost(payload);
       if (result.success) { showToast(result.message,'success'); closeFormModal(); await fetchPartialData(['overheadCosts']); document.getElementById('hpp-filter-wh').value = whId; renderHppTab(); } else showToast(result.message,'error');
     }
   });
@@ -6210,7 +6281,27 @@ async function deleteUser(username){
 }
 
 let _modalConfig = null;
-function renderFormField(f){
+function renderFormField(f, idx){
+  // Section: cuma header pemisah visual (full width), tidak punya input/value sendiri.
+  if (f.type === 'section') {
+    const tooltipHtml = f.tooltip ? renderInfoTip('gf-tip-sec-'+idx, f.tooltip) : '';
+    return `<div class="col-span-full mb-1.5${idx===0?'':' mt-1 pt-3 border-t border-slate-100'}">
+      <p class="flex items-center gap-1.5 text-xs font-bold text-slate-700">${f.icon?`<i data-lucide="${esc(f.icon)}" class="h-3.5 w-3.5 text-red-600 flex-shrink-0"></i>`:''}${esc(f.label)}${tooltipHtml}</p>
+    </div>`;
+  }
+  // Group: beberapa input angka kecil dalam 1 baris (mis. Panjang × Lebar × Tinggi), full width.
+  if (f.type === 'group') {
+    const gbase = 'w-full border border-slate-300 rounded-lg px-2 py-2 text-sm text-center outline-none focus:border-red-600 transition';
+    const inputsHtml = f.subfields.map(sf => `<input type="number" id="gf-${sf.name}" title="${esc(sf.short||sf.label)}" step="${sf.step!==undefined?sf.step:'any'}" value="${esc(sf.value)}" ${f.oninput?`oninput="${esc(f.oninput)}"`:''} class="${gbase}">`).join(`<span class="text-slate-300 text-xs flex-shrink-0">×</span>`);
+    const tooltipHtml = f.tooltip ? renderInfoTip('gf-tip-'+f.name, f.tooltip) : '';
+    const previewHtml = f.previewId ? `<p class="text-[11px] text-slate-400 mt-1.5">${esc(f.previewLabel||'')} <span id="${esc(f.previewId)}" class="font-semibold text-slate-600">-</span></p>` : '';
+    return `<div class="mb-3 col-span-full">
+      <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1"><span>${esc(f.label)}</span>${tooltipHtml}</label>
+      <div class="flex items-center gap-1.5">${inputsHtml}</div>
+      ${previewHtml}
+    </div>`;
+  }
+
   const val = f.value!==undefined && f.value!==null ? f.value : '';
   const reqAttr = f.required===false ? '' : 'required';
   const base = 'w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600 transition';
@@ -6226,7 +6317,8 @@ function renderFormField(f){
   const tooltipHtml = f.tooltip ? renderInfoTip('gf-tip-'+f.name, f.tooltip) : '';
 
   const showWhenAttrs = f.showWhen ? ` data-show-when-field="${esc(f.showWhen.field)}" data-show-when-value="${esc(f.showWhen.value)}"` : '';
-  return `<div class="mb-3${f.showWhen?' form-conditional-field hidden':''}"${showWhenAttrs}><label class="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1"><span>${esc(f.label)}</span>${tooltipHtml}${f.hint?`<span class="font-normal text-slate-400 normal-case">— ${esc(f.hint)}</span>`:''}</label>${input}</div>`;
+  const spanCls = (f.full || f.type==='textarea') ? ' col-span-full' : '';
+  return `<div class="mb-3${spanCls}${f.showWhen?' form-conditional-field hidden':''}"${showWhenAttrs}><label class="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-1"><span>${esc(f.label)}</span>${tooltipHtml}${f.hint?`<span class="font-normal text-slate-400 normal-case">— ${esc(f.hint)}</span>`:''}</label>${input}</div>`;
 }
 
 function setupConditionalFields(container){
@@ -6248,8 +6340,11 @@ function setupConditionalFields(container){
 function openFormModal(config){
   _modalConfig = config;
   document.getElementById('generic-modal-title').textContent = config.title;
+  const box = document.getElementById('modal-generic-box');
+  if (box) box.className = 'bg-white rounded-2xl p-6 w-full shadow-2xl max-h-[88vh] overflow-y-auto border border-slate-100 ' + (config.wide ? 'modal-box-wide' : 'max-w-md');
   const fieldsEl = document.getElementById('generic-modal-fields');
-  fieldsEl.innerHTML = config.fields.map(renderFormField).join('');
+  fieldsEl.className = config.wide ? 'grid grid-cols-1 sm:grid-cols-2 gap-x-6' : '';
+  fieldsEl.innerHTML = config.fields.map((f,idx) => renderFormField(f, idx)).join('');
   setupConditionalFields(fieldsEl);
   openModal('modal-generic');
   lucide.createIcons();
@@ -6259,7 +6354,11 @@ async function submitFormModal(e){
   e.preventDefault();
   if (!_modalConfig) return;
   const data = {};
-  _modalConfig.fields.forEach(f => { data[f.name] = document.getElementById('gf-'+f.name).value; });
+  _modalConfig.fields.forEach(f => {
+    if (f.type === 'section') return;
+    if (f.type === 'group') { f.subfields.forEach(sf => { data[sf.name] = document.getElementById('gf-'+sf.name).value; }); return; }
+    data[f.name] = document.getElementById('gf-'+f.name).value;
+  });
 
   const btn = document.getElementById('generic-modal-submit-btn');
   toggleSubmitLoading(btn, true);
