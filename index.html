@@ -5317,7 +5317,7 @@ function openMaterialForm(m){
       delete payload.pakaiKonversi;
       delete payload.konversiRatio;
       const result = await apiPost(payload);
-      if (result.success) { showToast(result.message,'success'); closeFormModal(); await fetchPartialData(['materials']); } else showToast(result.message,'error');
+      if (result.success) { showToast(result.message,'success'); closeFormModal(); await fetchPartialData(['materials','inventory']); } else showToast(result.message,'error');
     }
   });
   updateMaterialDimPreview();
