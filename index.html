@@ -711,10 +711,18 @@ header{box-shadow:none;border-bottom:1px solid rgba(0,0,0,.16)}
       <div id="tab-cases" class="tab-content hidden">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div><h2 class="font-display text-xl font-bold text-slate-900">Monitoring Case Operasional</h2><p class="text-sm text-slate-500 mt-0.5">Laporkan & pantau kendala operasional harian per gudang.</p></div>
-          <button data-perm-module="cases" data-perm-op="c" onclick="openCreateCaseModal()" class="flex items-center gap-1.5 bg-red-600 text-white text-xs font-semibold px-3.5 py-2.5 rounded-lg hover:bg-red-700 transition shadow-sm"><i data-lucide="plus" class="h-3.5 w-3.5"></i>Lapor Case Baru</button>
+          <div class="flex items-center gap-2">
+            <button onclick="exportCasesCsv()" class="flex items-center gap-1.5 bg-white text-slate-600 border border-slate-300 text-xs font-semibold px-3.5 py-2.5 rounded-lg hover:bg-slate-50 transition"><i data-lucide="download" class="h-3.5 w-3.5"></i>Export CSV</button>
+            <button data-perm-module="hpp" data-perm-op="u" onclick="openSlaSettingsModal()" class="flex items-center gap-1.5 bg-white text-slate-600 border border-slate-300 text-xs font-semibold px-3.5 py-2.5 rounded-lg hover:bg-slate-50 transition"><i data-lucide="timer" class="h-3.5 w-3.5"></i>Setelan SLA</button>
+            <button data-perm-module="cases" data-perm-op="c" onclick="openCreateCaseModal()" class="flex items-center gap-1.5 bg-red-600 text-white text-xs font-semibold px-3.5 py-2.5 rounded-lg hover:bg-red-700 transition shadow-sm"><i data-lucide="plus" class="h-3.5 w-3.5"></i>Lapor Case Baru</button>
+          </div>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+          <div class="bg-white rounded-xl border border-slate-200 status-rail border-l-red-700 p-3.5 shadow-sm">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Over SLA</p>
+            <p id="case-kpi-oversla" class="font-display text-xl font-bold text-red-700 mt-0.5">0</p>
+          </div>
           <div class="bg-white rounded-xl border border-slate-200 status-rail border-l-red-500 p-3.5 shadow-sm">
             <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Terbuka</p>
             <p id="case-kpi-terbuka" class="font-display text-xl font-bold text-red-600 mt-0.5">0</p>
@@ -753,6 +761,9 @@ header{box-shadow:none;border-bottom:1px solid rgba(0,0,0,.16)}
             <option value="Tinggi">Tinggi</option>
             <option value="Kritis">Kritis</option>
           </select>
+          <label class="flex items-center gap-1.5 text-xs font-semibold text-red-600 border border-red-200 bg-red-50 rounded-lg px-2.5 py-1.5 cursor-pointer select-none">
+            <input type="checkbox" id="case-filter-oversla" onchange="ui.casesPage=1; renderCasesTab()" class="accent-red-600">Hanya Over SLA
+          </label>
           <input type="text" id="case-search" oninput="ui.casesPage=1; debouncedRenderCases()" placeholder="Cari judul / Case ID..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm flex-1 min-w-[160px] outline-none focus:border-red-600">
 
           <div class="flex items-center gap-1.5 ml-auto bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
@@ -766,8 +777,8 @@ header{box-shadow:none;border-bottom:1px solid rgba(0,0,0,.16)}
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div class="overflow-x-auto"><table class="w-full text-sm text-left">
             <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-400"><tr>
-              <th class="px-4 py-2.5">Case ID</th><th class="px-4 py-2.5">Tanggal</th><th class="px-4 py-2.5">Gudang</th><th class="px-4 py-2.5">Kategori</th>
-              <th class="px-4 py-2.5">Judul</th><th class="px-4 py-2.5 text-center">Prioritas</th><th class="px-4 py-2.5">PIC</th><th class="px-4 py-2.5 text-center">Status</th><th class="px-4 py-2.5 text-center">Aksi</th>
+              <th class="px-4 py-2.5">Case ID</th><th class="px-4 py-2.5">Tanggal Lapor</th><th class="px-4 py-2.5">Gudang</th><th class="px-4 py-2.5">Kategori</th>
+              <th class="px-4 py-2.5">Judul</th><th class="px-4 py-2.5 text-center">Prioritas</th><th class="px-4 py-2.5">PIC</th><th class="px-4 py-2.5 text-center">Status</th><th class="px-4 py-2.5">Waktu Selesai</th><th class="px-4 py-2.5 text-center">Aksi</th>
             </tr></thead>
             <tbody id="tbl-cases" class="divide-y divide-slate-100"></tbody>
           </table></div>
@@ -1774,7 +1785,7 @@ const PAGE_SIZE = 12;
 
 let authToken = null;
 let currentUser = null;
-let db = { warehouses:[], materials:[], suppliers:[], supplierPricelist:[], inventoryAreas:[], inventory:[], transactionLogs:[], purchaseOrders:[], packCategories:[], bomRecipes:[], packLogs:[], users:[], overheadCosts:[], hppSettings:[], handlingFees:[], operationalCases:[], productivityLogs:[], clientOrderLogs:[], productivityTargets:[], warehouseAssets:[], productionTargets:[], rolePermissionMatrix:{}, rolePermissionCeiling:{}, customRoles:[], allRoleNames:[] };
+let db = { warehouses:[], materials:[], suppliers:[], supplierPricelist:[], inventoryAreas:[], inventory:[], transactionLogs:[], purchaseOrders:[], packCategories:[], bomRecipes:[], packLogs:[], users:[], overheadCosts:[], hppSettings:[], handlingFees:[], operationalCases:[], slaSettings:[], productivityLogs:[], clientOrderLogs:[], productivityTargets:[], warehouseAssets:[], productionTargets:[], rolePermissionMatrix:{}, rolePermissionCeiling:{}, customRoles:[], allRoleNames:[] };
 let ui = { invPage:1, trxPage:1, matPage:1, poPage:1, supplierPage:1, assetsPage:1, casesPage:1, selectedPackCat:null, selectedPackWh:null, selectedPermRole:'Staff Gudang', bomSubview:'recipe' };
 let permMatrixState = null;
 
@@ -1797,7 +1808,7 @@ const TAB_DATA_KEYS = {
   transaction:        ['transactionLogs'],
   outbound:           ['packCategories', 'bomRecipes', 'inventory', 'packLogs'],
   po:                 ['purchaseOrders'],
-  cases:              ['operationalCases'],
+  cases:              ['operationalCases', 'slaSettings'],
   productivity:       ['productivityLogs', 'productivityTargets', 'clientOrderLogs', 'packLogs'],
   warehouse:          [],
   material:           [],
@@ -1953,9 +1964,7 @@ function getRoleQtyPaket(r, packLogByAwb){
 }
 
 function findMaterialUnitPrice(materialId, warehouseId){
-  const whInfo = db.warehouses.find(w => w['Warehouse ID']===warehouseId);
-  const whName = whInfo ? whInfo['Warehouse Name'] : null;
-  const mat = db.materials.find(m => m['Material ID']===materialId && m['Warehouse Name']===whName);
+  const mat = findMaterialMaster(materialId, warehouseId);
   return mat ? Number(mat['Unit Price (Rp)']||0) : 0;
 }
 
@@ -1990,6 +1999,25 @@ function showToast(message, type){
   document.getElementById('toast-container').appendChild(el);
   lucide.createIcons();
   setTimeout(()=>{ if(document.body.contains(el)) el.onclick(); }, 4500);
+}
+
+// Toast KHUSUS status loading (dipakai saat refresh data / reload sesi) - beda dari showToast() yang
+// otomatis hilang sendiri dalam 4.5 detik: toast ini SENGAJA tidak auto-dismiss, supaya user tetap yakin
+// prosesnya masih berjalan selama toast ini masih tampil (sebelumnya cuma ikon kecil berputar di header
+// yang gampang tidak kelihatan/kelewat, apalagi kalau koneksi lambat). Ditutup manual lewat
+// dismissLoadingToast(handle) begitu proses selesai - biasanya langsung disusul showToast sukses/gagal.
+function showLoadingToast(message){
+  const el = document.createElement('div');
+  el.className = `toast-in flex items-center gap-2 bg-slate-800 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg mb-2 max-w-sm relative`;
+  el.innerHTML = `<i data-lucide="loader-2" class="h-4 w-4 flex-shrink-0 animate-spin"></i><span>${esc(message)}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  lucide.createIcons();
+  return el;
+}
+function dismissLoadingToast(handle){
+  if (!handle || !document.body.contains(handle)) return;
+  handle.style.opacity='0'; handle.style.transform='translateX(20px)';
+  setTimeout(()=>{ if(handle.parentNode) handle.remove(); },300);
 }
 
 function debounce(func, wait) {
@@ -2471,6 +2499,7 @@ async function handleLoginSubmit(e){
 
   if (result.success) {
     authToken = result.token;
+    try { localStorage.setItem('ezpickup_session_token', authToken); } catch(_e) {}
     currentUser = result.user;
     document.getElementById('login-section').classList.add('hidden');
     document.getElementById('app-section').classList.remove('hidden');
@@ -2492,9 +2521,11 @@ async function handleLoginSubmit(e){
 function logout(){ forceLogout(); }
 function forceLogout(){
   authToken = null; currentUser = null;
+  try { localStorage.removeItem('ezpickup_session_token'); } catch(_e) {}
   loadedKeys.clear(); // sesi baru = semua tab harus lazy-fetch ulang, jangan percaya status "sudah termuat" dari sesi/​user sebelumnya
   document.getElementById('app-section').classList.add('hidden');
   document.getElementById('app-section').classList.remove('flex');
+  document.getElementById('app-loading-skeleton').classList.add('hidden');
   document.getElementById('login-section').classList.remove('hidden');
   document.getElementById('login-form').reset();
 }
@@ -2519,6 +2550,7 @@ const DB_KEY_RENDER_MAP = {
   hppSettings: () => { renderHppTab(); markCompareDirty(); },
   handlingFees: () => renderHppTab(),
   operationalCases: () => { renderCasesTab(); renderDashboard(); markCompareDirty(); updateSidebarBadges(); },
+  slaSettings: () => renderCasesTab(),
   productivityLogs: () => { renderProductivityLogToday(); renderProductivityTab(); markCompareDirty(); },
 
   clientOrderLogs: () => { renderProductivityTab(); populateClientNameSuggestions(); markCompareDirty(); },
@@ -2564,26 +2596,78 @@ async function fetchAllData(){
   const ok = await fetchPartialData(initialKeys);
   if (refreshIcon) refreshIcon.classList.remove('animate-spin');
 
-  if (!ok) { badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-red-400"></span>Terputus'; return; }
+  if (!ok) { badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-red-400"></span>Terputus'; return false; }
   initialKeys.forEach(k => loadedKeys.add(k));
   badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>Terhubung';
+  return true;
+}
+
+// Pulihkan sesi kalau halaman di-reload (F5/tutup-buka tab): sebelumnya authToken cuma variabel
+// JS biasa, jadi reload apa pun SELALU melempar balik ke layar login walau sesinya di server masih
+// berlaku (sampai 6 jam - lihat SESSION_DURATION_MS di Code.gs), user jadi kehilangan tab/pekerjaan
+// yang sedang dibuka tiap kali browser reload sendiri/tidak sengaja. Token boleh dipakai berkali-kali
+// sampai expired (bukan sekali pakai - lihat createSession/getSession di backend), jadi aman disimpan
+// & dipakai ulang dari localStorage di sini. Selama proses ini, tampilkan skeleton + toast loading yang
+// jelas (bukan diam-diam) - dan kalau ternyata token sudah tidak valid/expired, jalur authError yang
+// SUDAH ADA di fetchPartialData otomatis menangani (forceLogout(), termasuk hapus token tersimpan &
+// balik ke layar login) - tidak perlu logic tambahan di sini untuk kasus itu.
+async function attemptSessionRestore(){
+  let saved = null;
+  try { saved = localStorage.getItem('ezpickup_session_token'); } catch(_e) {}
+  if (!saved) return;
+
+  authToken = saved;
+  document.getElementById('login-section').classList.add('hidden');
+  document.getElementById('app-section').classList.remove('hidden');
+  document.getElementById('app-section').classList.add('flex');
+  document.getElementById('app-loading-skeleton').classList.remove('hidden');
+  const loadingHandle = showLoadingToast('Memuat ulang sesi Anda...');
+
+  const ok = await fetchAllData();
+
+  if (!ok) {
+    dismissLoadingToast(loadingHandle);
+    if (!authToken) return; // token invalid/expired - forceLogout() sudah membereskan semua tampilan
+    // authToken masih ada tapi gagal (jaringan/server) - JANGAN biarkan skeleton nyangkut tampil selamanya;
+    // tampilkan shell app apa adanya (badge status sudah "Terputus" dari fetchAllData) supaya user bisa
+    // coba lagi lewat tombol Refresh di header tanpa harus login ulang.
+    document.getElementById('app-loading-skeleton').classList.add('hidden');
+    return;
+  }
+  document.getElementById('user-name').textContent = currentUser.namaUser;
+  document.getElementById('user-role').textContent = currentUser.role + (currentUser.resolvedWarehouseId ? ' · ' + currentUser.resolvedWarehouseId : ' · Semua Gudang');
+  document.getElementById('out-packer-name').value = currentUser.namaUser;
+  await switchTab('dashboard');
+  document.getElementById('app-loading-skeleton').classList.add('hidden');
+  dismissLoadingToast(loadingHandle);
+  showToast('Sesi berhasil dipulihkan, ' + String(currentUser.namaUser||'').split(' ')[0] + '.', 'success');
 }
 
 // Refresh manual (tombol di header): sebelumnya selalu narik ULANG SEMUA 15+ tab meski cuma
 // 1 yang kelihatan. Sekarang cukup refresh key yang MEMANG sudah pernah dimuat di sesi ini -
 // jadi tetap cepat walau data sudah banyak, dan tetap "menyegarkan apa yang sedang dipakai".
+// Sekarang juga dikasih toast loading yang jelas (bukan cuma ikon kecil berputar yang gampang
+// kelewat) + dijaga supaya tidak ada 2 proses refresh jalan bersamaan kalau tombolnya diklik
+// berkali-kali/lagi proses.
+let _refreshInFlight = false;
 async function refreshCurrentView(){
+  if (_refreshInFlight) { showToast('Masih memuat data sebelumnya, tunggu sebentar...', 'info'); return; }
+  _refreshInFlight = true;
   const badge = document.getElementById('api-status');
   const refreshIcon = document.querySelector('#btn-refresh i');
   if (refreshIcon) refreshIcon.classList.add('animate-spin');
+  const loadingHandle = showLoadingToast('Memuat data terbaru...');
 
   const keys = loadedKeys.size ? Array.from(loadedKeys) : Array.from(new Set(CORE_KEYS.concat(TAB_DATA_KEYS['dashboard'])));
   const ok = await fetchPartialData(keys);
   if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+  dismissLoadingToast(loadingHandle);
+  _refreshInFlight = false;
 
   if (ok) {
     keys.forEach(k => loadedKeys.add(k));
     badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>Terhubung';
+    showToast('Data berhasil diperbarui.', 'success');
   } else {
     badge.innerHTML = '<span class="h-1.5 w-1.5 rounded-full bg-red-400"></span>Terputus';
   }
@@ -2640,10 +2724,52 @@ function populateWarehouseSelects(){
   refreshPoBulkMaterialOptions();
 }
 
+// ============ INDEX CACHE (OPTIMASI PERFORMA) ============
+// Sebelumnya materialsForWarehouseId/findMaterialMaster/stockAvailable/poMaterialName/dst masing-
+// masing melakukan .find()/.filter() SENDIRI ke db.materials/db.warehouses/db.inventory tiap kali
+// dipanggil. Di tab yang menampilkan banyak baris (PO, Kapasitas Produksi, Rencana Pembelian
+// Agregat, dst) fungsi-fungsi ini terpanggil puluhan-ratusan kali per render - tiap panggilan scan
+// ulang array yang bisa berisi ribuan baris, jadi total kerja bisa kuadratik (O(baris x material)).
+// Index di bawah membangun object lookup SEKALI, lalu di-rebuild HANYA kalau referensi
+// db.materials/db.warehouses/db.inventory benar-benar berubah - ini valid karena fetchPartialData
+// selalu assign ARRAY BARU ke db[key] tiap ada data terbaru (bukan mutate in-place, lihat
+// fetchPartialData), jadi perbandingan referensi ini aman dipakai sbg penanda "data berubah".
+// Semua fungsi di bawah yang memakai index ini TIDAK berubah hasil/perilakunya - cuma jauh lebih
+// cepat, terutama saat data sudah ribuan-puluhan ribu baris (skala yang memang ditarget sistem ini).
+let _idxCache = null;
+let _idxSrc = { materials:null, warehouses:null, inventory:null };
+function dataIndex_(){
+  if (_idxCache && _idxSrc.materials===db.materials && _idxSrc.warehouses===db.warehouses && _idxSrc.inventory===db.inventory) {
+    return _idxCache;
+  }
+  const whNameById = {};
+  (db.warehouses||[]).forEach(w => { whNameById[w['Warehouse ID']] = w['Warehouse Name']; });
+
+  const materialsByWhName = {};   // whName -> Material[] (urutan sama seperti db.materials)
+  const materialByWhNameId = {};  // whName -> { materialId: Material }
+  (db.materials||[]).forEach(m => {
+    const whName = m['Warehouse Name'];
+    if (!materialsByWhName[whName]) { materialsByWhName[whName] = []; materialByWhNameId[whName] = {}; }
+    materialsByWhName[whName].push(m);
+    materialByWhNameId[whName][m['Material ID']] = m;
+  });
+
+  const invByWhId = {}; // whId -> { materialId: inventoryRow }
+  (db.inventory||[]).forEach(i => {
+    const whId = i['Warehouse ID'];
+    if (!invByWhId[whId]) invByWhId[whId] = {};
+    invByWhId[whId][i['Material ID']] = i;
+  });
+
+  _idxCache = { whNameById, materialsByWhName, materialByWhNameId, invByWhId };
+  _idxSrc = { materials: db.materials, warehouses: db.warehouses, inventory: db.inventory };
+  return _idxCache;
+}
+
 function materialsForWarehouseId(whId){
-  const wh = db.warehouses.find(w => w['Warehouse ID'] === whId);
-  const whName = wh ? wh['Warehouse Name'] : null;
-  return db.materials.filter(m => m['Warehouse Name'] === whName);
+  const idx = dataIndex_();
+  const whName = idx.whNameById[whId];
+  return idx.materialsByWhName[whName] || [];
 }
 
 async function switchTab(tab){
@@ -3514,14 +3640,12 @@ function renderBomPreview(){
   const recipes = db.bomRecipes.filter(b => b['Warehouse ID']===wh && b['Pack Category Code']===cat);
   if (!recipes.length) { box.innerHTML = '<p class="text-sm text-red-500">Resep BOM belum tersedia untuk kombinasi ini.</p>'; submitBtn.disabled = true; return; }
 
-  const materials = materialsForWarehouseId(wh);
   let allOk = true, totalCost = 0;
   const rowsHtml = recipes.map(r => {
     const usageQty = Number(r['Usage Qty']||r['qty']||1) * packQty;
-    const mat = materials.find(m => m['Material ID']===r['Material ID']);
+    const mat = findMaterialMaster(r['Material ID'], wh);
     const baseUsage = mat ? convertToBaseUnitClient(usageQty, mat) : usageQty;
-    const invItem = db.inventory.find(i => i['Warehouse ID']===wh && i['Material ID']===r['Material ID']);
-    const available = invItem ? Number(invItem['Qty Available']||0) : 0;
+    const available = stockAvailable(wh, r['Material ID']);
     const ok = available >= baseUsage;
     if (!ok) allOk = false;
 
@@ -3611,14 +3735,14 @@ function computePoPricing(qty, harga, diskon, ongkir){
 // per unit selalu jelas satuannya (sebelumnya cuma nampilin angka polos / teks generik "unit").
 function poMaterialUom(po){
   if (!po) return 'unit';
-  const mat = materialsForWarehouseId(po['Destination WH ID']).find(m => m['Material ID']===po['Material ID']);
+  const mat = findMaterialMaster(po['Material ID'], po['Destination WH ID']);
   return mat ? (mat['UOM'] || 'unit') : 'unit';
 }
 // Nama material dari 1 baris PO - tabel PO sebelumnya cuma nampilin Material ID, susah dibaca cepat
 // pas lagi memantau banyak PO sekaligus.
 function poMaterialName(po){
   if (!po) return '';
-  const mat = materialsForWarehouseId(po['Destination WH ID']).find(m => m['Material ID']===po['Material ID']);
+  const mat = findMaterialMaster(po['Material ID'], po['Destination WH ID']);
   return mat ? (mat['Material Name'] || '') : '';
 }
 // PO dianggap "terlambat" kalau statusnya masih berjalan (OPEN/APPROVED/PARTIAL - belum selesai atau
@@ -3697,7 +3821,7 @@ function onPoMaterialChange(){
   const wh = document.getElementById('po-wh').value;
   const matId = document.getElementById('po-mat').value;
   const supplierId = document.getElementById('po-supplier').value;
-  const mat = materialsForWarehouseId(wh).find(m => m['Material ID']===matId);
+  const mat = findMaterialMaster(matId, wh);
   const price = getSupplierPriceFor(supplierId, matId);
   document.getElementById('po-harga').value = price ? Number(price['Harga Satuan (Rp)']||0) : (mat ? Number(mat['Unit Price (Rp)']||0) : 0);
   const uom = mat ? (mat['UOM'] || 'unit') : 'unit';
@@ -3801,7 +3925,7 @@ function renderPoBulkRows(){
     const matOpts = '<option value="">Pilih material...</option>' + matList.map(m =>
       `<option value="${esc(m['Material ID'])}" ${m['Material ID']===row.materialId?'selected':''}>${esc(m['Material ID'])} — ${esc(m['Material Name'])}</option>`
     ).join('');
-    const rowMat = matList.find(m => m['Material ID']===row.materialId);
+    const rowMat = findMaterialMaster(row.materialId, wh);
     const uom = rowMat ? (rowMat['UOM'] || 'unit') : 'unit';
     return `<div class="border border-slate-200 rounded-lg p-3 relative bg-white">
       <div class="flex items-center justify-between mb-2">
@@ -3849,7 +3973,7 @@ function updatePoBulkRow(idx, field, val){
 function onPoBulkMaterialChange(idx, materialId){
   const wh = document.getElementById('pobulk-wh').value;
   const supplierId = document.getElementById('pobulk-supplier').value;
-  const mat = materialsForWarehouseId(wh).find(m => m['Material ID']===materialId);
+  const mat = findMaterialMaster(materialId, wh);
   const price = getSupplierPriceFor(supplierId, materialId);
   poBulkRows[idx].materialId = materialId;
   poBulkRows[idx].hargaSatuan = price ? Number(price['Harga Satuan (Rp)']||0) : (mat ? Number(mat['Unit Price (Rp)']||0) : '');
@@ -4152,16 +4276,39 @@ function casePriorityBadge(p){
   return map[p] || 'bg-slate-100 text-slate-500';
 }
 
-function renderCasesTab(append){
+// SLA per Prioritas (jam), diatur lewat tombol "Setelan SLA" - fallback 24 jam kalau prioritas
+// belum ada settingnya. "Over SLA" cuma berlaku utk case yang BELUM Selesai/Ditutup (case yang
+// sudah selesai dianggap tuntas, tidak perlu alert aktif lagi walau dulu penyelesaiannya telat).
+function getCaseSlaHours(c){
+  const map = {};
+  (db.slaSettings||[]).forEach(s => { map[s['Prioritas']] = Number(s['SLA (Jam)']); });
+  return map[c['Prioritas']] || 24;
+}
+function getCaseElapsedHours(c){
+  const start = new Date(c['Tanggal Lapor']);
+  if (isNaN(start.getTime())) return 0;
+  const doneStatuses = ['Selesai','Ditutup'];
+  const end = (doneStatuses.indexOf(c['Status'])!==-1 && c['Waktu Selesai']) ? new Date(c['Waktu Selesai']) : new Date();
+  return (end - start) / 3600000;
+}
+function isCaseOverSla(c){
+  const doneStatuses = ['Selesai','Ditutup'];
+  if (doneStatuses.indexOf(c['Status'])!==-1) return false;
+  return getCaseElapsedHours(c) > getCaseSlaHours(c);
+}
+
+// Dipakai renderCasesTab (tampilan) & exportCasesCsv (download) - biar hasil download selalu
+// sama persis dengan yang lagi ditampilkan/difilter di layar, satu sumber logic filter aja.
+function getFilteredCases(){
   const whFilter = document.getElementById('case-filter-wh').value;
   const statusFilter = document.getElementById('case-filter-status').value;
   const prioFilter = document.getElementById('case-filter-prioritas').value;
   const q = (document.getElementById('case-search').value||'').toLowerCase();
   const start = document.getElementById('case-filter-start').value;
   const end = document.getElementById('case-filter-end').value;
+  const onlyOverSla = document.getElementById('case-filter-oversla').checked;
 
-  const all = db.operationalCases || [];
-  const rows = all.filter(c => {
+  return (db.operationalCases||[]).filter(c => {
     let passDate = true;
     if (start || end) {
       const dStr = toWIBDateStr(c['Tanggal Lapor']);
@@ -4175,11 +4322,18 @@ function renderCasesTab(append){
       (!whFilter || c['Warehouse ID']===whFilter) &&
       (!statusFilter || c['Status']===statusFilter) &&
       (!prioFilter || c['Prioritas']===prioFilter) &&
+      (!onlyOverSla || isCaseOverSla(c)) &&
       (!q || String(c['Judul']).toLowerCase().includes(q) || String(c['Case ID']).toLowerCase().includes(q));
   }).slice().reverse();
+}
+
+function renderCasesTab(append){
+  const all = db.operationalCases || [];
+  const rows = getFilteredCases();
 
   const monthStr = getWIBDateString().slice(0,7);
   const doneStatuses = ['Selesai','Ditutup'];
+  document.getElementById('case-kpi-oversla').textContent = all.filter(isCaseOverSla).length;
   document.getElementById('case-kpi-terbuka').textContent = all.filter(c=>c['Status']==='Terbuka').length;
   document.getElementById('case-kpi-diproses').textContent = all.filter(c=>c['Status']==='Diproses').length;
   // Pakai Waktu Selesai (persis kapan case itu MASUK status selesai/ditutup), bukan Tanggal Update -
@@ -4188,18 +4342,14 @@ function renderCasesTab(append){
   document.getElementById('case-kpi-selesai').textContent = all.filter(c=>c['Status']==='Selesai' && String(c['Waktu Selesai']||'').slice(0,7)===monthStr).length;
   document.getElementById('case-kpi-total').textContent = all.length;
 
-  // Rata-rata waktu penyelesaian (Tanggal Lapor -> Waktu Selesai), dalam hari. Cuma case yang statusnya
-  // sudah selesai/ditutup DAN sudah punya Waktu Selesai yang dihitung (case lama dari sebelum field ini
-  // ada belum kebagian Waktu Selesai, jadi wajar dilewati daripada dianggap 0 hari).
+  // Rata-rata waktu penyelesaian (Tanggal Lapor -> Waktu Selesai), dalam JAM - pakai getCaseElapsedHours
+  // yang sama dgn logic Over SLA, biar satuannya konsisten sama Setelan SLA (yang juga dalam jam).
+  // Cuma case yang statusnya sudah selesai/ditutup DAN sudah punya Waktu Selesai yang dihitung (case
+  // lama dari sebelum field ini ada belum kebagian Waktu Selesai, wajar dilewati drpd dianggap 0 jam).
   const doneWithTime = all.filter(c => doneStatuses.indexOf(c['Status'])!==-1 && c['Waktu Selesai']);
   if (doneWithTime.length) {
-    const totalDays = doneWithTime.reduce((sum, c) => {
-      const tglLapor = new Date(toWIBDateStr(c['Tanggal Lapor']));
-      const tglSelesai = new Date(String(c['Waktu Selesai']).split(' ')[0]);
-      const days = (tglSelesai - tglLapor) / 86400000;
-      return sum + (isFinite(days) ? Math.max(0, days) : 0);
-    }, 0);
-    document.getElementById('case-kpi-avgresolusi').textContent = (totalDays / doneWithTime.length).toFixed(1) + ' hari';
+    const totalHours = doneWithTime.reduce((sum, c) => sum + Math.max(0, getCaseElapsedHours(c)), 0);
+    document.getElementById('case-kpi-avgresolusi').textContent = (totalHours / doneWithTime.length).toFixed(1) + ' jam';
   } else {
     document.getElementById('case-kpi-avgresolusi').textContent = '-';
   }
@@ -4208,26 +4358,64 @@ function renderCasesTab(append){
   ui.casesPage = Math.min(Math.max(1, ui.casesPage), totalPages);
   const pageStart = append ? (ui.casesPage-1) * PAGE_SIZE : 0;
   const items = rows.slice(pageStart, ui.casesPage * PAGE_SIZE);
-  const rowsHtml = items.map(c => `
-    <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="openCaseDetailModal('${esc(c['Case ID'])}')">
+  const rowsHtml = items.map(c => { const overSla = isCaseOverSla(c); return `
+    <tr class="hover:bg-slate-50 transition cursor-pointer${overSla ? ' bg-red-50/70' : ''}" onclick="openCaseDetailModal('${esc(c['Case ID'])}')">
       <td class="px-4 py-2.5 font-mono text-xs font-bold text-slate-700">${esc(c['Case ID'])}</td>
-      <td class="px-4 py-2.5 text-slate-500">${formatDate(c['Tanggal Lapor'])}</td>
+      <td class="px-4 py-2.5 text-slate-500 whitespace-nowrap">${formatDateTime(c['Tanggal Lapor'])}</td>
       <td class="px-4 py-2.5 text-slate-600">${esc(c['Warehouse ID'])}</td>
       <td class="px-4 py-2.5 text-slate-500">${esc(c['Kategori'])}</td>
       <td class="px-4 py-2.5 text-slate-800 font-medium max-w-[220px] truncate">${esc(c['Judul'])}</td>
       <td class="px-4 py-2.5 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${casePriorityBadge(c['Prioritas'])}">${esc(c['Prioritas']||'-')}</span></td>
       <td class="px-4 py-2.5 text-slate-600">${esc(c['PIC']||'-')}</td>
-      <td class="px-4 py-2.5 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${caseStatusBadge(c['Status'])}">${esc(c['Status'])}</span></td>
+      <td class="px-4 py-2.5 text-center">
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${caseStatusBadge(c['Status'])}">${esc(c['Status'])}</span>
+        ${overSla ? '<div class="text-[9px] font-bold text-red-700 mt-1">⚠ OVER SLA</div>' : ''}
+      </td>
+      <td class="px-4 py-2.5 text-slate-500 whitespace-nowrap">${c['Waktu Selesai'] ? formatDateTime(c['Waktu Selesai']) : '-'}</td>
       <td class="px-4 py-2.5 text-center" onclick="event.stopPropagation(); openCaseDetailModal('${esc(c['Case ID'])}')">
         <button class="text-slate-600 hover:text-red-700"><i data-lucide="${can('cases','u') ? 'settings-2' : 'eye'}" class="h-4 w-4"></i></button>
       </td>
-    </tr>`).join('');
+    </tr>`; }).join('');
   const tbl = document.getElementById('tbl-cases');
   if (append) { if (items.length) tbl.insertAdjacentHTML('beforeend', rowsHtml); }
-  else { tbl.innerHTML = items.length ? rowsHtml : `<tr><td colspan="9" class="px-4 py-8 text-center text-slate-400 text-sm">Tidak ada case operasional yang cocok dengan filter.</td></tr>`; }
+  else { tbl.innerHTML = items.length ? rowsHtml : `<tr><td colspan="10" class="px-4 py-8 text-center text-slate-400 text-sm">Tidak ada case operasional yang cocok dengan filter.</td></tr>`; }
   renderScrollStatus('pg-cases', 'cases-scroll-sentinel', Math.min(ui.casesPage*PAGE_SIZE, rows.length), rows.length, 'case');
   observeSentinel('cases-scroll-sentinel', () => { ui.casesPage++; renderCasesTab(true); });
   lucide.createIcons();
+}
+
+function exportCasesCsv(){
+  const rows = getFilteredCases();
+  const cols = [
+    ['Case ID','Case ID'], ['Warehouse ID','Gudang'],
+    [r => formatDateTime(r['Tanggal Lapor']), 'Tanggal Lapor'],
+    ['Kategori','Kategori'], ['Judul','Judul'], ['Deskripsi','Deskripsi'],
+    ['Prioritas','Prioritas'], ['PIC','PIC'], ['Status','Status'],
+    [r => r['Waktu Selesai'] ? formatDateTime(r['Waktu Selesai']) : '-', 'Waktu Selesai'],
+    [r => isCaseOverSla(r) ? 'Ya' : 'Tidak', 'Over SLA'],
+    ['Catatan Penyelesaian','Catatan Penyelesaian'], ['Dilaporkan Oleh','Dilaporkan Oleh']
+  ];
+  downloadCsv(`case_operasional_${getWIBDateString()}.csv`, cols, rows);
+}
+
+function openSlaSettingsModal(){
+  if (!can('hpp','u')) return;
+  const map = {};
+  (db.slaSettings||[]).forEach(s => { map[s['Prioritas']] = s['SLA (Jam)']; });
+  const defaults = { Kritis:4, Tinggi:12, Sedang:24, Rendah:48 };
+  openFormModal({
+    title: 'Setelan SLA Case Operasional',
+    wide: true,
+    fields: [
+      { type:'section', label:'Case yang belum Selesai/Ditutup akan ditandai "Over SLA" kalau sudah melewati jam berikut, sesuai Prioritasnya.', icon:'timer' },
+      ...CASE_PRIORITIES.map(p => ({ name:'sla_'+p, label:'Prioritas '+p+' (jam)', type:'number', step:'1', value: map[p] || defaults[p] }))
+    ],
+    onSubmit: async (data) => {
+      const records = CASE_PRIORITIES.map(p => ({ prioritas:p, slaJam:Number(data['sla_'+p]) || 24 }));
+      const result = await apiPost({ action:'SAVE_SLA_SETTINGS', records });
+      if (result.success) { showToast(result.message,'success'); closeFormModal(); await fetchPartialData(['slaSettings']); } else showToast(result.message,'error');
+    }
+  });
 }
 
 function openCreateCaseModal(){
@@ -4261,7 +4449,19 @@ function openCaseDetailModal(caseId){
   document.getElementById('cd-caseid').textContent = c['Case ID'];
   document.getElementById('cd-status-badge').className = `px-2 py-0.5 rounded-full text-[10px] font-bold ${caseStatusBadge(c['Status'])}`;
   document.getElementById('cd-status-badge').textContent = c['Status'];
-  document.getElementById('cd-meta').textContent = `${esc(c['Warehouse ID'])} · Dilaporkan ${formatDate(c['Tanggal Lapor'])} · Update terakhir ${formatDate(c['Tanggal Update'])}${c['Waktu Selesai'] ? ' · Selesai ' + formatDateTime(c['Waktu Selesai']) : ''}`;
+  const slaElapsed = getCaseElapsedHours(c);
+  const slaHours = getCaseSlaHours(c);
+  const slaBreached = slaElapsed > slaHours;
+  const isDoneCase = ['Selesai','Ditutup'].indexOf(c['Status'])!==-1;
+  let slaText = '';
+  if (isDoneCase) {
+    if (slaBreached) slaText = ' · <span class="text-amber-600 font-semibold">Diselesaikan melewati SLA (telat ' + Math.round(slaElapsed - slaHours) + ' jam)</span>';
+  } else if (slaBreached) {
+    slaText = ' · <span class="text-red-600 font-bold">⚠ Over SLA (lewat ' + Math.round(slaElapsed - slaHours) + ' jam)</span>';
+  } else {
+    slaText = ' · <span class="text-slate-400">Sisa ' + Math.round(slaHours - slaElapsed) + ' jam sebelum SLA</span>';
+  }
+  document.getElementById('cd-meta').innerHTML = `${esc(c['Warehouse ID'])} · Dilaporkan ${formatDateTime(c['Tanggal Lapor'])} · Update terakhir ${formatDate(c['Tanggal Update'])}${c['Waktu Selesai'] ? ' · Selesai ' + formatDateTime(c['Waktu Selesai']) : ''}${slaText}`;
   document.getElementById('cd-judul').textContent = c['Judul'] || '-';
   document.getElementById('cd-deskripsi').textContent = c['Deskripsi'] || '-';
   document.getElementById('cd-kategori').textContent = c['Kategori'] || '-';
@@ -5600,12 +5800,11 @@ function selectBomCategory(whId, code){
   document.getElementById('bom-detail-content').classList.remove('hidden');
   document.getElementById('bom-detail-title').textContent = code + ' — ' + whId;
   const items = db.bomRecipes.filter(b => b['Warehouse ID']===whId && b['Pack Category Code']===code);
-  const materials = materialsForWarehouseId(whId);
   let total = 0;
 
   document.getElementById('tbl-bom-items').innerHTML = items.length ? items.map(it => {
     const usageQty = Number(it['Usage Qty']||it['qty']||0);
-    const mat = materials.find(m => m['Material ID']===it['Material ID']);
+    const mat = findMaterialMaster(it['Material ID'], whId);
     const subtotal = mat ? getUsageUnitCostClient(mat) * usageQty : Number(it['Subtotal Cost']||0);
     total += subtotal;
     return `<tr>
@@ -5677,7 +5876,8 @@ function productionCapacityForCategory(whId, code){
     const usagePerPackBase = mat ? convertToBaseUnitClient(usagePerPack, mat) : usagePerPack;
     const usable = Math.max(0, available - safetyStock);
     const maxFromThis = usagePerPackBase > 0 ? Math.floor(usable / usagePerPackBase) : Infinity;
-    const invRow = (db.inventory||[]).find(i => i['Warehouse ID']===whId && i['Material ID']===it['Material ID']);
+    const invByMat = dataIndex_().invByWhId[whId];
+    const invRow = invByMat ? invByMat[it['Material ID']] : null;
     return {
       materialId: it['Material ID'], materialName: it['Material Name'], uom: it['UOM']||it['konversi UOM']||'', baseUOM,
       usagePerPack, usagePerPackBase, available, safetyStock, usable, maxFromThis, leadTime,
@@ -5869,13 +6069,15 @@ function actualQtyForTarget(t){
 }
 
 function stockAvailable(whId, materialId){
-  const row = (db.inventory||[]).find(i => i['Warehouse ID']===whId && i['Material ID']===materialId);
+  const byId = dataIndex_().invByWhId[whId];
+  const row = byId ? byId[materialId] : null;
   return row ? Number(row['Qty Available']||0) : 0;
 }
 function findMaterialMaster(materialId, whId){
-  const whInfo = db.warehouses.find(w => w['Warehouse ID']===whId);
-  const whName = whInfo ? whInfo['Warehouse Name'] : null;
-  return db.materials.find(m => m['Material ID']===materialId && m['Warehouse Name']===whName) || null;
+  const idx = dataIndex_();
+  const whName = idx.whNameById[whId];
+  const byId = idx.materialByWhNameId[whName];
+  return (byId && byId[materialId]) || null;
 }
 
 function materialRequirementForCategory(whId, code, targetQty){
@@ -6046,11 +6248,10 @@ function populateHppWarehouseSelect(){
 }
 
 function materialCostForCategory(whId, code){
-  const materials = materialsForWarehouseId(whId);
   return db.bomRecipes.filter(b => b['Warehouse ID']===whId && b['Pack Category Code']===code)
     .reduce((s,it) => {
       const usageQty = Number(it['Usage Qty']||it['qty']||0);
-      const mat = materials.find(m => m['Material ID']===it['Material ID']);
+      const mat = findMaterialMaster(it['Material ID'], whId);
       return s + (mat ? getUsageUnitCostClient(mat) * usageQty : Number(it['Subtotal Cost']||0));
     }, 0);
 }
@@ -6411,6 +6612,7 @@ const GLOSSARY_TERMS = [
   { category:'Istilah Bisnis & Operasional', term:'Report Order Klien', def:'Catatan jumlah Qty Paket order per klien per hari, terpisah dari proses packing - dipakai untuk menyandingkan/mem-balance dengan jumlah paket yang benar-benar diproses.' },
   { category:'Istilah Bisnis & Operasional', term:'Case Operasional', def:'Tiket pencatatan masalah operasional gudang (kehilangan barang, kerusakan, keterlambatan, dst) beserta status penyelesaiannya.' },
   { category:'Istilah Bisnis & Operasional', term:'Klaim Gudang', def:'Kategori Case khusus untuk kerugian yang perlu investigasi siapa bertanggung jawab & berapa nominal gantinya. Sistem otomatis mencarikan Packer pasti + kandidat Admin Print/Picker/Checker dari data yang sudah tercatat.' },
+  { category:'Istilah Bisnis & Operasional', term:'Over SLA', def:'Penanda pada Case Operasional yang belum Selesai/Ditutup tapi sudah melewati batas waktu penyelesaian. Batas waktunya beda-beda per Prioritas (Kritis/Tinggi/Sedang/Rendah) dan bisa diubah lewat tombol Setelan SLA.' },
   { category:'Istilah Bisnis & Operasional', term:'PIC', def:'Person In Charge - orang yang bertanggung jawab menindaklanjuti sesuatu (mis. sebuah Case).' },
   { category:'Istilah Bisnis & Operasional', term:'Stock Opname', def:'Penghitungan ulang stok fisik untuk dicocokkan dengan catatan sistem.' }
 ];
@@ -6467,6 +6669,7 @@ function chartThemeColors(){
 
 restoreSidebarPreference();
 lucide.createIcons();
+attemptSessionRestore();
 </script>
 </body>
 </html>
