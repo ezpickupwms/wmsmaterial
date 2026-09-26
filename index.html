@@ -1058,7 +1058,7 @@ header{box-shadow:none;border-bottom:1px solid rgba(0,0,0,.16)}
           <div class="overflow-x-auto"><table class="w-full text-sm text-left">
             <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-400"><tr>
               <th class="px-4 py-2.5">No. PO</th><th class="px-4 py-2.5">Tanggal</th><th class="px-4 py-2.5">Tujuan</th><th class="px-4 py-2.5">Supplier</th><th class="px-4 py-2.5">Material</th>
-              <th class="px-4 py-2.5 text-right">Order / Disetujui / Diterima</th><th class="px-4 py-2.5 text-right">Nilai Pembelian</th><th class="px-4 py-2.5 text-center">Status</th><th class="px-4 py-2.5 text-center">Aksi</th>
+              <th class="px-4 py-2.5 text-right">Order / Disetujui / Diterima</th><th class="px-4 py-2.5 text-right">CBM</th><th class="px-4 py-2.5 text-right">Nilai Pembelian</th><th class="px-4 py-2.5 text-center">Status</th><th class="px-4 py-2.5 text-center">Aksi</th>
             </tr></thead>
             <tbody id="tbl-po" class="divide-y divide-slate-100"></tbody>
           </table></div>
@@ -1961,6 +1961,7 @@ header{box-shadow:none;border-bottom:1px solid rgba(0,0,0,.16)}
         <div class="flex justify-between text-slate-500"><span>Ongkir</span><span id="po-sum-ongkir">+ Rp 0</span></div>
         <div class="flex justify-between font-bold text-slate-800 pt-1 border-t border-slate-200"><span>Total Nilai PO</span><span id="po-sum-total">Rp 0</span></div>
         <div class="flex justify-between text-slate-400"><span>≈ Harga efektif / unit</span><span id="po-sum-unit">Rp 0</span></div>
+        <div class="flex justify-between text-slate-400"><span>Estimasi CBM (volume)</span><span id="po-sum-cbm">-</span></div>
       </div>
       <div><label class="block text-xs font-semibold text-slate-600 mb-1">Estimasi Tanggal Tiba</label>
         <input type="date" id="po-expected" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-600"></div>
@@ -2001,6 +2002,7 @@ header{box-shadow:none;border-bottom:1px solid rgba(0,0,0,.16)}
         <div class="flex justify-between text-slate-500"><span>Diskon</span><span id="pobulk-sum-diskon" class="text-emerald-600">- Rp 0</span></div>
         <div class="flex justify-between text-slate-500"><span>Ongkir</span><span id="pobulk-sum-ongkir">+ Rp 0</span></div>
         <div class="flex justify-between font-bold text-slate-800 pt-1 border-t border-slate-200"><span>Total Nilai Semua PO</span><span id="pobulk-sum-total">Rp 0</span></div>
+        <div class="flex justify-between text-slate-400"><span>Estimasi Total CBM (volume)</span><span id="pobulk-sum-cbm">-</span></div>
       </div>
 
       <div class="flex justify-end gap-2 pt-2">
@@ -4652,6 +4654,14 @@ function updatePoSummary(){
   document.getElementById('po-sum-ongkir').textContent = '+ ' + formatRupiah(r.ongkir);
   document.getElementById('po-sum-total').textContent = formatRupiah(r.total);
   document.getElementById('po-sum-unit').textContent = formatRupiah(r.unitCost) + ' / unit';
+  // BARU: estimasi CBM total dari qty yang diorder x Volume per Unit (CBM) material - bantu
+  // pertimbangan kapasitas gudang tujuan sebelum PO diajukan.
+  const cbmEl = document.getElementById('po-sum-cbm');
+  if (cbmEl) {
+    const mat = findMaterialMaster(document.getElementById('po-mat').value, document.getElementById('po-wh').value);
+    const cbmPerUnit = mat ? Number(mat['Volume per Unit (CBM)']||0) : 0;
+    cbmEl.textContent = cbmPerUnit > 0 ? (cbmPerUnit * (Number(qty)||0)).toLocaleString('id-ID',{maximumFractionDigits:2}) + ' m³' : '-';
+  }
 }
 function openCreatePOModal(){
   document.getElementById('po-qty').value = '';
@@ -4738,7 +4748,7 @@ function renderPoBulkRows(){
       <div class="grid grid-cols-2 gap-2 mt-2 items-end">
         <div><label class="block text-[10px] font-semibold text-slate-500 mb-1">Ongkir (Rp, opsional)</label>
           <input type="number" id="pobulk-ongkir-${idx}" min="0" step="any" value="${esc(row.ongkir)}" oninput="updatePoBulkRow(${idx},'ongkir',this.value)" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-red-600"></div>
-        <p class="text-[11px] text-slate-400 text-right pb-1.5">Subtotal: <span id="pobulk-subtotal-${idx}" class="font-semibold text-slate-600">Rp 0</span></p>
+        <p class="text-[11px] text-slate-400 text-right pb-1.5">Subtotal: <span id="pobulk-subtotal-${idx}" class="font-semibold text-slate-600">Rp 0</span> <span class="text-slate-300">·</span> CBM: <span id="pobulk-cbm-${idx}" class="font-semibold text-slate-600">-</span></p>
       </div>
     </div>`;
   }).join('');
@@ -4782,14 +4792,23 @@ function onPoBulkSupplierChange(){
   renderPoBulkRows();
 }
 function updatePoBulkSummary(){
-  let sumSubtotal=0, sumDiskon=0, sumOngkir=0, sumTotal=0, validCount=0;
+  const wh = document.getElementById('pobulk-wh') ? document.getElementById('pobulk-wh').value : '';
+  let sumSubtotal=0, sumDiskon=0, sumOngkir=0, sumTotal=0, validCount=0, sumCbm=0;
   poBulkRows.forEach((row, idx) => {
     const r = computePoPricing(row.qtyOrdered, row.hargaSatuan, row.diskon, row.ongkir);
     const el = document.getElementById('pobulk-subtotal-'+idx);
     if (el) el.textContent = formatRupiah(r.subtotal);
+    // BARU: estimasi CBM per baris (Volume per Unit material x qty) - bantu perkiraan kebutuhan
+    // ruang gudang dari 1 PO bulk (banyak item sekaligus) sebelum diajukan.
+    const rowMat = row.materialId ? findMaterialMaster(row.materialId, wh) : null;
+    const cbmPerUnit = rowMat ? Number(rowMat['Volume per Unit (CBM)']||0) : 0;
+    const rowCbm = cbmPerUnit * (Number(row.qtyOrdered)||0);
+    const cbmEl = document.getElementById('pobulk-cbm-'+idx);
+    if (cbmEl) cbmEl.textContent = cbmPerUnit > 0 ? rowCbm.toLocaleString('id-ID',{maximumFractionDigits:2}) + ' m³' : '-';
     if (row.materialId && Number(row.qtyOrdered)>0) {
       validCount++;
       sumSubtotal += r.subtotal; sumDiskon += r.diskon; sumOngkir += r.ongkir; sumTotal += r.total;
+      sumCbm += rowCbm;
     }
   });
   const setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
@@ -4798,6 +4817,7 @@ function updatePoBulkSummary(){
   setText('pobulk-sum-diskon', '- ' + formatRupiah(sumDiskon));
   setText('pobulk-sum-ongkir', '+ ' + formatRupiah(sumOngkir));
   setText('pobulk-sum-total', formatRupiah(sumTotal));
+  setText('pobulk-sum-cbm', sumCbm > 0 ? sumCbm.toLocaleString('id-ID',{maximumFractionDigits:2}) + ' m³' : '-');
 }
 
 async function submitCreatePOBulk(e){
@@ -4946,6 +4966,9 @@ function renderPOTab(append){
   ui.poPage = Math.min(Math.max(1, ui.poPage), totalPages);
   const pageStart = append ? (ui.poPage-1) * PAGE_SIZE : 0;
   const items = rows.slice(pageStart, ui.poPage * PAGE_SIZE);
+  // BARU: kolom CBM per baris PO - estimasi volume total dari qty x Volume per Unit (CBM) material,
+  // bantu perkiraan kebutuhan ruang gudang dari PO yang lagi berjalan/masuk.
+  const getCbm = buildMaterialCbmIndex();
   const rowsHtml = items.map(po => {
     const status = po['PO Status'] || 'OPEN';
     const badge = { OPEN:'bg-slate-100 text-slate-600', APPROVED:'bg-slate-800 text-white', PARTIAL:'bg-amber-100 text-amber-700', COMPLETED:'bg-emerald-100 text-emerald-700', CANCELLED:'bg-red-100 text-red-600' }[status] || 'bg-slate-100 text-slate-600';
@@ -4989,6 +5012,13 @@ function renderPOTab(append){
     const selisihNote = (pr.isFinal && Math.abs(pr.qtyDiff) > 0.001)
       ? `<p class="text-[9px] font-semibold ${pr.qtyDiff>0?'text-sky-600':'text-amber-600'}">Diterima ${pr.qtyDiff>0?'lebih':'kurang'} ${Math.abs(pr.qtyDiff).toLocaleString('id-ID')} ${esc(uom)} dari disetujui</p>`
       : '';
+    // Basis qty CBM sama persis dgn basis Nilai Pembelian (qtyReceived kalau sudah final/COMPLETED,
+    // selain itu qtyBasis = Qty Approved kalau ada, else Qty Ordered) - biar konsisten sama kolom sebelahnya.
+    const cbmPerUnit = getCbm(po['Material ID'], po['Destination WH ID']);
+    const cbmQty = pr.isFinal ? pr.qtyReceived : pr.qtyBasis;
+    const cbmCell = cbmPerUnit > 0
+      ? `${(cbmPerUnit * cbmQty).toLocaleString('id-ID',{maximumFractionDigits:2})} m³`
+      : `<span class="text-slate-300">-</span>`;
     const priceCell = pr.hasPricing
       ? `<p class="font-semibold text-slate-700">${formatRupiah(showTotal)}</p><p class="text-[10px] text-slate-400">@ ${formatRupiah(showUnitCost)}/${esc(uom)}${priceExtras?' · '+priceExtras:''}${pr.isFinal?' · final':''}</p>${selisihNote}`
       : `<span class="text-slate-300 italic text-[11px]">- data harga -</span>`;
@@ -5001,6 +5031,7 @@ function renderPOTab(append){
       <td class="px-4 py-2.5 text-slate-600">${esc(po['Supplier Name'])}</td>
       <td class="px-4 py-2.5"><p class="text-slate-700">${esc(po['Material ID'])}</p>${matName?`<p class="text-[10px] text-slate-400">${esc(matName)}</p>`:''}</td>
       <td class="px-4 py-2.5 text-right text-slate-600 text-xs">${qtyOrdered.toLocaleString('id-ID')} / ${qtyApproved!==null ? qtyApproved.toLocaleString('id-ID') : '-'} / ${qtyReceived.toLocaleString('id-ID')} <span class="text-slate-400">${esc(uom)}</span></td>
+      <td class="px-4 py-2.5 text-right text-slate-600 text-xs">${cbmCell}</td>
       <td class="px-4 py-2.5 text-right">${priceCell}</td>
       <td class="px-4 py-2.5 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badge}">${esc(status)}</span>${overdue?'<p class="mt-1 text-[9px] font-bold text-red-600 uppercase tracking-wide">Terlambat</p>':''}</td>
       <td class="px-4 py-2.5 text-center">${action}</td>
@@ -5008,7 +5039,7 @@ function renderPOTab(append){
   }).join('');
   const tbl = document.getElementById('tbl-po');
   if (append) { if (items.length) tbl.insertAdjacentHTML('beforeend', rowsHtml); }
-  else { tbl.innerHTML = items.length ? rowsHtml : `<tr><td colspan="9" class="px-4 py-8 text-center text-slate-400 text-sm">Tidak ada Purchase Order yang cocok dengan filter.</td></tr>`; }
+  else { tbl.innerHTML = items.length ? rowsHtml : `<tr><td colspan="10" class="px-4 py-8 text-center text-slate-400 text-sm">Tidak ada Purchase Order yang cocok dengan filter.</td></tr>`; }
   renderScrollStatus('pg-po', 'po-scroll-sentinel', Math.min(ui.poPage*PAGE_SIZE, rows.length), rows.length, 'PO');
   observeSentinel('po-scroll-sentinel', () => { ui.poPage++; renderPOTab(true); });
   updateFilterDot('po');
@@ -5168,6 +5199,13 @@ function isCaseOverSla(c){
   if (doneStatuses.indexOf(c['Status'])!==-1) return false;
   return getCaseElapsedHours(c) > getCaseSlaHours(c);
 }
+// BARU: beda dari isCaseOverSla (yang cuma true kalau case MASIH AKTIF & sudah lewat SLA, buat alert
+// "butuh perhatian sekarang") - ini murni bandingin durasi vs SLA TANPA peduli status case, dipakai
+// buat menandai case yang SUDAH selesai tapi DULU diselesaikan melewati batas SLA-nya (penanda
+// kepatuhan historis, bukan alert case yang masih aktif).
+function caseSlaBreached(c){
+  return getCaseElapsedHours(c) > getCaseSlaHours(c);
+}
 
 // Dipakai renderCasesTab (tampilan) & exportCasesCsv (download) - biar hasil download selalu
 // sama persis dengan yang lagi ditampilkan/difilter di layar, satu sumber logic filter aja.
@@ -5280,7 +5318,13 @@ function renderCasesTab(append){
   ui.casesPage = Math.min(Math.max(1, ui.casesPage), totalPages);
   const pageStart = append ? (ui.casesPage-1) * PAGE_SIZE : 0;
   const items = rows.slice(pageStart, ui.casesPage * PAGE_SIZE);
-  const rowsHtml = items.map(c => { const overSla = isCaseOverSla(c); return `
+  const rowsHtml = items.map(c => {
+    const elapsedH = getCaseElapsedHours(c);
+    const slaH = getCaseSlaHours(c);
+    const doneNow = ['Selesai','Ditutup'].indexOf(c['Status'])!==-1;
+    const overSla = !doneNow && elapsedH > slaH;      // masih berjalan & sudah lewat SLA -> alert aktif
+    const lateWhenDone = doneNow && elapsedH > slaH;  // sudah Selesai/Ditutup tapi dulu telat dari SLA
+    return `
     <tr class="hover:bg-slate-50 transition cursor-pointer${overSla ? ' bg-red-50/70' : ''}" onclick="openCaseDetailModal('${esc(c['Case ID'])}')">
       <td class="px-4 py-2.5 font-mono text-xs font-bold text-slate-700">${esc(c['Case ID'])}</td>
       <td class="px-4 py-2.5 text-slate-500 whitespace-nowrap">${formatDateTime(c['Tanggal Lapor'])}</td>
@@ -5295,10 +5339,13 @@ function renderCasesTab(append){
       <td class="px-4 py-2.5 text-slate-600">${esc(c['PIC']||'-')}</td>
       <td class="px-4 py-2.5 text-center">
         <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${caseStatusBadge(c['Status'])}">${esc(c['Status'])}</span>
-        ${overSla ? '<div class="text-[9px] font-bold text-red-700 mt-1">⚠ OVER SLA</div>' : ''}
+        ${overSla ? `<div class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-600 text-white"><i data-lucide="alert-triangle" class="h-3 w-3"></i>Over SLA · ${Math.round(elapsedH - slaH)} jam</div>` : ''}
       </td>
       <td class="px-4 py-2.5 text-slate-500 whitespace-nowrap">${c['Waktu Selesai'] ? formatDateTime(c['Waktu Selesai']) : '-'}</td>
-      <td class="px-4 py-2.5 text-slate-600 whitespace-nowrap">${formatCaseDuration(getCaseElapsedHours(c))}${['Selesai','Ditutup'].indexOf(c['Status'])===-1 ? ' <span class="text-slate-400 text-[10px]">(berjalan)</span>' : ''}</td>
+      <td class="px-4 py-2.5 text-slate-600 whitespace-nowrap">
+        ${formatCaseDuration(elapsedH)}${!doneNow ? ' <span class="text-slate-400 text-[10px]">(berjalan)</span>' : ''}
+        ${lateWhenDone ? `<div class="mt-0.5"><span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-700">⚠ Over SLA · telat ${Math.round(elapsedH - slaH)} jam</span></div>` : ''}
+      </td>
       <td class="px-4 py-2.5 text-center" onclick="event.stopPropagation(); openCaseDetailModal('${esc(c['Case ID'])}')">
         <button class="text-slate-600 hover:text-red-700"><i data-lucide="${can('cases','u') ? 'settings-2' : 'eye'}" class="h-4 w-4"></i></button>
       </td>
@@ -5321,7 +5368,7 @@ function exportCasesCsv(){
     ['Prioritas','Prioritas'], ['PIC','PIC'], ['Status','Status'],
     [r => r['Waktu Selesai'] ? formatDateTime(r['Waktu Selesai']) : '-', 'Waktu Selesai'],
     [r => formatCaseDuration(getCaseElapsedHours(r)), 'Durasi'],
-    [r => isCaseOverSla(r) ? 'Ya' : 'Tidak', 'Over SLA'],
+    [r => caseSlaBreached(r) ? 'Ya' : 'Tidak', 'Over SLA'],
     ['Catatan Penyelesaian','Catatan Penyelesaian'], ['Dilaporkan Oleh','Dilaporkan Oleh']
   ];
   downloadCsv(`case_operasional_${getWIBDateString()}.csv`, cols, rows);
