@@ -654,6 +654,20 @@ header{box-shadow:none;border-bottom:1px solid rgba(0,0,0,.16)}
         </nav>
       </div>
 
+      <!-- P0 Portal Sistem-Doc: navigasi saja; tidak membaca/menulis database dan tidak berbagi token login. -->
+      <div id="nav-document-group">
+        <a href="./portal.html" title="Portal EzPickUp" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-semibold text-red-700 hover:bg-red-50">
+          <i data-lucide="layout-grid" class="h-4 w-4 flex-shrink-0"></i><span class="nav-label">Portal Utama</span>
+        </a>
+        <p class="nav-section-label px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Dokumen & Mutu</p>
+        <nav class="space-y-0.5" aria-label="Modul dokumen mutu">
+          <a href="https://sistem-doc.vercel.app/" target="_blank" rel="noopener noreferrer" title="Buka Sistem-Doc (login terpisah)" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+            <i data-lucide="file-check-2" class="h-4 w-4 flex-shrink-0"></i><span class="nav-label">SOP, Surat & Memo</span><i data-lucide="external-link" class="nav-label h-3 w-3 ml-auto text-slate-400" aria-hidden="true"></i>
+          </a>
+          <p class="nav-label px-3 text-[10px] text-slate-400">Modul terpisah · login Sistem-Doc tetap berlaku</p>
+        </nav>
+      </div>
+
       <div id="nav-admin-group">
         <button onclick="toggleNavSection('admin')" class="nav-section-toggle w-full flex items-center justify-between px-3 pt-4 pb-1 group/sec"><span class="nav-section-label text-[10px] font-bold uppercase tracking-wider text-slate-400">Administrasi</span><i data-lucide="chevron-down" class="nav-section-chevron h-3 w-3 text-slate-300"></i></button>
         <nav id="nav-admin-items" class="space-y-0.5">
