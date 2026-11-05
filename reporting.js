@@ -506,6 +506,17 @@
   function reportRowsToSheet(XLSX, rows) {
     return XLSX.utils.json_to_sheet(rows && rows.length ? rows : [{ Keterangan: "Tidak ada data dalam periode ini" }]);
   }
+  function exportSafeRows(rows, financialVisible) {
+    if (financialVisible) return rows || [];
+    return (rows || []).map(function (row) {
+      var clean = {};
+      Object.keys(row || {}).forEach(function (key) {
+        if (/(rp|cost|harga|nominal|valuation|nilai pembelian|landed)/i.test(key)) return;
+        clean[key] = row[key];
+      });
+      return clean;
+    });
+  }
   window.exportReportXlsx = async function () {
     var r = state.report;
     if (!r) return toast("Generate laporan terlebih dahulu.", "info");
@@ -538,15 +549,15 @@
       }
       XLSX.utils.book_append_sheet(wb, reportRowsToSheet(XLSX, summary), "Executive Summary");
       XLSX.utils.book_append_sheet(wb, reportRowsToSheet(XLSX, r.dailyTrend), "Daily Trend");
-      XLSX.utils.book_append_sheet(wb, reportRowsToSheet(XLSX, r.warehousePerformance), "Warehouse");
+      XLSX.utils.book_append_sheet(wb, reportRowsToSheet(XLSX, exportSafeRows(r.warehousePerformance, vis)), "Warehouse");
       XLSX.utils.book_append_sheet(wb, reportRowsToSheet(XLSX, r.topMaterials), "Top Material");
-      XLSX.utils.book_append_sheet(wb, reportRowsToSheet(XLSX, r.topCategories), "Packing Category");
+      XLSX.utils.book_append_sheet(wb, reportRowsToSheet(XLSX, exportSafeRows(r.topCategories, vis)), "Packing Category");
       XLSX.utils.book_append_sheet(wb, reportRowsToSheet(XLSX, r.byRole), "Produktivitas Role");
       if (vis) XLSX.utils.book_append_sheet(wb, reportRowsToSheet(XLSX, r.purchaseOrders), "Detail PO");
       XLSX.utils.book_append_sheet(wb, reportRowsToSheet(XLSX, r.transactions), "Detail Transaksi");
-      XLSX.utils.book_append_sheet(wb, reportRowsToSheet(XLSX, r.packLogs), "Detail Packing");
+      XLSX.utils.book_append_sheet(wb, reportRowsToSheet(XLSX, exportSafeRows(r.packLogs, vis)), "Detail Packing");
       XLSX.utils.book_append_sheet(wb, reportRowsToSheet(XLSX, r.productivityLogs), "Detail Produktivitas");
-      XLSX.utils.book_append_sheet(wb, reportRowsToSheet(XLSX, r.newCases), "Detail Case");
+      XLSX.utils.book_append_sheet(wb, reportRowsToSheet(XLSX, exportSafeRows(r.newCases, vis)), "Detail Case");
       XLSX.writeFile(wb, fileBase() + ".xlsx");
       toast("Excel berhasil dibuat.", "success");
     } catch (err) { toast("Gagal membuat Excel: " + err.message, "error"); }
