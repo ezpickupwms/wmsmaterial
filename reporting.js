@@ -605,7 +605,7 @@
     var r = state.report;
     if (!r) return toast("Generate laporan terlebih dahulu.", "info");
     try {
-      if (!window.PptxGenJS) await ensureScript("pptxgen-report", "https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@4.0.1/dist/pptxgen.bundle.js");
+      if (!window.PptxGenJS) await ensureScript("pptxgen-report", "https://cdn.jsdelivr.net/npm/pptxgenjs@4/dist/pptxgen.bundle.js");
       var Pptx = window.PptxGenJS;
       if (!Pptx) throw new Error("Library PowerPoint tidak tersedia.");
       var pptx = new Pptx();
@@ -682,7 +682,7 @@
       });
       addSlideText(slide, "Analisa dihitung dari data yang tersedia di frontend. Inventory adalah posisi saat ini; riwayat yang sudah dipindahkan ke arsip hanya tercakup jika dikirim oleh data loader yang tersedia.", .8, 6.55, 11.8, .36, { fontSize: 7.5, color: "64748B", italic: true });
       await pptx.writeFile({ fileName: fileBase() + ".pptx" });
-      toast("PowerPoint berhasil dibuat (" + pptx._slides.length + " slide).", "success");
+      toast("PowerPoint berhasil dibuat.", "success");
     } catch (err) { toast("Gagal membuat PowerPoint: " + err.message, "error"); }
   };
 
