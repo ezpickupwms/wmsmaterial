@@ -30,11 +30,14 @@
   }
   function shiftDate(value, amount) {
     var d = new Date(value + "T12:00:00+07:00");
-    d.setDate(d.getDate() + amount);
-    return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, "0"), String(d.getDate()).padStart(2, "0")].join("-");
+    d.setUTCDate(d.getUTCDate() + amount);
+    return [d.getUTCFullYear(), String(d.getUTCMonth() + 1).padStart(2, "0"), String(d.getUTCDate()).padStart(2, "0")].join("-");
   }
   function monthStart(value) { return value.slice(0, 8) + "01"; }
-  function monthEnd(value) { return shiftDate(shiftDate(value.slice(0, 8) + "01", 31), -1); }
+  function monthEnd(value) {
+    var year = Number(value.slice(0, 4)), month = Number(value.slice(5, 7));
+    return new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
+  }
   function inRange(dateValue, from, to) {
     var d = dateOnly(dateValue);
     return !!d && d >= from && d <= to;
@@ -190,10 +193,10 @@
       var prevDate = shiftDate(monthStart(t), -1);
       from = monthStart(prevDate); to = monthEnd(prevDate);
     } else if (preset === "weekly") {
-      var dow = (new Date(t + "T12:00:00+07:00").getDay() + 6) % 7;
+      var dow = (new Date(t + "T12:00:00+07:00").getUTCDay() + 6) % 7;
       from = shiftDate(t, -dow);
     } else if (preset === "previous-week") {
-      var todayDow = (new Date(t + "T12:00:00+07:00").getDay() + 6) % 7;
+      var todayDow = (new Date(t + "T12:00:00+07:00").getUTCDay() + 6) % 7;
       to = shiftDate(t, -todayDow - 1); from = shiftDate(to, -6);
     } else if (preset === "custom") {
       from = $("report-from").value || t; to = $("report-to").value || t;
@@ -699,6 +702,12 @@
   window.initReportsTab = function () {
     buildMarkup();
     initWarehouseOptions();
+    var keys = (typeof TAB_DATA_KEYS !== "undefined" && TAB_DATA_KEYS.reports) ? TAB_DATA_KEYS.reports : [];
+    var ready = !keys.length || (typeof loadedKeys !== "undefined" && keys.every(function (key) { return loadedKeys.has(key); }));
+    if (!ready) {
+      if ($("report-status")) $("report-status").textContent = "Sebagian data belum berhasil dimuat. Tekan Generate Laporan untuk mencoba memuat ulang.";
+      return;
+    }
     if (!state.report) window.generateFrontendReport(false);
   };
   document.addEventListener("DOMContentLoaded", buildMarkup);
