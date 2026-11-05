@@ -2264,7 +2264,7 @@ let permMatrixState = null;
 // Tab yang tidak terdaftar di sini (atau array kosong) berarti cuma butuh CORE_KEYS.
 const CORE_KEYS = ['warehouses', 'materials', 'suppliers', 'supplierPricelist', 'inventoryAreas', 'rolePermissionMatrix'];
 const TAB_DATA_KEYS = {
-  reports:             [],
+  reports:             ['inventory', 'transactionLogs', 'packLogs', 'purchaseOrders', 'operationalCases', 'productivityLogs'],
   dashboard:          ['inventory', 'transactionLogs', 'packLogs', 'purchaseOrders', 'operationalCases', 'clientOrderLogs'],
   warehouse_compare:  ['inventory', 'transactionLogs', 'packLogs', 'purchaseOrders', 'operationalCases', 'productivityLogs', 'clientOrderLogs', 'packCategories', 'productionTargets', 'overheadCosts', 'hppSettings'],
   inventory:          ['inventory', 'transactionLogs'],
@@ -2332,7 +2332,6 @@ const PERMISSION_MODULES = [
   { section:'Administrasi', key:'users', label:'User & Akses', icon:'users', ops:['r','c','u','d'] },
   { section:'Administrasi', key:'roles', label:'Role & Permission', icon:'shield-check', ops:['r','u'] },
   { section:'Administrasi', key:'warehouse_compare', label:'Performance WH', icon:'git-compare', ops:['r'] },
-  { section:'Administrasi', key:'reports', label:'Laporan & Analisa', icon:'file-bar-chart', ops:['r'] },
   { section:'Administrasi', key:'financial_visibility', label:'Lihat Nominal Harga (Umum)', icon:'eye-off', ops:['r'] },
   { section:'Administrasi', key:'hpp_overhead_visibility', label:'↳ Nominal Overhead di Kalkulator HPP', icon:'eye-off', ops:['r'] }
 ];
@@ -2923,9 +2922,10 @@ function applyRoleUI(){
   const masterGroup = document.getElementById('nav-master-group');
   if (masterGroup) masterGroup.classList.toggle('hidden', !['warehouse','material','supplier','bom','hpp','assets'].some(k=>can(k,'r')));
   const adminGroup = document.getElementById('nav-admin-group');
-  if (adminGroup) adminGroup.classList.toggle('hidden', !['users','roles','warehouse_compare','reports'].some(k=>can(k,'r')));
+  if (adminGroup) adminGroup.classList.toggle('hidden', !['users','roles','warehouse_compare'].some(k=>can(k,'r')));
   // AI Assistant sengaja TIDAK ikut PERMISSION_MODULES/can() yg configurable - dikunci hard ke Super
   // Admin biar konsisten sama pengecekan session.role !== ROLE_ADMIN di backend (handleAiChat_).
+  document.querySelectorAll('[data-nav="reports"]').forEach(el => el.classList.toggle('hidden', !can('warehouse_compare','r')));
   document.querySelectorAll('[data-nav="ai-assistant"]').forEach(el => el.classList.toggle('hidden', !isAdmin()));
   // Audit Log: tampilkan untuk Super Admin (penuh) dan Viewer/Auditor jika ada.
   document.querySelectorAll('[data-nav="audit-log"]').forEach(el => el.classList.toggle('hidden', !isAdmin()));
