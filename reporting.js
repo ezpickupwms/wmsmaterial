@@ -475,7 +475,7 @@
     });
   }
 
-  window.generateFrontendReport = function () {
+  window.generateFrontendReport = async function (refreshExistingData) {
     if (!state.initialized) buildMarkup();
     if (state.busy) return;
     var from = $("report-from").value, to = $("report-to").value;
@@ -485,12 +485,22 @@
     state.busy = true;
     var btn = $("report-run"), status = $("report-status");
     btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 inline mr-1 animate-spin"></i>Menghitung...';
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 inline mr-1 animate-spin"></i>Memproses...';
     try {
+      if (refreshExistingData !== false) {
+        if (status) status.textContent = "Memperbarui data melalui jalur GET WMS yang sudah tersedia...";
+        var reportKeys = (typeof TAB_DATA_KEYS !== "undefined" && TAB_DATA_KEYS.reports) ? TAB_DATA_KEYS.reports : [];
+        if (reportKeys.length && typeof fetchPartialData === "function") {
+          var refreshed = await fetchPartialData(reportKeys);
+          if (!refreshed) throw new Error("Data WMS tidak berhasil diperbarui. Periksa koneksi dan coba lagi.");
+          if (typeof loadedKeys !== "undefined") reportKeys.forEach(function (key) { loadedKeys.add(key); });
+        }
+      }
+      if (status) status.textContent = "Menghitung ringkasan dan tren dari data WMS...";
       state.report = computeReport(from, to);
       render(state.report);
       ["report-xlsx", "report-pptx", "report-pdf", "report-csv"].forEach(function (id) { if ($(id)) $(id).disabled = false; });
-      if (status) status.textContent = "Laporan dihitung dari " + fmt((db.transactionLogs || []).length) + " transaksi, " + fmt((db.packLogs || []).length) + " log packing, dan dataset WMS yang sudah dimuat. Tidak ada permintaan API laporan baru.";
+      if (status) status.textContent = "Laporan dihitung dari dataset aktif yang dimuat oleh WMS. Perhitungan dan file ekspor berjalan di frontend; tidak ada action backend laporan.";
       toast("Laporan berhasil dihitung di frontend.", "success");
     } catch (err) {
       if (status) status.textContent = "Perhitungan laporan gagal: " + err.message;
@@ -689,7 +699,7 @@
   window.initReportsTab = function () {
     buildMarkup();
     initWarehouseOptions();
-    if (!state.report) window.generateFrontendReport();
+    if (!state.report) window.generateFrontendReport(false);
   };
   document.addEventListener("DOMContentLoaded", buildMarkup);
   buildMarkup();
