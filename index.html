@@ -673,6 +673,7 @@ header{box-shadow:none;border-bottom:1px solid rgba(0,0,0,.16)}
         <nav id="nav-admin-items" class="space-y-0.5">
           <button onclick="switchTab('users')" data-nav="users" title="User & Akses" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="users" class="h-4 w-4 flex-shrink-0"></i><span class="nav-label">User &amp; Akses</span></button>
           <button onclick="switchTab('roles')" data-nav="roles" title="Role & Permission" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="shield-check" class="h-4 w-4 flex-shrink-0"></i><span class="nav-label">Role &amp; Permission</span></button>
+          <button onclick="switchTab('reports')" data-nav="reports" title="Laporan & Analisa" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="file-bar-chart" class="h-4 w-4 flex-shrink-0"></i><span class="nav-label">Laporan &amp; Analisa</span></button>
           <button onclick="switchTab('warehouse_compare')" data-nav="warehouse_compare" title="Performance WH" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="git-compare" class="h-4 w-4 flex-shrink-0"></i><span class="nav-label">Performance WH</span></button>
           <button onclick="switchTab('audit-log')" data-nav="audit-log" title="Audit Log" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="scroll-text" class="h-4 w-4 flex-shrink-0"></i><span class="nav-label">Audit Log</span></button>
           <button onclick="switchTab('ai-assistant')" data-nav="ai-assistant" title="AI Assistant" class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"><i data-lucide="sparkles" class="h-4 w-4 flex-shrink-0"></i><span class="nav-label">AI Assistant</span></button>
@@ -778,6 +779,8 @@ header{box-shadow:none;border-bottom:1px solid rgba(0,0,0,.16)}
           </div>
         </div>
       </div>
+
+      <div id="tab-reports" class="tab-content hidden"></div>
 
       <div id="tab-warehouse_compare" class="tab-content hidden">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -2261,6 +2264,7 @@ let permMatrixState = null;
 // Tab yang tidak terdaftar di sini (atau array kosong) berarti cuma butuh CORE_KEYS.
 const CORE_KEYS = ['warehouses', 'materials', 'suppliers', 'supplierPricelist', 'inventoryAreas', 'rolePermissionMatrix'];
 const TAB_DATA_KEYS = {
+  reports:             [],
   dashboard:          ['inventory', 'transactionLogs', 'packLogs', 'purchaseOrders', 'operationalCases', 'clientOrderLogs'],
   warehouse_compare:  ['inventory', 'transactionLogs', 'packLogs', 'purchaseOrders', 'operationalCases', 'productivityLogs', 'clientOrderLogs', 'packCategories', 'productionTargets', 'overheadCosts', 'hppSettings'],
   inventory:          ['inventory', 'transactionLogs'],
@@ -2328,6 +2332,7 @@ const PERMISSION_MODULES = [
   { section:'Administrasi', key:'users', label:'User & Akses', icon:'users', ops:['r','c','u','d'] },
   { section:'Administrasi', key:'roles', label:'Role & Permission', icon:'shield-check', ops:['r','u'] },
   { section:'Administrasi', key:'warehouse_compare', label:'Performance WH', icon:'git-compare', ops:['r'] },
+  { section:'Administrasi', key:'reports', label:'Laporan & Analisa', icon:'file-bar-chart', ops:['r'] },
   { section:'Administrasi', key:'financial_visibility', label:'Lihat Nominal Harga (Umum)', icon:'eye-off', ops:['r'] },
   { section:'Administrasi', key:'hpp_overhead_visibility', label:'↳ Nominal Overhead di Kalkulator HPP', icon:'eye-off', ops:['r'] }
 ];
@@ -2918,7 +2923,7 @@ function applyRoleUI(){
   const masterGroup = document.getElementById('nav-master-group');
   if (masterGroup) masterGroup.classList.toggle('hidden', !['warehouse','material','supplier','bom','hpp','assets'].some(k=>can(k,'r')));
   const adminGroup = document.getElementById('nav-admin-group');
-  if (adminGroup) adminGroup.classList.toggle('hidden', !['users','roles','warehouse_compare'].some(k=>can(k,'r')));
+  if (adminGroup) adminGroup.classList.toggle('hidden', !['users','roles','warehouse_compare','reports'].some(k=>can(k,'r')));
   // AI Assistant sengaja TIDAK ikut PERMISSION_MODULES/can() yg configurable - dikunci hard ke Super
   // Admin biar konsisten sama pengecekan session.role !== ROLE_ADMIN di backend (handleAiChat_).
   document.querySelectorAll('[data-nav="ai-assistant"]').forEach(el => el.classList.toggle('hidden', !isAdmin()));
@@ -3395,6 +3400,7 @@ async function switchTab(tab){
   if (tab === 'outbound' && document.getElementById('out-wh').value) onOutboundWhChange();
   if (tab === 'warehouse_compare' && compareTabDirty) renderWarehouseCompareTab();
   if (tab === 'dashboard' && dashboardChartDirty) renderTrendChart();
+  if (tab === 'reports' && typeof initReportsTab === 'function') initReportsTab();
 }
 
 
@@ -8132,5 +8138,6 @@ restoreSidebarPreference();
 lucide.createIcons();
 attemptSessionRestore();
 </script>
+  <script src="reporting.js"></script>
 </body>
 </html>
