@@ -68,13 +68,13 @@
           '<button id="report-btn-xlsx" onclick="exportReportXlsx()" disabled class="px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold disabled:opacity-40"><i data-lucide="file-spreadsheet" class="w-4 h-4 inline mr-1"></i>Excel</button>',
           '<button id="report-btn-pptx" onclick="exportReportPptx()" disabled class="px-3 py-2 rounded-lg bg-red-600 text-white text-xs font-semibold disabled:opacity-40"><i data-lucide="presentation" class="w-4 h-4 inline mr-1"></i>PowerPoint</button>',
           '<button id="report-btn-pdf" onclick="printReportPdf()" disabled class="px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-semibold disabled:opacity-40"><i data-lucide="file-pdf" class="w-4 h-4 inline mr-1"></i>PDF / Cetak</button>',
-          '<button id="report-btn-csv" onclick="exportReportCsv()" disabled class="px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-semibold disabled:opacity-40"><i data-lucide="download" class="w-4 h-4 inline mr-1"></i>CSV Detail</button>',
+          '<button id="report-btn-csv" onclick="exportReportCsv()" disabled class="px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-semibold disabled:opacity-40"><i data-lucide="download" class="w-4 h-4 inline mr-1"></i>CSV Transaksi</button>',
         '</div>',
       '</div>',
       '<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-5 no-print">',
         '<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 items-end">',
           '<div><label class="block text-[10px] uppercase tracking-wide font-bold text-slate-400 mb-1">Jenis Periode</label>',
-            '<select id="report-period" onchange="setReportPreset(this.value)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"><option value="weekly">Mingguan (Senin–hari ini)</option><option value="monthly">Bulanan (awal bulan–hari ini)</option><option value="custom">Rentang khusus</option></select></div>',
+            '<select id="report-period" onchange="setReportPreset(this.value)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"><option value="weekly">Minggu berjalan</option><option value="previous-week">Minggu lalu</option><option value="monthly">Bulan berjalan</option><option value="previous-month">Bulan lalu</option><option value="custom">Rentang khusus</option></select></div>',
           '<div><label class="block text-[10px] uppercase tracking-wide font-bold text-slate-400 mb-1">Dari Tanggal</label><input id="report-from" type="date" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></div>',
           '<div><label class="block text-[10px] uppercase tracking-wide font-bold text-slate-400 mb-1">Sampai Tanggal</label><input id="report-to" type="date" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></div>',
           '<div><label class="block text-[10px] uppercase tracking-wide font-bold text-slate-400 mb-1">Gudang</label><select id="report-warehouse" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"><option value="">Semua Gudang</option></select></div>',
@@ -134,18 +134,34 @@
     if (!reportState.initialized) buildReportsMarkup();
     var today = reportDateToday();
     var from = today;
-    if (preset === "weekly") {
+    var to = today;
+    if (preset === "weekly" || preset === "previous-week") {
       var d = new Date(today + "T12:00:00+07:00");
       var daysFromMonday = (d.getDay() + 6) % 7;
-      from = reportDateShift(today, -daysFromMonday);
-    } else if (preset === "monthly") {
-      from = today.slice(0, 8) + "01";
+      var thisWeekStart = reportDateShift(today, -daysFromMonday);
+      if (preset === "weekly") {
+        from = thisWeekStart;
+      } else {
+        to = reportDateShift(thisWeekStart, -1);
+        from = reportDateShift(to, -6);
+      }
+    } else if (preset === "monthly" || preset === "previous-month") {
+      var thisMonthStart = today.slice(0, 8) + "01";
+      if (preset === "monthly") {
+        from = thisMonthStart;
+      } else {
+        to = reportDateShift(thisMonthStart, -1);
+        from = to.slice(0, 8) + "01";
+      }
     } else if (preset === "custom") {
       from = $("report-from").value || today;
+      to = $("report-to").value || today;
     }
     $("report-period").value = preset;
-    if (preset !== "custom") $("report-from").value = from;
-    if (preset !== "custom" || !$("report-to").value) $("report-to").value = today;
+    if (preset !== "custom") {
+      $("report-from").value = from;
+      $("report-to").value = to;
+    }
     if (preset !== "custom" && reportState.data) loadReportData();
   };
 
@@ -503,6 +519,7 @@
   // Called by switchTab('reports') after the core data is ready.
   window.initReportsTab = function () {
     buildReportsMarkup();
+    initReportWarehouseOptions();
     if (!reportState.data && !reportState.loading) window.loadReportData();
   };
 
