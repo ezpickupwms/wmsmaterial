@@ -145,7 +145,7 @@
           '<div class="bg-white rounded-xl border border-slate-200 p-4"><h3 class="font-bold text-sm text-slate-800 mb-3">Paket Packing &amp; Produktivitas</h3><div class="h-64"><canvas id="report-chart-volume"></canvas></div></div>',
         '</div>',
         '<div class="bg-white rounded-xl border border-slate-200 p-4"><div class="flex items-center justify-between gap-2 mb-3"><h3 class="font-bold text-sm text-slate-800">Analisa &amp; Sinyal Operasional</h3><span class="text-[10px] text-slate-400">Dihitung otomatis dari data</span></div><div id="report-insights" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div></div>',
-        '<div class="bg-white rounded-xl border border-slate-200 p-4"><h3 class="font-bold text-sm text-slate-800 mb-3">Perbandingan Performa Gudang</h3><div class="overflow-x-auto"><table class="w-full text-xs"><thead class="text-slate-400 uppercase bg-slate-50"><tr><th class="p-2 text-left">Gudang</th><th class="p-2 text-right">Inbound</th><th class="p-2 text-right">Outbound</th><th class="p-2 text-right">Paket</th><th class="p-2 text-right">Produktivitas</th><th class="p-2 text-right report-money-col">Cost Packing</th></tr></thead><tbody id="report-warehouse-rows" class="divide-y divide-slate-100"></tbody></table></div></div>',
+        '<div class="bg-white rounded-xl border border-slate-200 p-4"><h3 class="font-bold text-sm text-slate-800 mb-3">Perbandingan Performa Gudang</h3><div class="overflow-x-auto"><table class="w-full text-xs"><thead class="text-slate-400 uppercase bg-slate-50"><tr><th class="p-2 text-left">Gudang</th><th class="p-2 text-right">Inbound</th><th class="p-2 text-right">Outbound</th><th class="p-2 text-right">Paket</th><th class="p-2 text-right">Produktivitas</th><th class="p-2 text-right report-money-col">Nilai PO Datang</th><th class="p-2 text-right report-money-col">Sisa Nilai Inventori</th><th class="p-2 text-right report-money-col">Cost Packing</th></tr></thead><tbody id="report-warehouse-rows" class="divide-y divide-slate-100"></tbody></table></div></div>',
         '<div class="grid grid-cols-1 xl:grid-cols-2 gap-4">',
           '<div class="bg-white rounded-xl border border-slate-200 p-4"><h3 class="font-bold text-sm text-slate-800 mb-3">Top Konsumsi Material (OUT)</h3><div class="overflow-x-auto"><table class="w-full text-xs"><thead class="text-slate-400 bg-slate-50"><tr><th class="p-2 text-left">Material</th><th class="p-2 text-left">Gudang</th><th class="p-2 text-right">Qty OUT</th></tr></thead><tbody id="report-material-rows" class="divide-y divide-slate-100"></tbody></table></div></div>',
           '<div class="bg-white rounded-xl border border-slate-200 p-4"><h3 class="font-bold text-sm text-slate-800 mb-3">Kategori Packing</h3><div class="overflow-x-auto"><table class="w-full text-xs"><thead class="text-slate-400 bg-slate-50"><tr><th class="p-2 text-left">Kategori</th><th class="p-2 text-right">AWB</th><th class="p-2 text-right">Paket</th><th class="p-2 text-right report-money-col">Cost</th></tr></thead><tbody id="report-category-rows" class="divide-y divide-slate-100"></tbody></table></div></div>',
@@ -242,7 +242,7 @@
       id = id || "—";
       if (!whStats[id]) {
         var nameRow = (db.warehouses || []).find(function (w) { return w["Warehouse ID"] === id; });
-        whStats[id] = { warehouseId: id, warehouseName: nameRow ? (nameRow["Warehouse Name"] || id) : id, inboundQty: 0, outboundQty: 0, packages: 0, productivityPackages: 0, packingCost: 0 };
+        whStats[id] = { warehouseId: id, warehouseName: nameRow ? (nameRow["Warehouse Name"] || id) : id, inboundQty: 0, outboundQty: 0, packages: 0, productivityPackages: 0, packingCost: 0, poReceivedValueRp: 0, inventoryValueRp: 0 };
       }
       return whStats[id];
     }
@@ -314,6 +314,17 @@
     var openCases = allCases.filter(function (c) { return ["Terbuka", "Diproses"].indexOf(c["Status"]) !== -1; });
     var highCases = openCases.filter(function (c) { return ["Tinggi", "High", "Critical", "Kritis"].indexOf(String(c["Prioritas"] || "")) !== -1; });
     var inventory = (db.inventory || []).filter(function (i) { return !wh || i["Warehouse ID"] === wh; });
+    inventory.forEach(function (i) { whStat(i["Warehouse ID"]).inventoryValueRp += n(i["Total Valuation (Rp)"]); });
+    var receivedPOs = (db.purchaseOrders || []).filter(function (p) {
+      return (!wh || p["Destination WH ID"] === wh) && n(p["Qty Received"]) > 0 && inRange(p["Actual Date"], from, to);
+    });
+    receivedPOs.forEach(function (p) {
+      var receivedQty = n(p["Qty Received"]);
+      var receivedValue = typeof computePoPricing === "function"
+        ? computePoPricing(receivedQty, p["Harga Satuan (Rp)"], p["Diskon (Rp)"], p["Ongkir (Rp)"]).total
+        : receivedQty * n(p["Harga Satuan (Rp)"]);
+      whStat(p["Destination WH ID"]).poReceivedValueRp += receivedValue;
+    });
     var invSummary = {
       skuCount: inventory.length,
       criticalCount: inventory.filter(function (i) { return i["Status Alert"] === "CRITICAL"; }).length,
@@ -421,8 +432,8 @@
       return '<div class="border rounded-lg p-3 ' + style + '"><p class="text-xs font-bold text-slate-800"><i data-lucide="' + icon + '" class="w-3.5 h-3.5 inline mr-1"></i>' + escHtml(x.title) + '</p><p class="text-xs text-slate-600 mt-1">' + escHtml(x.detail) + "</p></div>";
     }).join("");
     tableRows("report-warehouse-rows", r.warehousePerformance.map(function (w) {
-      return "<tr><td class=\"p-2 font-semibold\">" + escHtml(w.warehouseName) + '</td><td class="p-2 text-right">' + fmt(w.inboundQty) + '</td><td class="p-2 text-right">' + fmt(w.outboundQty) + '</td><td class="p-2 text-right">' + fmt(w.packages) + '</td><td class="p-2 text-right">' + fmt(w.productivityPackages) + '</td><td class="p-2 text-right report-money-col">' + (vis ? money(w.packingCost) : "—") + "</td></tr>";
-    }), 6);
+      return "<tr><td class=\"p-2 font-semibold\">" + escHtml(w.warehouseName) + '</td><td class="p-2 text-right">' + fmt(w.inboundQty) + '</td><td class="p-2 text-right">' + fmt(w.outboundQty) + '</td><td class="p-2 text-right">' + fmt(w.packages) + '</td><td class="p-2 text-right">' + fmt(w.productivityPackages) + '</td><td class="p-2 text-right report-money-col">' + (vis ? money(w.poReceivedValueRp) : "—") + '</td><td class="p-2 text-right report-money-col">' + (vis ? money(w.inventoryValueRp) : "—") + '</td><td class="p-2 text-right report-money-col">' + (vis ? money(w.packingCost) : "—") + "</td></tr>";
+    }), 8);
     tableRows("report-material-rows", r.topMaterials.map(function (x) {
       return "<tr><td class=\"p-2 font-semibold\">" + escHtml(x.materialName) + '<div class="text-[10px] text-slate-400">' + escHtml(x.materialId) + '</div></td><td class="p-2">' + escHtml(x.warehouseId) + '</td><td class="p-2 text-right font-semibold">' + fmt(x.qtyOut) + "</td></tr>";
     }), 3);
@@ -660,15 +671,19 @@
 
       slide = pptx.addSlide(); pptHeader(slide, "Performa Antar Gudang", sub, pptx);
       var wlist = r.warehousePerformance.slice(0, 8);
-      var cols = [{ x: .75, w: 2.3, label: "Gudang" }, { x: 3.2, w: 1.6, label: "Inbound" }, { x: 4.95, w: 1.6, label: "Outbound" }, { x: 6.7, w: 1.5, label: "Paket" }, { x: 8.35, w: 1.8, label: "Produktivitas" }];
-      if (r.visibility.financial) cols.push({ x: 10.35, w: 2.1, label: "Cost Packing" });
+      var cols = [{ x: .55, w: 1.85, label: "Gudang" }, { x: 2.45, w: 1.15, label: "Inbound" }, { x: 3.65, w: 1.15, label: "Outbound" }, { x: 4.85, w: 1.0, label: "Paket" }, { x: 5.9, w: 1.35, label: "Produktivitas" }];
+      if (r.visibility.financial) cols.push({ x: 7.3, w: 1.8, label: "Nilai PO Datang" }, { x: 9.15, w: 1.9, label: "Sisa Inventori" }, { x: 11.1, w: 1.7, label: "Cost Packing" });
       cols.forEach(function (c) { addSlideText(slide, c.label, c.x, 1.35, c.w, .25, { fontSize: 9, bold: true, color: "64748B", align: c.label === "Gudang" ? "left" : "right" }); });
       wlist.forEach(function (w, i) {
         var y = 1.8 + i * .55;
         slide.addShape(pptx.ShapeType.line, { x: .7, y: y + .34, w: 12, h: 0, line: { color: "E2E8F0", width: .6 } });
         var vals = [w.warehouseName, fmt(w.inboundQty), fmt(w.outboundQty), fmt(w.packages), fmt(w.productivityPackages)];
-        cols.forEach(function (c, ci) { addSlideText(slide, ci === 0 ? vals[ci] : vals[ci], c.x, y, c.w, .26, { fontSize: 9, align: ci === 0 ? "left" : "right", bold: ci === 0 }); });
-        if (r.visibility.financial) addSlideText(slide, money(w.packingCost), 10.35, y, 2.1, .26, { fontSize: 9, align: "right" });
+        cols.slice(0, 5).forEach(function (c, ci) { addSlideText(slide, vals[ci], c.x, y, c.w, .26, { fontSize: 8, align: ci === 0 ? "left" : "right", bold: ci === 0 }); });
+        if (r.visibility.financial) {
+          addSlideText(slide, money(w.poReceivedValueRp), cols[5].x, y, cols[5].w, .26, { fontSize: 7, align: "right" });
+          addSlideText(slide, money(w.inventoryValueRp), cols[6].x, y, cols[6].w, .26, { fontSize: 7, align: "right" });
+          addSlideText(slide, money(w.packingCost), cols[7].x, y, cols[7].w, .26, { fontSize: 7, align: "right" });
+        }
       });
 
       slide = pptx.addSlide(); pptHeader(slide, "Produktivitas Tim", sub, pptx);
