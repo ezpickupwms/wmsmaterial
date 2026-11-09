@@ -116,6 +116,52 @@
   function buildMarkup() {
     var root = $("tab-reports");
     if (!root || state.initialized) return;
+    if (!$("report-ui-style")) {
+      var reportStyle = document.createElement("style");
+      reportStyle.id = "report-ui-style";
+      reportStyle.textContent = `
+        #tab-reports { color:#172033; padding:clamp(12px,1.6vw,24px)!important; background:#f6f8fb; }
+        #tab-reports > div:first-child { align-items:center; margin-bottom:18px!important; }
+        #tab-reports h2 { font-size:clamp(20px,1.7vw,26px); letter-spacing:-.035em; line-height:1.2; }
+        #tab-reports h3 { letter-spacing:-.015em; }
+        #tab-reports .no-print button { min-height:36px; padding:8px 12px; border-radius:9px; box-shadow:0 1px 2px rgba(15,23,42,.05); }
+        #tab-reports #report-xlsx { background:#16845b; }
+        #tab-reports #report-pptx { background:#b4232e; }
+        #tab-reports #report-pdf, #tab-reports #report-csv { border-color:#d8dee8; }
+        #tab-reports .no-print.bg-white { border:1px solid #e1e7ef; border-radius:14px; padding:16px; box-shadow:0 4px 14px rgba(15,23,42,.035); }
+        #tab-reports #report-period, #tab-reports #report-from, #tab-reports #report-to, #tab-reports #report-warehouse { min-height:40px; background:#fff; border-color:#d7dee8; border-radius:9px; }
+        #tab-reports #report-run { min-height:40px; border-radius:9px; box-shadow:0 2px 5px rgba(15,23,42,.12); }
+        #tab-reports #report-results { gap:16px!important; }
+        #tab-reports #report-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+        #tab-reports #report-kpis > div { min-height:122px; border-color:#e2e8f0; border-radius:13px; padding:15px; box-shadow:0 2px 8px rgba(15,23,42,.035); display:flex; flex-direction:column; justify-content:flex-start; }
+        #tab-reports #report-kpis > div > p:nth-child(2) { font-size:clamp(19px,1.7vw,25px); line-height:1.2; font-variant-numeric:tabular-nums; }
+        #tab-reports #report-results > .bg-white, #tab-reports #report-results .grid > .bg-white { border:1px solid #e2e8f0; border-radius:13px; padding:16px; box-shadow:0 2px 9px rgba(15,23,42,.035); min-width:0; }
+        #tab-reports canvas { max-width:100%; }
+        #tab-reports #report-results .h-64 { height:240px; }
+        #tab-reports #report-insights > div { border-radius:10px; padding:12px; }
+        #tab-reports #report-results .overflow-x-auto { max-width:100%; border:1px solid #edf0f4; border-radius:9px; }
+        #tab-reports #report-results table { border-collapse:separate; border-spacing:0; min-width:100%; font-variant-numeric:tabular-nums; }
+        #tab-reports #report-warehouse-rows { white-space:nowrap; }
+        #tab-reports #report-warehouse-rows td, #tab-reports #report-results table th { padding:11px 12px!important; }
+        #tab-reports #report-results table thead th { background:#f7f9fc; color:#64748b; font-size:10px; letter-spacing:.055em; white-space:nowrap; border-bottom:1px solid #e7ebf1; }
+        #tab-reports #report-warehouse-rows tr:hover, #tab-reports #report-material-rows tr:hover, #tab-reports #report-category-rows tr:hover { background:#f8fafc; }
+        #tab-reports #report-warehouse-rows td { border-bottom:1px solid #eef1f5; }
+        #tab-reports #report-warehouse-rows td:nth-child(7) { color:#1d4ed8; font-weight:700; }
+        #tab-reports #report-warehouse-rows td:nth-child(6) { color:#047857; font-weight:700; }
+        #tab-reports .report-money-col { white-space:nowrap; }
+        @media (min-width:768px) { #tab-reports #report-kpis { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+        @media (min-width:1280px) { #tab-reports #report-kpis { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+        @media (max-width:640px) {
+          #tab-reports { padding:12px!important; }
+          #tab-reports > div:first-child { align-items:flex-start; }
+          #tab-reports .no-print button { flex:1 1 calc(50% - 8px); }
+          #tab-reports #report-results > .flex { align-items:flex-start; }
+          #tab-reports #report-results .grid { gap:12px; }
+          #tab-reports #report-results .h-64 { height:210px; }
+        }
+      `;
+      document.head.appendChild(reportStyle);
+    }
     root.innerHTML = [
       '<div class="flex flex-wrap items-start justify-between gap-3 mb-5">',
         '<div><h2 class="font-display text-2xl font-bold text-slate-900">Laporan &amp; Analisa</h2>',
@@ -139,13 +185,13 @@
       '</div>',
       '<div id="report-print-area"><div id="report-results" class="hidden space-y-5">',
         '<div class="flex flex-wrap justify-between items-center gap-2"><div><h3 class="font-display text-lg font-bold text-slate-900">Ringkasan Eksekutif</h3><p id="report-period-label" class="text-xs text-slate-500 mt-0.5"></p></div><span id="report-wh-label" class="text-xs font-semibold text-slate-600 bg-slate-100 rounded-full px-3 py-1"></span></div>',
-        '<div id="report-kpis" class="grid grid-cols-2 xl:grid-cols-4 gap-3"></div>',
+        '<div id="report-kpis" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3"></div>',
         '<div class="grid grid-cols-1 xl:grid-cols-2 gap-4">',
           '<div class="bg-white rounded-xl border border-slate-200 p-4"><h3 class="font-bold text-sm text-slate-800 mb-3">Tren Inbound &amp; Outbound</h3><div class="h-64"><canvas id="report-chart-movement"></canvas></div></div>',
           '<div class="bg-white rounded-xl border border-slate-200 p-4"><h3 class="font-bold text-sm text-slate-800 mb-3">Paket Packing &amp; Produktivitas</h3><div class="h-64"><canvas id="report-chart-volume"></canvas></div></div>',
         '</div>',
         '<div class="bg-white rounded-xl border border-slate-200 p-4"><div class="flex items-center justify-between gap-2 mb-3"><h3 class="font-bold text-sm text-slate-800">Analisa &amp; Sinyal Operasional</h3><span class="text-[10px] text-slate-400">Dihitung otomatis dari data</span></div><div id="report-insights" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div></div>',
-        '<div class="bg-white rounded-xl border border-slate-200 p-4"><h3 class="font-bold text-sm text-slate-800 mb-3">Perbandingan Performa Gudang</h3><div class="overflow-x-auto"><table class="w-full text-xs"><thead class="text-slate-400 uppercase bg-slate-50"><tr><th class="p-2 text-left">Gudang</th><th class="p-2 text-right">Inbound</th><th class="p-2 text-right">Outbound</th><th class="p-2 text-right">Paket</th><th class="p-2 text-right">Produktivitas</th><th class="p-2 text-right report-money-col">Nilai PO Datang</th><th class="p-2 text-right report-money-col">Sisa Nilai Inventori</th><th class="p-2 text-right report-money-col">Cost Packing</th></tr></thead><tbody id="report-warehouse-rows" class="divide-y divide-slate-100"></tbody></table></div></div>',
+        '<div class="bg-white rounded-xl border border-slate-200 p-4"><h3 class="font-bold text-sm text-slate-800 mb-3">Perbandingan Performa Gudang</h3><div class="overflow-x-auto report-warehouse-scroll"><table class="w-full text-xs"><thead class="text-slate-400 uppercase bg-slate-50"><tr><th class="p-2 text-left">Gudang</th><th class="p-2 text-right">Inbound</th><th class="p-2 text-right">Outbound</th><th class="p-2 text-right">Paket</th><th class="p-2 text-right">Produktivitas</th><th class="p-2 text-right report-money-col">Nilai PO Datang</th><th class="p-2 text-right report-money-col">Sisa Nilai Inventori</th><th class="p-2 text-right report-money-col">Cost Packing</th></tr></thead><tbody id="report-warehouse-rows" class="divide-y divide-slate-100"></tbody></table></div></div>',
         '<div class="grid grid-cols-1 xl:grid-cols-2 gap-4">',
           '<div class="bg-white rounded-xl border border-slate-200 p-4"><h3 class="font-bold text-sm text-slate-800 mb-3">Top Konsumsi Material (OUT)</h3><div class="overflow-x-auto"><table class="w-full text-xs"><thead class="text-slate-400 bg-slate-50"><tr><th class="p-2 text-left">Material</th><th class="p-2 text-left">Gudang</th><th class="p-2 text-right">Qty OUT</th></tr></thead><tbody id="report-material-rows" class="divide-y divide-slate-100"></tbody></table></div></div>',
           '<div class="bg-white rounded-xl border border-slate-200 p-4"><h3 class="font-bold text-sm text-slate-800 mb-3">Kategori Packing</h3><div class="overflow-x-auto"><table class="w-full text-xs"><thead class="text-slate-400 bg-slate-50"><tr><th class="p-2 text-left">Kategori</th><th class="p-2 text-right">AWB</th><th class="p-2 text-right">Paket</th><th class="p-2 text-right report-money-col">Cost</th></tr></thead><tbody id="report-category-rows" class="divide-y divide-slate-100"></tbody></table></div></div>',
